@@ -1,5 +1,9 @@
 import express, { NextFunction, Request, Response } from "express";
-import { readFileContent } from "./utils/fileIO";
+import {
+  fileExists,
+  readFileContent,
+  writeFileEnsureDir,
+} from "./utils/fileIO";
 import { resolveHome } from "./utils/parsing";
 
 const app = express();
@@ -15,6 +19,12 @@ app.get("/api/health", (req, res) => {
 
 app.get("/api/files", async (req, res, next) => {
   try {
+    const queryFileName = req.query.fileName as string;
+    if (!queryFileName) {
+      return res
+        .status(400)
+        .json({ message: "Missing fileName query parameter" });
+    }
     const fileName = resolveHome(req.query.fileName as string) || "unknown";
     const fileContent = await readFileContent(fileName);
     res.send(fileContent);
@@ -23,9 +33,13 @@ app.get("/api/files", async (req, res, next) => {
   }
 });
 
-app.post("/api/users", (req, res) => {
-  const newUser = req.body;
-  res.status(201).json({ message: "User created", user: newUser });
+app.post("/api/files", async (req, res, next) => {
+  const { fileName, content } = req.body;
+  if (await fileExists(resolveHome(fileName))) {
+    return res.status(400).json({ message: "File already exists" });
+  }
+  await writeFileEnsureDir(resolveHome(fileName), content);
+  res.status(201).json({ message: "File created" });
 });
 
 const FS_STATUS: Record<string, number> = {
