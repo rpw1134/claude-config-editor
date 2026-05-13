@@ -2,10 +2,11 @@ import express from "express";
 import type { NextFunction, Request, Response } from "express";
 import {
   fileExists,
+  listDir,
   readFileContent,
   writeFileEnsureDir,
-} from "./utils/fileIO.ts";
-import { resolveHome } from "./utils/parsing.ts";
+} from "./utils/fileIO";
+import { resolveHome } from "./utils/parsing";
 
 const app = express();
 const PORT = 3000;
@@ -20,13 +21,13 @@ app.get("/api/health", (req, res) => {
 
 app.get("/api/files", async (req, res, next) => {
   try {
-    const queryFileName = req.query.fileName as string;
-    if (!queryFileName) {
+    const queryFilePath = req.query.filePath as string;
+    if (!queryFilePath) {
       return res
         .status(400)
-        .json({ message: "Missing fileName query parameter" });
+        .json({ message: "Missing filePath query parameter" });
     }
-    const fileName = resolveHome(req.query.fileName as string) || "unknown";
+    const fileName = resolveHome(req.query.filePath as string) || "unknown";
     const fileContent = await readFileContent(fileName);
     res.send(fileContent);
   } catch (err) {
@@ -41,6 +42,21 @@ app.post("/api/files", async (req, res, next) => {
   }
   await writeFileEnsureDir(resolveHome(fileName), content);
   res.status(201).json({ message: "File created" });
+});
+
+app.get("/api/directory", async (req, res) => {
+  const { directoryPath } = req.query;
+  if (!directoryPath) {
+    return res
+      .status(400)
+      .json({ message: "Missing directoryPath query parameter" });
+  }
+  const dirPath = resolveHome(directoryPath as string);
+  const listing = await listDir(dirPath);
+  if (listing === null) {
+    return res.status(404).json({ message: "Directory not found" });
+  }
+  res.json(listing);
 });
 
 const FS_STATUS: Record<string, number> = {

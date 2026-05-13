@@ -1,5 +1,6 @@
 import { access, appendFile, mkdir, readdir, readFile, writeFile } from "fs/promises";
 import { dirname } from "path";
+import type { DirListing } from "../types/fileIO.js";
 
 /** Reads a file and returns its contents as a UTF-8 string. Throws with code ENOENT if not found. */
 export async function readFileContent(path: string): Promise<string> {
@@ -39,10 +40,14 @@ export async function ensureDir(path: string): Promise<void> {
   await mkdir(path, { recursive: true });
 }
 
-/** Returns the file names in a directory, or null if the directory does not exist. Throws on other errors (e.g. EACCES). */
-export async function listDir(path: string): Promise<string[] | null> {
+/** Returns files and subdirectories in a directory separately, or null if it does not exist. Throws on other errors (e.g. EACCES). */
+export async function listDir(path: string): Promise<DirListing | null> {
   try {
-    return await readdir(path);
+    const entries = await readdir(path, { withFileTypes: true });
+    return {
+      files: entries.filter((e) => e.isFile()).map((e) => e.name),
+      dirs: entries.filter((e) => e.isDirectory()).map((e) => e.name),
+    };
   } catch (e) {
     const error = e as NodeJS.ErrnoException;
     if (error.code === "ENOENT") return null;
