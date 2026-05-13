@@ -28,8 +28,8 @@ export const EditorPane = ({ name, type, onClose }: EditorPaneProps) => {
   }, [name, type, currentKey]);
 
   return (
-    <div className="flex flex-col h-full bg-[#0d0d10] border-l border-white/[0.06]">
-      <div className="px-4 py-2.5 border-b border-white/[0.06] flex items-center justify-between shrink-0">
+    <div className="flex flex-col h-full bg-[#0d0d10] border-l border-white/6">
+      <div className="px-4 py-2.5 border-b border-white/6 flex items-center justify-between shrink-0">
         <span className="font-mono text-[11px] text-white/30">
           {filePath(name, type)}
         </span>

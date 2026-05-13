@@ -65,7 +65,7 @@ interface ProjectCardProps {
 
 const ProjectCard = ({ project }: ProjectCardProps) => {
   return (
-    <button className="group w-full text-left px-4 py-3.5 rounded-md bg-white/[0.02] border border-white/[0.06] hover:bg-white/[0.045] hover:border-white/[0.1] transition-all duration-150 block">
+    <button className="group w-full text-left px-4 py-3.5 rounded-md bg-white/2 border border-white/6 hover:bg-white/4.5 hover:border-white/10 transition-all duration-150 block">
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2 mb-0.5">
@@ -90,7 +90,7 @@ const ProjectCard = ({ project }: ProjectCardProps) => {
           </div>
         </div>
       </div>
-      <div className="mt-3 pt-3 border-t border-white/[0.05] flex items-center justify-between">
+      <div className="mt-3 pt-3 border-t border-white/5 flex items-center justify-between">
         <div className="flex items-center gap-1.5">
           <div className="w-1 h-1 rounded-full bg-white/20" />
           <span className="text-[11px] text-white/25 font-mono">CLAUDE.md</span>

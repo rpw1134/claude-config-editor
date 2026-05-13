@@ -27,7 +27,7 @@ export const SectionHeader = ({
       {actionLabel && (
         <button
           onClick={onAction}
-          className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded text-[12px] font-medium bg-orange-500/[0.12] text-orange-400 border border-orange-500/20 hover:bg-orange-500/[0.18] hover:border-orange-500/30 transition-all duration-100"
+          className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded text-[12px] font-medium bg-orange-500/12 text-orange-400 border border-orange-500/20 hover:bg-orange-500/18 hover:border-orange-500/30 transition-all duration-100"
         >
           <span className="text-[10px]">+</span>
           {actionLabel}

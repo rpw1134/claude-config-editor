@@ -51,9 +51,9 @@ const NAV_ITEMS: NavItem[] = [
 
 export const Sidebar = ({ activeTab, onTabChange }: SidebarProps) => {
   return (
-    <aside className="w-[220px] shrink-0 flex flex-col bg-[#0d0d0f] border-r border-white/[0.06] h-full">
+    <aside className="w-[220px] shrink-0 flex flex-col bg-[#0d0d0f] border-r border-white/6 h-full">
       {/* App title */}
-      <div className="px-4 pt-5 pb-4 border-b border-white/[0.06]">
+      <div className="px-4 pt-5 pb-4 border-b border-white/6">
         <div className="flex items-center gap-2.5">
           <div className="w-6 h-6 rounded bg-orange-500/90 flex items-center justify-center shrink-0">
             <span className="text-[10px] font-bold text-white leading-none">C</span>
@@ -79,8 +79,8 @@ export const Sidebar = ({ activeTab, onTabChange }: SidebarProps) => {
                     'w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded text-left transition-all duration-100',
                     'text-[13px] font-medium',
                     isActive
-                      ? 'bg-orange-500/[0.12] text-orange-400 border-l-2 border-orange-500 pl-[9px]'
-                      : 'text-white/45 hover:text-white/70 hover:bg-white/[0.04] border-l-2 border-transparent pl-[9px]',
+                      ? 'bg-orange-500/12 text-orange-400 border-l-2 border-orange-500 pl-2.25'
+                      : 'text-white/45 hover:text-white/70 hover:bg-white/4 border-l-2 border-transparent pl-2.25',
                   ].join(' ')}
                 >
                   <span className={isActive ? 'text-orange-400' : 'text-white/30'}>
@@ -95,8 +95,8 @@ export const Sidebar = ({ activeTab, onTabChange }: SidebarProps) => {
       </nav>
 
       {/* Bottom settings */}
-      <div className="px-2 pb-4 border-t border-white/[0.06] pt-3">
-        <button className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded text-left border-l-2 border-transparent pl-[9px] text-white/35 hover:text-white/60 hover:bg-white/[0.04] transition-all duration-100 text-[13px] font-medium">
+      <div className="px-2 pb-4 border-t border-white/6 pt-3">
+        <button className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded text-left border-l-2 border-transparent pl-2.25 text-white/35 hover:text-white/60 hover:bg-white/4 transition-all duration-100 text-[13px] font-medium">
           <span className="text-white/25">
             <SettingsIcon />
           </span>
