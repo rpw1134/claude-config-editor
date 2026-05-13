@@ -6,11 +6,11 @@ import {
   listDir,
   readFileContent,
   writeFileEnsureDir,
-} from "./utils/fileIO";
-import { resolveHome } from "./utils/parsing";
-import claudeConfigRouter from "./routers/claudeConfig";
-import agentsRouter from "./routers/agents";
-import skillsRouter from "./routers/skills";
+} from "./utils/fileIO.js";
+import { resolveHome } from "./utils/parsing.js";
+import claudeConfigRouter from "./routers/claudeConfig.js";
+import agentsRouter from "./routers/agents.js";
+import skillsRouter from "./routers/skills.js";
 
 const app = express();
 const PORT = 3000;

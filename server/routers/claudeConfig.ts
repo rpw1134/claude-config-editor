@@ -4,7 +4,7 @@ import {
   listAgents,
   listMcpServers,
   listSkills,
-} from "../services/claudeConfig";
+} from "../services/claudeConfig.js";
 
 const router: Router = express.Router();
 

@@ -8,6 +8,17 @@ async function get<T>(path: string): Promise<T> {
   return res.json() as Promise<T>;
 }
 
+async function put(path: string, body: Record<string, unknown>): Promise<void> {
+  const res = await fetch(`${BASE_URL}${path}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    throw new Error(`${res.status} ${res.statusText} — ${path}`);
+  }
+}
+
 export async function fetchSkills(): Promise<string[]> {
   const data = await get<{ skills: string[] }>('/api/claude-config/skills');
   return data.skills;
@@ -31,4 +42,12 @@ export async function fetchAgentContent(name: string): Promise<string> {
 export async function fetchSkillContent(name: string): Promise<string> {
   const data = await get<{ content: string }>(`/api/skills/${encodeURIComponent(name)}`);
   return data.content;
+}
+
+export async function updateAgentContent(name: string, content: string): Promise<void> {
+  await put(`/api/agents/${encodeURIComponent(name)}`, { content });
+}
+
+export async function updateSkillContent(name: string, content: string): Promise<void> {
+  await put(`/api/skills/${encodeURIComponent(name)}`, { content });
 }
