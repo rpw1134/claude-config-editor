@@ -51,7 +51,7 @@ const CreateHeader = ({
   const disabled = draftName.trim() === "" || creating;
 
   const btnClassName = [
-    "font-mono text-[11px] px-2 py-0.5 rounded transition-colors",
+    "font-mono text-[12px] px-2.5 py-1 rounded transition-colors",
     disabled
       ? "opacity-40 cursor-not-allowed text-white/40"
       : isError
@@ -62,9 +62,9 @@ const CreateHeader = ({
   const label = creating ? "Creating…" : isError ? "Error" : "Create";
 
   return (
-    <div className="px-4 py-2.5 border-b border-white/6 flex items-center justify-between shrink-0">
-      <div className="flex items-center gap-2">
-        <span className="font-mono text-[11px] text-white/30">
+    <div className="px-5 border-b border-white/6 flex items-center justify-between shrink-0" style={{ minHeight: '44px' }}>
+      <div className="flex items-center gap-1.5">
+        <span className="font-mono text-[12px] text-white/25">
           {type === "agent" ? "~/.claude/agents/" : "~/.claude/skills/"}
         </span>
         <input
@@ -73,7 +73,7 @@ const CreateHeader = ({
           onChange={(e) => onDraftNameChange(e.target.value)}
           onKeyDown={(e) => { if (e.key === "Enter" && !disabled) onCreate(); }}
           placeholder="name"
-          className="bg-transparent font-mono text-[11px] text-white/60 outline-none border-b border-white/20 focus:border-white/40 w-48 transition-colors"
+          className="bg-transparent font-mono text-[12px] text-white/60 outline-none border-b border-white/20 focus:border-white/40 w-48 transition-colors"
           autoFocus
           spellCheck={false}
         />
@@ -89,7 +89,7 @@ const CreateHeader = ({
         </button>
         <button
           onClick={onClose}
-          className="text-white/30 hover:text-white/60 transition-colors text-[16px] leading-none"
+          className="text-white/30 hover:text-white/60 transition-colors text-[18px] leading-none"
           aria-label="Close editor"
         >
           ×
@@ -130,7 +130,7 @@ const EditHeader = ({
       : "Save";
 
   const saveClassName = [
-    "font-mono text-[11px] px-2 py-0.5 rounded transition-colors",
+    "font-mono text-[12px] px-2.5 py-1 rounded transition-colors",
     saveDisabled
       ? "opacity-40 cursor-not-allowed text-white/40"
       : saveStatus === "saved"
@@ -141,8 +141,8 @@ const EditHeader = ({
   ].join(" ");
 
   return (
-    <div className="px-4 py-2.5 border-b border-white/6 flex items-center justify-between shrink-0">
-      <span className="font-mono text-[11px] text-white/30">
+    <div className="px-5 border-b border-white/6 flex items-center justify-between shrink-0" style={{ minHeight: '44px' }}>
+      <span className="font-mono text-[12px] text-white/30">
         {filePath(name, type)}
       </span>
       <div className="flex items-center gap-3">
@@ -156,7 +156,7 @@ const EditHeader = ({
         </button>
         <button
           onClick={onClose}
-          className="text-white/30 hover:text-white/60 transition-colors text-[16px] leading-none"
+          className="text-white/30 hover:text-white/60 transition-colors text-[18px] leading-none"
           aria-label="Close editor"
         >
           ×

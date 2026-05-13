@@ -12,15 +12,24 @@ const SkillCard = ({ name, isSelected, onSelect }: SkillCardProps) => (
   <button
     onClick={() => onSelect(isSelected ? null : name)}
     className={[
-      'group w-full text-left px-4 py-3.5 rounded-md border transition-all duration-150 block',
+      'group w-full text-left px-5 py-4 rounded-lg border transition-all duration-150 block',
       isSelected
-        ? 'bg-white/6 border-white/12'
-        : 'bg-white/2 border-white/6 hover:bg-white/4.5 hover:border-white/10',
+        ? 'bg-white/6 border-white/14'
+        : 'bg-white/2.5 border-white/7 hover:bg-white/4.5 hover:border-white/12',
     ].join(' ')}
   >
-    <span className="text-[13px] font-semibold text-white/80 group-hover:text-white/95 transition-colors font-mono">
-      {name}
-    </span>
+    <div className="flex items-center gap-3">
+      <div className={[
+        'w-1.5 h-1.5 rounded-full shrink-0 transition-colors',
+        isSelected ? 'bg-orange-400' : 'bg-white/20 group-hover:bg-white/35',
+      ].join(' ')} />
+      <span className={[
+        'text-[14px] font-semibold font-mono transition-colors leading-tight',
+        isSelected ? 'text-white/95' : 'text-white/70 group-hover:text-white/90',
+      ].join(' ')}>
+        {name}
+      </span>
+    </div>
   </button>
 );
 
@@ -67,7 +76,7 @@ export const SkillsSection = ({ selectedName, onSelect, onNew, refreshKey }: Ski
       )}
 
       {!loading && !error && (
-        <div className="space-y-2">
+        <div className="space-y-2.5">
           {skills.map((name) => (
             <SkillCard
               key={name}

@@ -54,7 +54,7 @@ const MOCK_PROJECTS: Project[] = [
 ];
 
 const ExternalLinkIcon = () => (
-  <svg width="11" height="11" viewBox="0 0 11 11" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <svg width="12" height="12" viewBox="0 0 11 11" fill="none" xmlns="http://www.w3.org/2000/svg">
     <path d="M2 9L9 2M9 2H4.5M9 2V6.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
   </svg>
 );
@@ -65,37 +65,32 @@ interface ProjectCardProps {
 
 const ProjectCard = ({ project }: ProjectCardProps) => {
   return (
-    <button className="group w-full text-left px-4 py-3.5 rounded-md bg-white/2 border border-white/6 hover:bg-white/4.5 hover:border-white/10 transition-all duration-150 block">
+    <button className="group w-full text-left px-5 py-4 rounded-lg bg-white/2.5 border border-white/7 hover:bg-white/4.5 hover:border-white/12 transition-all duration-150 block">
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2 mb-0.5">
-            <span className="text-[13px] font-semibold text-white/80 group-hover:text-white/95 transition-colors">
+          {/* Name row */}
+          <div className="flex items-center gap-2 mb-1.5">
+            <span className="text-[14px] font-semibold text-white/85 group-hover:text-white transition-colors leading-tight">
               {project.name}
             </span>
             {project.isGlobal && (
-              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-semibold uppercase tracking-wider bg-orange-500/15 text-orange-400/80 border border-orange-500/20">
+              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-orange-500/15 text-orange-400/90 border border-orange-500/20">
                 Global
               </span>
             )}
+            <span className="ml-auto text-[11px] text-white/20 font-mono shrink-0">{project.lastModified}</span>
           </div>
-          <p className="font-mono text-[11px] text-white/25 mb-2 truncate">{project.path}</p>
-          <p className="text-[12px] text-white/40 leading-relaxed line-clamp-2">{project.description}</p>
+          {/* Path */}
+          <p className="font-mono text-[11px] text-white/25 mb-2.5 truncate">{project.path}</p>
+          {/* Description */}
+          <p className="text-[12px] text-white/40 leading-[1.6] line-clamp-2">{project.description}</p>
         </div>
-        <div className="shrink-0 flex flex-col items-end gap-2 pt-0.5">
-          <span className="opacity-0 group-hover:opacity-100 transition-opacity text-white/30">
+        <div className="shrink-0 flex flex-col items-end gap-3 pt-0.5">
+          <span className="opacity-0 group-hover:opacity-100 transition-opacity text-white/35">
             <ExternalLinkIcon />
           </span>
-          <div className="text-right">
-            <p className="text-[11px] text-white/20 font-mono">{project.size}</p>
-          </div>
+          <span className="text-[11px] text-white/20 font-mono">{project.size}</span>
         </div>
-      </div>
-      <div className="mt-3 pt-3 border-t border-white/5 flex items-center justify-between">
-        <div className="flex items-center gap-1.5">
-          <div className="w-1 h-1 rounded-full bg-white/20" />
-          <span className="text-[11px] text-white/25 font-mono">CLAUDE.md</span>
-        </div>
-        <span className="text-[11px] text-white/20">{project.lastModified}</span>
       </div>
     </button>
   );
@@ -110,7 +105,7 @@ export const ProjectsSection = () => {
         actionLabel="Add Project"
         count={MOCK_PROJECTS.length}
       />
-      <div className="space-y-2">
+      <div className="space-y-2.5">
         {MOCK_PROJECTS.map((project) => (
           <ProjectCard key={project.id} project={project} />
         ))}
