@@ -11,7 +11,7 @@ export async function listSkills(): Promise<string[]> {
 /** Returns agent file names under ~/.claude/agents/. */
 export async function listAgents(): Promise<string[]> {
   const listing = await listDir(resolveHome("~/.claude/agents"));
-  return listing?.files.filter((f) => f.endsWith(".md")) ?? [];
+  return listing?.files.filter((f) => f.endsWith(".md")).map((f) => f.slice(0, -3)) ?? [];
 }
 
 /** Returns the keys of global mcpServers from ~/.claude.json. */

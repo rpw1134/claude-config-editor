@@ -22,3 +22,13 @@ export async function fetchMcpServers(): Promise<string[]> {
   const data = await get<{ mcpServers: string[] }>('/api/claude-config/mcp-servers');
   return data.mcpServers;
 }
+
+export async function fetchAgentContent(name: string): Promise<string> {
+  const data = await get<{ content: string }>(`/api/agents/${encodeURIComponent(name)}`);
+  return data.content;
+}
+
+export async function fetchSkillContent(name: string): Promise<string> {
+  const data = await get<{ content: string }>(`/api/skills/${encodeURIComponent(name)}`);
+  return data.content;
+}

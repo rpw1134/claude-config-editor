@@ -9,6 +9,8 @@ import {
 } from "./utils/fileIO";
 import { resolveHome } from "./utils/parsing";
 import claudeConfigRouter from "./routers/claudeConfig";
+import agentsRouter from "./routers/agents";
+import skillsRouter from "./routers/skills";
 
 const app = express();
 const PORT = 3000;
@@ -22,6 +24,8 @@ app.use(
 );
 
 app.use("/api/claude-config", claudeConfigRouter);
+app.use("/api/agents", agentsRouter);
+app.use("/api/skills", skillsRouter);
 
 // Dummy routes so I remember how express works 💀
 app.get("/api/health", (req, res) => {
