@@ -20,7 +20,7 @@ Frontend is written once. The "backend" boundary (file I/O calls) is the only th
 
 ## Stack
 
-- **Vite + React + TypeScript** — frontend
+- **Vite + React + TypeScript + TailwindCSS** — frontend
 - **Monaco editor** — editing pane (syntax highlighting, validation)
 - **Express** — phase 1 backend for file I/O
 - **Tauri (Rust)** — phase 2 desktop shell
