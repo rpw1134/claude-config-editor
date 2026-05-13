@@ -27,9 +27,11 @@ const SkillCard = ({ name, isSelected, onSelect }: SkillCardProps) => (
 interface SkillsSectionProps {
   selectedName: string | null;
   onSelect: (name: string | null) => void;
+  onNew: () => void;
+  refreshKey: number;
 }
 
-export const SkillsSection = ({ selectedName, onSelect }: SkillsSectionProps) => {
+export const SkillsSection = ({ selectedName, onSelect, onNew, refreshKey }: SkillsSectionProps) => {
   const [skills, setSkills] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -44,7 +46,7 @@ export const SkillsSection = ({ selectedName, onSelect }: SkillsSectionProps) =>
         setError(err instanceof Error ? err.message : 'Failed to load skills');
         setLoading(false);
       });
-  }, []);
+  }, [refreshKey]);
 
   return (
     <div>
@@ -52,6 +54,7 @@ export const SkillsSection = ({ selectedName, onSelect }: SkillsSectionProps) =>
         title="Skills"
         description="Reusable instruction sets that activate on keywords or slash commands to guide specialized tasks."
         actionLabel="New Skill"
+        onAction={onNew}
         count={skills.length}
       />
 

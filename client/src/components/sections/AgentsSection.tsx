@@ -27,9 +27,11 @@ const AgentCard = ({ name, isSelected, onSelect }: AgentCardProps) => (
 interface AgentsSectionProps {
   selectedName: string | null;
   onSelect: (name: string | null) => void;
+  onNew: () => void;
+  refreshKey: number;
 }
 
-export const AgentsSection = ({ selectedName, onSelect }: AgentsSectionProps) => {
+export const AgentsSection = ({ selectedName, onSelect, onNew, refreshKey }: AgentsSectionProps) => {
   const [agents, setAgents] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -44,7 +46,7 @@ export const AgentsSection = ({ selectedName, onSelect }: AgentsSectionProps) =>
         setError(err instanceof Error ? err.message : 'Failed to load agents');
         setLoading(false);
       });
-  }, []);
+  }, [refreshKey]);
 
   return (
     <div>
@@ -52,6 +54,7 @@ export const AgentsSection = ({ selectedName, onSelect }: AgentsSectionProps) =>
         title="Agents"
         description="Named sub-agents with specialized roles and model assignments, stored as markdown files."
         actionLabel="New Agent"
+        onAction={onNew}
         count={agents.length}
       />
 

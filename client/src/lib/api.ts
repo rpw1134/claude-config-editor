@@ -8,6 +8,17 @@ async function get<T>(path: string): Promise<T> {
   return res.json() as Promise<T>;
 }
 
+async function post(path: string, body: Record<string, unknown>): Promise<void> {
+  const res = await fetch(`${BASE_URL}${path}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    throw new Error(`${res.status} ${res.statusText} — ${path}`);
+  }
+}
+
 async function put(path: string, body: Record<string, unknown>): Promise<void> {
   const res = await fetch(`${BASE_URL}${path}`, {
     method: "PUT",
@@ -50,4 +61,12 @@ export async function updateAgentContent(name: string, content: string): Promise
 
 export async function updateSkillContent(name: string, content: string): Promise<void> {
   await put(`/api/skills/${encodeURIComponent(name)}`, { content });
+}
+
+export async function createAgent(name: string, content: string): Promise<void> {
+  await post("/api/agents", { name, content });
+}
+
+export async function createSkill(name: string, content: string): Promise<void> {
+  await post("/api/skills", { name, content });
 }

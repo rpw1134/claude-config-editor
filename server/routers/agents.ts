@@ -1,6 +1,6 @@
 import express from "express";
 import type { NextFunction, Request, Response, Router } from "express";
-import { readFileContent, writeFileContent } from "../utils/fileIO.js";
+import { readFileContent, writeFileContent, fileExists } from "../utils/fileIO.js";
 import { resolveHome } from "../utils/parsing.js";
 
 const router: Router = express.Router();
@@ -35,6 +35,29 @@ router.put(
     try {
       await writeFileContent(filePath, content);
       res.status(200).json({ message: "Agent saved" });
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+router.post(
+  "/",
+  async (req: Request, res: Response, next: NextFunction) => {
+    const { name, content } = req.body as { name?: unknown; content?: unknown };
+    if (typeof name !== "string" || typeof content !== "string") {
+      return res.status(400).json({ message: "name and content must be strings" });
+    }
+    if (!name || name.includes("/") || name.includes("\\") || name.includes("..")) {
+      return res.status(400).json({ message: "name must not be empty or contain path separators" });
+    }
+    const filePath = resolveHome(`~/.claude/agents/${name}.md`);
+    try {
+      if (await fileExists(filePath)) {
+        return res.status(409).json({ message: "Agent already exists" });
+      }
+      await writeFileContent(filePath, content);
+      res.status(201).json({ message: "Agent created" });
     } catch (err) {
       next(err);
     }
