@@ -1,3 +1,4 @@
+import cors from "cors";
 import express from "express";
 import type { NextFunction, Request, Response } from "express";
 import {
@@ -14,6 +15,11 @@ const PORT = 3000;
 
 // Middleware to parse JSON bodies
 app.use(express.json());
+app.use(
+  cors({
+    origin: "http://localhost:5173",
+  }),
+);
 
 app.use("/api/claude-config", claudeConfigRouter);
 
