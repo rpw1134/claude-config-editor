@@ -1,11 +1,15 @@
-import { listDir, readFileContent } from "../utils/fileIO.js";
+import { fileExists, listDir, readFileContent } from "../utils/fileIO.js";
 import { resolveHome } from "../utils/parsing.js";
 import type { ClaudeConfig } from "../types/claudeConfig.js";
 
-/** Returns skill directory names under ~/.claude/skills/. */
+/** Returns skill directory names under ~/.claude/skills/ that contain a SKILL.md file. */
 export async function listSkills(): Promise<string[]> {
   const listing = await listDir(resolveHome("~/.claude/skills"));
-  return listing?.dirs ?? [];
+  const dirs = listing?.dirs ?? [];
+  const checks = await Promise.all(
+    dirs.map((d) => fileExists(resolveHome(`~/.claude/skills/${d}/SKILL.md`)))
+  );
+  return dirs.filter((_, i) => checks[i]);
 }
 
 /** Returns agent file names under ~/.claude/agents/. */

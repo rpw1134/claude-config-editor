@@ -1,6 +1,6 @@
 import express from "express";
 import type { NextFunction, Request, Response, Router } from "express";
-import { readFileContent, writeFileContent, writeFileEnsureDir, listDir } from "../utils/fileIO.js";
+import { fileExists, readFileContent, writeFileContent, writeFileEnsureDir } from "../utils/fileIO.js";
 import { resolveHome } from "../utils/parsing.js";
 
 const router: Router = express.Router();
@@ -54,7 +54,7 @@ router.post(
     const dirPath = resolveHome(`~/.claude/skills/${name}`);
     const filePath = `${dirPath}/SKILL.md`;
     try {
-      if ((await listDir(dirPath)) !== null) {
+      if (await fileExists(filePath)) {
         return res.status(409).json({ message: "Skill already exists" });
       }
       await writeFileEnsureDir(filePath, content);
