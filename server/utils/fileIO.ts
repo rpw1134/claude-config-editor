@@ -1,4 +1,4 @@
-import { access, appendFile, mkdir, readFile, writeFile } from "fs/promises";
+import { access, appendFile, mkdir, readdir, readFile, writeFile } from "fs/promises";
 import { dirname } from "path";
 
 /** Reads a file and returns its contents as a UTF-8 string. Throws with code ENOENT if not found. */
@@ -37,6 +37,17 @@ export async function fileExists(path: string): Promise<boolean> {
 /** Recursively creates a directory and any missing ancestors. No-ops if it already exists. */
 export async function ensureDir(path: string): Promise<void> {
   await mkdir(path, { recursive: true });
+}
+
+/** Returns the file names in a directory, or null if the directory does not exist. Throws on other errors (e.g. EACCES). */
+export async function listDir(path: string): Promise<string[] | null> {
+  try {
+    return await readdir(path);
+  } catch (e) {
+    const error = e as NodeJS.ErrnoException;
+    if (error.code === "ENOENT") return null;
+    throw error;
+  }
 }
 
 /** Writes content to a file, creating the parent directory tree if needed. */

@@ -1,10 +1,11 @@
-import express, { NextFunction, Request, Response } from "express";
+import express from "express";
+import type { NextFunction, Request, Response } from "express";
 import {
   fileExists,
   readFileContent,
   writeFileEnsureDir,
-} from "./utils/fileIO";
-import { resolveHome } from "./utils/parsing";
+} from "./utils/fileIO.ts";
+import { resolveHome } from "./utils/parsing.ts";
 
 const app = express();
 const PORT = 3000;
