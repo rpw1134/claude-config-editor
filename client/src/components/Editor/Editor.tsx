@@ -26,6 +26,11 @@ const beforeMount: BeforeMount = (monaco) => {
 
 const EDITOR_OPTIONS = {
   minimap: { enabled: false },
+  quickSuggestions: false,
+  suggestOnTriggerCharacters: false,
+  parameterHints: { enabled: false },
+  wordBasedSuggestions: 'off' as const,
+  hover: { enabled: false },
   fontSize: 13,
   lineHeight: 22,
   fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
