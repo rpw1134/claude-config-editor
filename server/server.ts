@@ -7,12 +7,15 @@ import {
   writeFileEnsureDir,
 } from "./utils/fileIO";
 import { resolveHome } from "./utils/parsing";
+import claudeConfigRouter from "./routers/claudeConfig";
 
 const app = express();
 const PORT = 3000;
 
 // Middleware to parse JSON bodies
 app.use(express.json());
+
+app.use("/api/claude-config", claudeConfigRouter);
 
 // Dummy routes so I remember how express works 💀
 app.get("/api/health", (req, res) => {

@@ -14,7 +14,7 @@ export async function listAgents(): Promise<string[]> {
   return listing?.files.filter((f) => f.endsWith(".md")) ?? [];
 }
 
-/** Returns the keys of mcpServers from ~/.claude.json. */
+/** Returns the keys of global mcpServers from ~/.claude.json. */
 export async function listMcpServers(): Promise<string[]> {
   let raw: string;
   try {
@@ -26,5 +26,6 @@ export async function listMcpServers(): Promise<string[]> {
   }
 
   const config = JSON.parse(raw) as ClaudeConfig;
-  return Object.keys(config.mcpServers ?? {});
+  const globalProject = config.projects?.[resolveHome("~/.claude")];
+  return Object.keys(globalProject?.mcpServers ?? {});
 }
