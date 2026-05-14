@@ -1,26 +1,19 @@
 import { useState } from 'react';
 import { Sidebar } from './components/Sidebar';
-import { AgentsSection } from './components/sections/AgentsSection';
-import { SkillsSection } from './components/sections/SkillsSection';
-import { McpServersSection } from './components/sections/McpServersSection';
+import { SidebarAgentsList, SidebarSkillsList, SidebarMcpList } from './components/SidebarLists';
 import { EditorPane } from './components/Editor/EditorPane';
+import { WelcomePane, NoProjectPane } from './components/WelcomePane';
 
-type ActiveTab = 'claude-md' | 'agents' | 'skills' | 'mcp-servers';
+type ActiveTab = 'claude-md' | 'agents' | 'skills' | 'mcp-servers' | 'welcome';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<ActiveTab>('claude-md');
+  const [activeTab, setActiveTab] = useState<ActiveTab>('welcome');
   const [selectedProjectPath, setSelectedProjectPath] = useState<string | null>(null);
   const [selectedName, setSelectedName] = useState<string | null>(null);
   const [creatingType, setCreatingType] = useState<'agent' | 'skill' | 'mcp-server' | null>(null);
   const [agentsRefreshKey, setAgentsRefreshKey] = useState(0);
   const [skillsRefreshKey, setSkillsRefreshKey] = useState(0);
   const [mcpRefreshKey, setMcpRefreshKey] = useState(0);
-
-  const handleTabChange = (tab: string) => {
-    setActiveTab(tab as ActiveTab);
-    setSelectedName(null);
-    setCreatingType(null);
-  };
 
   const handleProjectSelect = (path: string) => {
     setSelectedProjectPath(path);
@@ -29,19 +22,67 @@ export default function App() {
     setActiveTab('claude-md');
   };
 
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab as ActiveTab);
+    setSelectedName(null);
+    setCreatingType(null);
+  };
+
+  // Sidebar list item selected → open that item in the editor
+  const handleSelectAgent = (name: string) => {
+    setActiveTab('agents');
+    setSelectedName(name);
+    setCreatingType(null);
+  };
+
+  const handleSelectSkill = (name: string) => {
+    setActiveTab('skills');
+    setSelectedName(name);
+    setCreatingType(null);
+  };
+
+  const handleSelectMcp = (name: string) => {
+    setActiveTab('mcp-servers');
+    setSelectedName(name);
+    setCreatingType(null);
+  };
+
+  // "+" buttons in the sidebar
   const handleNewAgent = () => {
+    setActiveTab('agents');
     setSelectedName(null);
     setCreatingType('agent');
   };
 
   const handleNewSkill = () => {
+    setActiveTab('skills');
     setSelectedName(null);
     setCreatingType('skill');
   };
 
-  const handleNewMcpServer = () => {
+  const handleNewMcp = () => {
+    setActiveTab('mcp-servers');
     setSelectedName(null);
     setCreatingType('mcp-server');
+  };
+
+  // Welcome pane quick-access cards — navigate to the section
+  const handleWelcomeAgents = () => {
+    setActiveTab('agents');
+    setSelectedName(null);
+    setCreatingType(null);
+  };
+
+  const handleWelcomeSkills = () => {
+    setActiveTab('skills');
+    setSelectedName(null);
+    setCreatingType(null);
+  };
+
+  const handleWelcomeMcp = () => {
+    setActiveTab('mcp-servers');
+    setSelectedName(null);
+    setCreatingType(null);
   };
 
   const handleCreated = (name: string) => {
@@ -55,8 +96,18 @@ export default function App() {
   const handleDeleted = () => {
     if (activeTab === 'agents') setAgentsRefreshKey((k) => k + 1);
     else if (activeTab === 'skills') setSkillsRefreshKey((k) => k + 1);
+    else if (activeTab === 'mcp-servers') setMcpRefreshKey((k) => k + 1);
     setSelectedName(null);
+    setActiveTab('welcome');
   };
+
+  const handleEditorClose = () => {
+    setSelectedName(null);
+    setCreatingType(null);
+    setActiveTab('welcome');
+  };
+
+  // ── Derived state ─────────────────────────────────────────────────────────
 
   const editorType =
     activeTab === 'claude-md'
@@ -67,130 +118,97 @@ export default function App() {
       ? 'mcp-server'
       : 'skill';
 
-  const isClaudeMdTab = activeTab === 'claude-md';
-  const isSplitTab = activeTab === 'agents' || activeTab === 'skills' || activeTab === 'mcp-servers';
   const showEditor =
-    (isClaudeMdTab && selectedProjectPath !== null) ||
-    (isSplitTab && (selectedName !== null || creatingType !== null));
+    selectedProjectPath !== null &&
+    (activeTab === 'claude-md' ||
+      ((activeTab === 'agents' || activeTab === 'skills' || activeTab === 'mcp-servers') &&
+        (selectedName !== null || creatingType !== null)));
 
-  const editorKey = isClaudeMdTab
-    ? `claude-md:${selectedProjectPath}`
-    : creatingType !== null
-    ? `create:${creatingType}:${selectedProjectPath}`
-    : `edit:${activeTab}:${selectedProjectPath}:${selectedName}`;
+  const showWelcome = selectedProjectPath !== null && !showEditor;
 
-  const editorName = isClaudeMdTab ? selectedProjectPath : (creatingType !== null ? null : selectedName);
+  const editorKey =
+    activeTab === 'claude-md'
+      ? `claude-md:${selectedProjectPath}`
+      : creatingType !== null
+      ? `create:${creatingType}:${selectedProjectPath}`
+      : `edit:${activeTab}:${selectedProjectPath}:${selectedName}`;
 
-  const sectionContent = (() => {
-    if (!selectedProjectPath) return null;
-    switch (activeTab) {
-      case 'agents':
-        return (
-          <AgentsSection
-            projectPath={selectedProjectPath}
-            selectedName={selectedName}
-            onSelect={setSelectedName}
-            onNew={handleNewAgent}
-            refreshKey={agentsRefreshKey}
-          />
-        );
-      case 'skills':
-        return (
-          <SkillsSection
-            projectPath={selectedProjectPath}
-            selectedName={selectedName}
-            onSelect={setSelectedName}
-            onNew={handleNewSkill}
-            refreshKey={skillsRefreshKey}
-          />
-        );
-      case 'mcp-servers':
-        return (
-          <McpServersSection
-            projectPath={selectedProjectPath}
-            selectedName={selectedName}
-            onSelect={setSelectedName}
-            onNew={handleNewMcpServer}
-            refreshKey={mcpRefreshKey}
-          />
-        );
-      default:
-        return null;
-    }
-  })();
+  const editorName =
+    activeTab === 'claude-md'
+      ? selectedProjectPath
+      : creatingType !== null
+      ? null
+      : selectedName;
 
-  const sidebar = (
-    <Sidebar
-      activeTab={activeTab}
-      onTabChange={handleTabChange}
-      selectedProjectPath={selectedProjectPath}
-      onProjectSelect={handleProjectSelect}
-    />
-  );
+  // Selected name for sidebar highlight — only highlight within the active section
+  const agentSelected = activeTab === 'agents' ? selectedName : null;
+  const skillSelected = activeTab === 'skills' ? selectedName : null;
+  const mcpSelected = activeTab === 'mcp-servers' ? selectedName : null;
 
-  if (!selectedProjectPath) {
-    return (
-      <div className="flex h-screen bg-[#0a0a0c] text-white overflow-hidden">
-        {sidebar}
-        <main className="flex-1 flex items-center justify-center">
-          <div className="text-center">
-            <p className="text-[13px] text-white/25 font-mono">Select a project to get started</p>
-          </div>
-        </main>
-      </div>
-    );
-  }
+  // ── Sidebar list content ──────────────────────────────────────────────────
 
-  if (isClaudeMdTab) {
-    return (
-      <div className="flex h-screen bg-[#0a0a0c] text-white overflow-hidden">
-        {sidebar}
-        <main className="flex flex-1 overflow-hidden">
-          <EditorPane
-            key={editorKey}
-            name={editorName}
-            type="project"
-            projectPath={selectedProjectPath}
-            onClose={() => {}}
-            onCreated={handleCreated}
-            onDeleted={handleDeleted}
-          />
-        </main>
-      </div>
-    );
-  }
+  const listContent = selectedProjectPath ? (
+    <div className="pt-1">
+      <SidebarAgentsList
+        projectPath={selectedProjectPath}
+        selectedName={agentSelected}
+        refreshKey={agentsRefreshKey}
+        onSelect={handleSelectAgent}
+        onNew={handleNewAgent}
+      />
+      <SidebarSkillsList
+        projectPath={selectedProjectPath}
+        selectedName={skillSelected}
+        refreshKey={skillsRefreshKey}
+        onSelect={handleSelectSkill}
+        onNew={handleNewSkill}
+      />
+      <SidebarMcpList
+        projectPath={selectedProjectPath}
+        selectedName={mcpSelected}
+        refreshKey={mcpRefreshKey}
+        onSelect={handleSelectMcp}
+        onNew={handleNewMcp}
+      />
+    </div>
+  ) : undefined;
 
-  if (showEditor) {
-    return (
-      <div className="flex h-screen bg-[#0a0a0c] text-white overflow-hidden">
-        {sidebar}
-        <main className="flex flex-1 overflow-hidden">
-          <div className="w-90 shrink-0 overflow-y-auto px-8 py-8">
-            {sectionContent}
-          </div>
-          <div className="flex-1 min-w-0">
-            <EditorPane
-              key={editorKey}
-              name={editorName}
-              type={editorType}
-              projectPath={selectedProjectPath}
-              onClose={() => { setSelectedName(null); setCreatingType(null); }}
-              onCreated={handleCreated}
-              onDeleted={handleDeleted}
-            />
-          </div>
-        </main>
-      </div>
-    );
-  }
+  // ── Render ────────────────────────────────────────────────────────────────
 
   return (
     <div className="flex h-screen bg-[#0a0a0c] text-white overflow-hidden">
-      {sidebar}
-      <main className="flex-1 overflow-y-auto">
-        <div className="max-w-2xl mx-auto px-8 py-8">
-          {sectionContent}
-        </div>
+      <Sidebar
+        activeTab={activeTab}
+        onTabChange={handleTabChange}
+        selectedProjectPath={selectedProjectPath}
+        onProjectSelect={handleProjectSelect}
+        listContent={listContent}
+      />
+
+      <main className="flex flex-1 overflow-hidden">
+        {!selectedProjectPath && <NoProjectPane />}
+
+        {showWelcome && selectedProjectPath && (
+          <WelcomePane
+            projectName={selectedProjectPath.split('/').pop() ?? selectedProjectPath}
+            onOpenClaudeMd={() => handleTabChange('claude-md')}
+            onOpenAgents={handleWelcomeAgents}
+            onOpenSkills={handleWelcomeSkills}
+            onOpenMcp={handleWelcomeMcp}
+          />
+        )}
+
+        {showEditor && (
+          <EditorPane
+            key={editorKey}
+            name={editorName}
+            type={editorType}
+            projectPath={selectedProjectPath}
+            onClose={handleEditorClose}
+            onCreated={handleCreated}
+            onDeleted={handleDeleted}
+          />
+        )}
       </main>
     </div>
   );
