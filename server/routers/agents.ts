@@ -1,6 +1,6 @@
 import express from "express";
 import type { NextFunction, Request, Response, Router } from "express";
-import { readFileContent, writeFileContent, fileExists } from "../utils/fileIO.js";
+import { readFileContent, writeFileContent, fileExists, deleteFile } from "../utils/fileIO.js";
 import { resolveHome } from "../utils/parsing.js";
 
 const router: Router = express.Router();
@@ -58,6 +58,23 @@ router.post(
       }
       await writeFileContent(filePath, content);
       res.status(201).json({ message: "Agent created" });
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+router.delete(
+  "/:name",
+  async (req: Request, res: Response, next: NextFunction) => {
+    const { name } = req.params;
+    const filePath = resolveHome(`~/.claude/agents/${name}.md`);
+    try {
+      if (!(await fileExists(filePath))) {
+        return res.status(404).json({ message: "Agent not found" });
+      }
+      await deleteFile(filePath);
+      res.status(200).json({ message: "Agent deleted" });
     } catch (err) {
       next(err);
     }

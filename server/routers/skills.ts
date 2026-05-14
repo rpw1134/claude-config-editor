@@ -1,6 +1,6 @@
 import express from "express";
 import type { NextFunction, Request, Response, Router } from "express";
-import { fileExists, readFileContent, writeFileContent, writeFileEnsureDir } from "../utils/fileIO.js";
+import { fileExists, readFileContent, writeFileContent, writeFileEnsureDir, deleteDir } from "../utils/fileIO.js";
 import { resolveHome } from "../utils/parsing.js";
 
 const router: Router = express.Router();
@@ -59,6 +59,23 @@ router.post(
       }
       await writeFileEnsureDir(filePath, content);
       res.status(201).json({ message: "Skill created" });
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+router.delete(
+  "/:name",
+  async (req: Request, res: Response, next: NextFunction) => {
+    const { name } = req.params;
+    const dirPath = resolveHome(`~/.claude/skills/${name}`);
+    try {
+      if (!(await fileExists(dirPath))) {
+        return res.status(404).json({ message: "Skill not found" });
+      }
+      await deleteDir(dirPath);
+      res.status(200).json({ message: "Skill deleted" });
     } catch (err) {
       next(err);
     }

@@ -19,6 +19,13 @@ async function post(path: string, body: Record<string, unknown>): Promise<void> 
   }
 }
 
+async function del(path: string): Promise<void> {
+  const res = await fetch(`${BASE_URL}${path}`, { method: "DELETE" });
+  if (!res.ok) {
+    throw new Error(`${res.status} ${res.statusText} — ${path}`);
+  }
+}
+
 async function put(path: string, body: Record<string, unknown>): Promise<void> {
   const res = await fetch(`${BASE_URL}${path}`, {
     method: "PUT",
@@ -67,8 +74,16 @@ export async function createAgent(name: string, content: string): Promise<void> 
   await post("/api/agents", { name, content });
 }
 
+export async function deleteAgent(name: string): Promise<void> {
+  await del(`/api/agents/${encodeURIComponent(name)}`);
+}
+
 export async function createSkill(name: string, content: string): Promise<void> {
   await post("/api/skills", { name, content });
+}
+
+export async function deleteSkill(name: string): Promise<void> {
+  await del(`/api/skills/${encodeURIComponent(name)}`);
 }
 
 export async function fetchMcpServerContent(name: string): Promise<string> {

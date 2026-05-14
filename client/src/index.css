@@ -9,6 +9,10 @@
   }
 }
 
+button, [role="button"], a {
+  cursor: pointer;
+}
+
 /* Base typography */
 html {
   font-family: 'Inter', system-ui, -apple-system, sans-serif;

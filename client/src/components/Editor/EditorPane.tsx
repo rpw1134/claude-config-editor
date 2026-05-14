@@ -6,6 +6,8 @@ import {
   updateSkillContent,
   createAgent,
   createSkill,
+  deleteAgent,
+  deleteSkill,
   fetchMcpServerContent,
   updateMcpServerContent,
   createMcpServer,
@@ -19,10 +21,12 @@ interface EditorPaneProps {
   type: "agent" | "skill" | "mcp-server" | "project";
   onClose: () => void;
   onCreated?: (name: string) => void;
+  onDeleted?: () => void;
 }
 
 type SaveStatus = "idle" | "saving" | "saved" | "error";
 type CreateStatus = "idle" | "creating" | "error";
+type DeleteStatus = "idle" | "confirm" | "deleting" | "error";
 
 function filePath(name: string, type: "agent" | "skill" | "mcp-server" | "project"): string {
   if (type === "agent") return `~/.claude/agents/${name}`;
@@ -120,6 +124,8 @@ interface EditHeaderProps {
   saveDisabled: boolean;
   onSave: () => void;
   onClose: () => void;
+  deleteStatus: DeleteStatus;
+  onDelete: () => void;
 }
 
 const EditHeader = ({
@@ -129,6 +135,8 @@ const EditHeader = ({
   saveDisabled,
   onSave,
   onClose,
+  deleteStatus,
+  onDelete,
 }: EditHeaderProps) => {
   const saveLabel =
     saveStatus === "saving"
@@ -150,12 +158,44 @@ const EditHeader = ({
       : "text-white/50 hover:text-white/80",
   ].join(" ");
 
+  const deleteLabel =
+    deleteStatus === "confirm"
+      ? "Confirm?"
+      : deleteStatus === "deleting"
+      ? "Deleting…"
+      : deleteStatus === "error"
+      ? "Error"
+      : "Delete";
+
+  const deleteClassName = [
+    "font-mono text-[12px] px-2.5 py-1 rounded transition-colors",
+    deleteStatus === "deleting"
+      ? "opacity-40 cursor-not-allowed text-white/40"
+      : deleteStatus === "confirm"
+      ? "text-rose-400/80 hover:text-rose-400"
+      : deleteStatus === "error"
+      ? "text-red-400/70"
+      : "text-white/20 hover:text-white/50",
+  ].join(" ");
+
+  const canDelete = type === "agent" || type === "skill";
+
   return (
     <div className="px-5 border-b border-white/6 flex items-center justify-between shrink-0" style={{ minHeight: '44px' }}>
       <span className="font-mono text-[12px] text-white/30">
         {filePath(name, type)}
       </span>
       <div className="flex items-center gap-3">
+        {canDelete && (
+          <button
+            onClick={onDelete}
+            disabled={deleteStatus === "deleting"}
+            className={deleteClassName}
+            aria-label="Delete file"
+          >
+            {deleteLabel}
+          </button>
+        )}
         <button
           onClick={onSave}
           disabled={saveDisabled}
@@ -180,13 +220,15 @@ const EditHeader = ({
 // EditorPane — composes the two header modes
 // ------------------------------------------------------------
 
-export const EditorPane = ({ name, type, onClose, onCreated }: EditorPaneProps) => {
+export const EditorPane = ({ name, type, onClose, onCreated, onDeleted }: EditorPaneProps) => {
   // Edit mode state
   const [content, setContent] = useState("");
   const [savedContent, setSavedContent] = useState("");
   const [loadedKey, setLoadedKey] = useState<string | null>(null);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
+  const [deleteStatus, setDeleteStatus] = useState<DeleteStatus>("idle");
   const statusTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const deleteTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Create mode state
   const [draftName, setDraftName] = useState("");
@@ -226,10 +268,13 @@ export const EditorPane = ({ name, type, onClose, onCreated }: EditorPaneProps) 
       });
   }, [name, type, currentKey, isCreateMode]);
 
-  // Clear any pending status timer on unmount
+  // Clear any pending timers on unmount
   useEffect(() => {
+    const st = statusTimer.current;
+    const dt = deleteTimer.current;
     return () => {
-      if (statusTimer.current !== null) clearTimeout(statusTimer.current);
+      if (st !== null) clearTimeout(st);
+      if (dt !== null) clearTimeout(dt);
     };
   }, []);
 
@@ -254,6 +299,37 @@ export const EditorPane = ({ name, type, onClose, onCreated }: EditorPaneProps) 
       statusTimer.current = setTimeout(() => setSaveStatus("idle"), 2000);
     }
   };
+
+  const handleDelete = async () => {
+    if (isCreateMode || !name || deleteStatus === "deleting") return;
+    if (deleteStatus !== "confirm") {
+      setDeleteStatus("confirm");
+      deleteTimer.current = setTimeout(() => setDeleteStatus("idle"), 3000);
+      return;
+    }
+    if (deleteTimer.current !== null) clearTimeout(deleteTimer.current);
+    setDeleteStatus("deleting");
+    try {
+      if (type === "agent") await deleteAgent(name);
+      else if (type === "skill") await deleteSkill(name);
+      onDeleted?.();
+    } catch {
+      setDeleteStatus("error");
+      deleteTimer.current = setTimeout(() => setDeleteStatus("idle"), 2000);
+    }
+  };
+
+  // Cmd+S / Ctrl+S to save
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "s") {
+        e.preventDefault();
+        handleSave();
+      }
+    };
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
+  });
 
   const handleCreate = async () => {
     const trimmed = draftName.trim();
@@ -296,6 +372,8 @@ export const EditorPane = ({ name, type, onClose, onCreated }: EditorPaneProps) 
           saveDisabled={loading || !dirty || saving}
           onSave={handleSave}
           onClose={onClose}
+          deleteStatus={deleteStatus}
+          onDelete={handleDelete}
         />
       )}
       <div className="flex-1 min-h-0">

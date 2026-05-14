@@ -1,4 +1,4 @@
-import { access, appendFile, mkdir, readdir, readFile, writeFile } from "fs/promises";
+import { access, appendFile, mkdir, readdir, readFile, rm, unlink, writeFile } from "fs/promises";
 import { dirname } from "path";
 import type { DirListing } from "../types/fileIO.js";
 
@@ -62,4 +62,14 @@ export async function writeFileEnsureDir(
 ): Promise<void> {
   await ensureDir(dirname(path));
   await writeFile(path, content, "utf-8");
+}
+
+/** Deletes a single file. Throws with code ENOENT if not found. */
+export async function deleteFile(path: string): Promise<void> {
+  await unlink(path);
+}
+
+/** Deletes a directory and all its contents recursively. Throws if it doesn't exist. */
+export async function deleteDir(path: string): Promise<void> {
+  await rm(path, { recursive: true });
 }
