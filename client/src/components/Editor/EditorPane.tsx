@@ -299,12 +299,15 @@ export const EditorPane = ({ name, type, onClose, onCreated }: EditorPaneProps) 
         />
       )}
       <div className="flex-1 min-h-0">
-        <Editor
-          value={loading ? "" : content}
-          onChange={(val) => setContent(val ?? "")}
-          language={editorLanguage}
-          readOnly={loading}
-        />
+        {loading ? (
+          <div className="w-full h-full bg-[#0d0d10]" />
+        ) : (
+          <Editor
+            value={content}
+            onChange={(val) => setContent(val ?? "")}
+            language={editorLanguage}
+          />
+        )}
       </div>
     </div>
   );

@@ -76,10 +76,6 @@ export const ProjectsSection = ({ selectedPath, onSelect }: ProjectsSectionProps
         count={projects.length}
       />
 
-      {loading && (
-        <p className="text-[12px] text-white/25 font-mono px-1">Loading…</p>
-      )}
-
       {error && (
         <p className="text-[12px] text-rose-400/60 font-mono px-1">{error}</p>
       )}
