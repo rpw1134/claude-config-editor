@@ -45,6 +45,12 @@ export default function App() {
     setSelectedName(name);
   };
 
+  const handleDeleted = () => {
+    if (activeTab === 'agents') setAgentsRefreshKey((k) => k + 1);
+    else if (activeTab === 'skills') setSkillsRefreshKey((k) => k + 1);
+    setSelectedName(null);
+  };
+
   const isSplitTab =
     activeTab === 'agents' ||
     activeTab === 'skills' ||
@@ -122,6 +128,7 @@ export default function App() {
               type={editorType}
               onClose={() => { setSelectedName(null); setCreatingType(null); }}
               onCreated={handleCreated}
+              onDeleted={handleDeleted}
             />
           </div>
         </main>

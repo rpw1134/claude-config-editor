@@ -319,12 +319,14 @@ export const EditorPane = ({ name, type, onClose, onCreated, onDeleted }: Editor
     }
   };
 
-  // Cmd+S / Ctrl+S to save
+  // Keyboard shortcuts: Cmd+S to save, Escape to close when clean
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === "s") {
         e.preventDefault();
         handleSave();
+      } else if (e.key === "Escape" && !dirty) {
+        onClose();
       }
     };
     document.addEventListener("keydown", handler);
