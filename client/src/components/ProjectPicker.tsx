@@ -22,7 +22,6 @@ export const ProjectPicker = ({ selectedPath, onSelect }: ProjectPickerProps) =>
   useEffect(() => {
     fetchProjects()
       .then((data) => {
-        // Pin global to top, sort rest by name
         const global = data.filter((p) => p.name === 'global');
         const rest = data.filter((p) => p.name !== 'global').sort((a, b) => a.name.localeCompare(b.name));
         setProjects([...global, ...rest]);

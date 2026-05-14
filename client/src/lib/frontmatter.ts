@@ -1,4 +1,3 @@
-// Parse and serialize YAML frontmatter (---\n...\n---) from agent markdown files.
 import yaml from 'js-yaml';
 
 export interface AgentFrontmatter {
@@ -51,7 +50,6 @@ export function parseFrontmatter(content: string): { frontmatter: AgentFrontmatt
 export function serializeFrontmatter(frontmatter: AgentFrontmatter, body: string): string {
   const filtered: Record<string, unknown> = {};
 
-  // Priority keys first
   for (const key of PRIORITY_KEYS) {
     const value = frontmatter[key];
     if (!isEmpty(value)) {
@@ -59,7 +57,6 @@ export function serializeFrontmatter(frontmatter: AgentFrontmatter, body: string
     }
   }
 
-  // Remaining keys alphabetically
   const remaining = Object.keys(frontmatter)
     .filter((k) => !PRIORITY_KEYS.includes(k as keyof AgentFrontmatter))
     .sort();

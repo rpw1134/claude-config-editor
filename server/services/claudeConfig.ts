@@ -8,17 +8,12 @@ export interface ProjectInfo {
   name: string;
 }
 
-/**
- * Returns the config directory for a given projectPath.
- *  - If projectPath is ~/.claude itself, return it as-is (global config lives there).
- *  - Otherwise return projectPath/.claude (per-project config).
- */
+// Global config lives directly in ~/.claude; project config lives in <project>/.claude.
 export function getConfigDir(projectPath: string): string {
   const globalDir = resolveHome("~/.claude");
   return projectPath === globalDir ? projectPath : `${projectPath}/.claude`;
 }
 
-/** Returns all projects from ~/.claude.json that have a CLAUDE.md file. */
 export async function listProjects(): Promise<ProjectInfo[]> {
   let raw: string;
   try {
@@ -45,7 +40,6 @@ export async function listProjects(): Promise<ProjectInfo[]> {
     }));
 }
 
-/** Returns the content of {projectPath}/CLAUDE.md, or null if not found. */
 export async function getProjectContent(projectPath: string): Promise<string | null> {
   let raw: string;
   try {
@@ -70,7 +64,6 @@ export async function getProjectContent(projectPath: string): Promise<string | n
   }
 }
 
-/** Writes content to {projectPath}/CLAUDE.md. Throws if directory or project doesn't exist. */
 export async function setProjectContent(projectPath: string, content: string): Promise<void> {
   let raw: string;
   try {
@@ -89,7 +82,6 @@ export async function setProjectContent(projectPath: string, content: string): P
   await writeFileContent(`${projectPath}/CLAUDE.md`, content);
 }
 
-/** Returns skill directory names under {configDir}/skills/ that contain a SKILL.md file. */
 export async function listSkills(projectPath: string): Promise<string[]> {
   const configDir = getConfigDir(projectPath);
   const listing = await listDir(`${configDir}/skills`);
@@ -100,14 +92,12 @@ export async function listSkills(projectPath: string): Promise<string[]> {
   return dirs.filter((_, i) => checks[i]);
 }
 
-/** Returns agent file names (without .md) under {configDir}/agents/. */
 export async function listAgents(projectPath: string): Promise<string[]> {
   const configDir = getConfigDir(projectPath);
   const listing = await listDir(`${configDir}/agents`);
   return listing?.files.filter((f) => f.endsWith(".md")).map((f) => f.slice(0, -3)) ?? [];
 }
 
-/** Returns the keys of mcpServers for the given projectPath from ~/.claude.json. */
 export async function listMcpServers(projectPath: string): Promise<string[]> {
   let raw: string;
   try {
@@ -123,7 +113,6 @@ export async function listMcpServers(projectPath: string): Promise<string[]> {
   return Object.keys(project?.mcpServers ?? {});
 }
 
-/** Returns the config object for one MCP server under the given projectPath, or null if not found. */
 export async function getMcpServer(projectPath: string, key: string): Promise<unknown | null> {
   let raw: string;
   try {
@@ -139,7 +128,6 @@ export async function getMcpServer(projectPath: string, key: string): Promise<un
   return key in servers ? servers[key] : null;
 }
 
-/** Replaces (or creates) one MCP server key under the given projectPath. */
 export async function setMcpServer(projectPath: string, key: string, value: unknown): Promise<void> {
   let config: ClaudeConfig = {};
   try {
@@ -158,7 +146,6 @@ export async function setMcpServer(projectPath: string, key: string, value: unkn
   await writeFileContent(resolveHome("~/.claude.json"), JSON.stringify(config, null, 2));
 }
 
-/** Adds a new MCP server key under the given projectPath. Throws if the key already exists. */
 export async function createMcpServer(projectPath: string, key: string, value: unknown): Promise<void> {
   let config: ClaudeConfig = {};
   try {
@@ -182,7 +169,6 @@ export async function createMcpServer(projectPath: string, key: string, value: u
   await writeFileContent(resolveHome("~/.claude.json"), JSON.stringify(config, null, 2));
 }
 
-/** Removes an MCP server key under the given projectPath. Throws if the key does not exist. */
 export async function deleteMcpServer(projectPath: string, key: string): Promise<void> {
   let config: ClaudeConfig = {};
   try {

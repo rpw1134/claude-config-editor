@@ -39,10 +39,6 @@ function filePath(name: string, type: "agent" | "skill" | "mcp-server" | "projec
   return `~/.claude.json → mcpServers → ${name}`;
 }
 
-// ------------------------------------------------------------
-// ViewModeToggle
-// ------------------------------------------------------------
-
 interface ViewModeToggleProps {
   viewMode: ViewMode;
   onToggle: (mode: ViewMode) => void;
@@ -73,10 +69,6 @@ const ViewModeToggle = ({ viewMode, onToggle }: ViewModeToggleProps) => (
     </button>
   </div>
 );
-
-// ------------------------------------------------------------
-// Create mode header
-// ------------------------------------------------------------
 
 interface CreateHeaderProps {
   type: "agent" | "skill" | "mcp-server" | "project";
@@ -158,10 +150,6 @@ const CreateHeader = ({
     </div>
   );
 };
-
-// ------------------------------------------------------------
-// Edit mode header
-// ------------------------------------------------------------
 
 interface EditHeaderProps {
   name: string;
@@ -269,12 +257,7 @@ const EditHeader = ({
   );
 };
 
-// ------------------------------------------------------------
-// EditorPane — composes the two header modes
-// ------------------------------------------------------------
-
 export const EditorPane = ({ name, type, projectPath, onClose, onCreated, onDeleted }: EditorPaneProps) => {
-  // Edit mode state
   const [content, setContent] = useState("");
   const [savedContent, setSavedContent] = useState("");
   const [loadedKey, setLoadedKey] = useState<string | null>(null);
@@ -283,18 +266,14 @@ export const EditorPane = ({ name, type, projectPath, onClose, onCreated, onDele
   const statusTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const deleteTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Create mode state
   const [draftName, setDraftName] = useState("");
   const [createStatus, setCreateStatus] = useState<CreateStatus>("idle");
 
   const isCreateMode = name === null;
-
-  // Edit mode derived values
   const currentKey = `${type}:${projectPath}:${name}`;
 
-  // View mode: form for agents, raw for everything else.
-  // Store the key alongside the mode so we can detect when the active file has changed
-  // and reset to the default — without an effect.
+  // Store the view mode key alongside the mode so we can reset to default when
+  // the active file changes, without needing an effect.
   const defaultMode: ViewMode = type === "agent" ? "form" : "raw";
   const [storedViewMode, setStoredViewMode] = useState<{ key: string; mode: ViewMode }>({
     key: currentKey,
@@ -309,7 +288,6 @@ export const EditorPane = ({ name, type, projectPath, onClose, onCreated, onDele
   const dirty = !loading && !isCreateMode && content !== savedContent;
   const saving = saveStatus === "saving";
 
-  // Fetch content in edit mode
   useEffect(() => {
     if (isCreateMode) return;
     const fetchContent = async () => {
@@ -340,7 +318,6 @@ export const EditorPane = ({ name, type, projectPath, onClose, onCreated, onDele
     fetchContent();
   }, [name, type, projectPath, currentKey, isCreateMode]);
 
-  // Clear any pending timers on unmount
   useEffect(() => {
     const st = statusTimer.current;
     const dt = deleteTimer.current;
@@ -391,7 +368,8 @@ export const EditorPane = ({ name, type, projectPath, onClose, onCreated, onDele
     }
   };
 
-  // Keyboard shortcuts: Cmd+S to save, Escape to close when clean
+  // No dependency array: handleSave and dirty must be current on every keydown.
+  // Adding them as deps would require memoizing handleSave, which isn't worth it.
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === "s") {
@@ -426,7 +404,6 @@ export const EditorPane = ({ name, type, projectPath, onClose, onCreated, onDele
   };
 
   const editorLanguage = type === "mcp-server" ? "json" : "markdown";
-
   const showFormView = type === "agent" && viewMode === "form";
 
   return (

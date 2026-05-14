@@ -39,6 +39,8 @@
    }
    }
 
+8. For memory, there are tips to follow to ge best access out of it. Should auto implement those for users if they want memory in their subagents
+
 ### MCP Servers:
 
 1. Common MCP server widgets to add by default

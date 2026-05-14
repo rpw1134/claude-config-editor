@@ -5,7 +5,7 @@ import { Pagination } from '../Pagination';
 
 const PAGE_SIZE = 10;
 
-interface McpServersSection {
+interface McpServersSectionProps {
   projectPath: string;
   selectedName: string | null;
   onSelect: (name: string) => void;
@@ -44,7 +44,7 @@ const McpServerRow = ({ name, selected, onClick }: McpServerRowProps) => (
   </button>
 );
 
-export const McpServersSection = ({ projectPath, selectedName, onSelect, onNew, refreshKey }: McpServersSection) => {
+export const McpServersSection = ({ projectPath, selectedName, onSelect, onNew, refreshKey }: McpServersSectionProps) => {
   const [servers, setServers] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

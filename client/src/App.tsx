@@ -26,7 +26,6 @@ export default function App() {
     setSelectedProjectPath(path);
     setSelectedName(null);
     setCreatingType(null);
-    // Reset to CLAUDE.md tab when switching projects
     setActiveTab('claude-md');
   };
 
@@ -68,7 +67,6 @@ export default function App() {
       ? 'mcp-server'
       : 'skill';
 
-  // CLAUDE.md tab: editor is always open for the selected project
   const isClaudeMdTab = activeTab === 'claude-md';
   const isSplitTab = activeTab === 'agents' || activeTab === 'skills' || activeTab === 'mcp-servers';
   const showEditor =
@@ -130,7 +128,6 @@ export default function App() {
     />
   );
 
-  // No project selected — empty state
   if (!selectedProjectPath) {
     return (
       <div className="flex h-screen bg-[#0a0a0c] text-white overflow-hidden">
@@ -144,7 +141,6 @@ export default function App() {
     );
   }
 
-  // CLAUDE.md tab always shows full-width editor
   if (isClaudeMdTab) {
     return (
       <div className="flex h-screen bg-[#0a0a0c] text-white overflow-hidden">
@@ -164,7 +160,6 @@ export default function App() {
     );
   }
 
-  // Split-pane layout for agents/skills/mcp-servers
   if (showEditor) {
     return (
       <div className="flex h-screen bg-[#0a0a0c] text-white overflow-hidden">

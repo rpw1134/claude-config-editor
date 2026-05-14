@@ -2,19 +2,11 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { parseFrontmatter, serializeFrontmatter, type AgentFrontmatter } from '../../lib/frontmatter';
 import { Editor } from './Editor';
 
-// ------------------------------------------------------------
-// Shared field styles
-// ------------------------------------------------------------
-
 const labelClass = 'text-[11px] font-semibold uppercase tracking-wide text-white/30 mb-1 block';
 const inputClass =
   'bg-white/4 border border-white/8 rounded-md text-[13px] text-white/80 px-3 py-1.5 focus:outline-none focus:border-white/20 w-full';
 const tagPillClass =
   'bg-white/8 text-white/60 text-[11px] font-mono px-2 py-0.5 rounded-md flex items-center gap-1.5';
-
-// ------------------------------------------------------------
-// TagInput
-// ------------------------------------------------------------
 
 interface TagInputProps {
   value: string[];
@@ -84,10 +76,6 @@ const TagInput = ({ value, onChange, placeholder = 'Add…', disabled }: TagInpu
   );
 };
 
-// ------------------------------------------------------------
-// ColorPicker
-// ------------------------------------------------------------
-
 const COLOR_OPTIONS = [
   { name: 'red',    dot: 'bg-red-400' },
   { name: 'blue',   dot: 'bg-blue-400' },
@@ -130,10 +118,6 @@ const ColorPicker = ({ value, onChange, disabled }: ColorPickerProps) => (
   </div>
 );
 
-// ------------------------------------------------------------
-// Toggle (pill switch)
-// ------------------------------------------------------------
-
 interface ToggleProps {
   checked: boolean;
   onChange: (val: boolean) => void;
@@ -161,10 +145,6 @@ const Toggle = ({ checked, onChange, disabled }: ToggleProps) => (
     />
   </button>
 );
-
-// ------------------------------------------------------------
-// ModelSelect — handles inherit / known / custom
-// ------------------------------------------------------------
 
 const KNOWN_MODELS = ['sonnet', 'opus', 'haiku'];
 
@@ -217,10 +197,6 @@ const ModelSelect = ({ value, onChange, disabled }: ModelSelectProps) => {
   );
 };
 
-// ------------------------------------------------------------
-// AdvancedSection
-// ------------------------------------------------------------
-
 interface AdvancedSectionProps {
   fm: AgentFrontmatter;
   onFieldChange: <K extends keyof AgentFrontmatter>(key: K, value: AgentFrontmatter[K]) => void;
@@ -255,7 +231,6 @@ const AdvancedSection = ({ fm, onFieldChange, disabled }: AdvancedSectionProps) 
 
       {open && (
         <div className="flex flex-col gap-4">
-          {/* model */}
           <div>
             <label className={labelClass}>Model</label>
             <ModelSelect
@@ -265,7 +240,6 @@ const AdvancedSection = ({ fm, onFieldChange, disabled }: AdvancedSectionProps) 
             />
           </div>
 
-          {/* tools */}
           <div>
             <label className={labelClass}>Tools</label>
             <TagInput
@@ -276,7 +250,6 @@ const AdvancedSection = ({ fm, onFieldChange, disabled }: AdvancedSectionProps) 
             />
           </div>
 
-          {/* disallowedTools */}
           <div>
             <label className={labelClass}>Disallowed Tools</label>
             <TagInput
@@ -287,7 +260,6 @@ const AdvancedSection = ({ fm, onFieldChange, disabled }: AdvancedSectionProps) 
             />
           </div>
 
-          {/* permissionMode */}
           <div>
             <label className={labelClass}>Permission Mode</label>
             <select
@@ -306,7 +278,6 @@ const AdvancedSection = ({ fm, onFieldChange, disabled }: AdvancedSectionProps) 
             </select>
           </div>
 
-          {/* maxTurns */}
           <div>
             <label className={labelClass}>Max Turns</label>
             <input
@@ -323,7 +294,6 @@ const AdvancedSection = ({ fm, onFieldChange, disabled }: AdvancedSectionProps) 
             />
           </div>
 
-          {/* memory */}
           <div>
             <label className={labelClass}>Memory</label>
             <select
@@ -339,7 +309,6 @@ const AdvancedSection = ({ fm, onFieldChange, disabled }: AdvancedSectionProps) 
             </select>
           </div>
 
-          {/* background */}
           <div className="flex items-center gap-3">
             <Toggle
               checked={fm.background ?? false}
@@ -349,7 +318,6 @@ const AdvancedSection = ({ fm, onFieldChange, disabled }: AdvancedSectionProps) 
             <label className={labelClass + ' mb-0'}>Background</label>
           </div>
 
-          {/* effort */}
           <div>
             <label className={labelClass}>Effort</label>
             <select
@@ -367,7 +335,6 @@ const AdvancedSection = ({ fm, onFieldChange, disabled }: AdvancedSectionProps) 
             </select>
           </div>
 
-          {/* isolation */}
           <div>
             <label className={labelClass}>Isolation</label>
             <select
@@ -381,7 +348,6 @@ const AdvancedSection = ({ fm, onFieldChange, disabled }: AdvancedSectionProps) 
             </select>
           </div>
 
-          {/* color */}
           <div>
             <label className={labelClass}>Color</label>
             <ColorPicker
@@ -391,7 +357,6 @@ const AdvancedSection = ({ fm, onFieldChange, disabled }: AdvancedSectionProps) 
             />
           </div>
 
-          {/* initialPrompt */}
           <div>
             <label className={labelClass}>Initial Prompt</label>
             <textarea
@@ -404,7 +369,6 @@ const AdvancedSection = ({ fm, onFieldChange, disabled }: AdvancedSectionProps) 
             />
           </div>
 
-          {/* mcpServers */}
           <div>
             <label className={labelClass}>MCP Servers</label>
             <TagInput
@@ -420,10 +384,6 @@ const AdvancedSection = ({ fm, onFieldChange, disabled }: AdvancedSectionProps) 
   );
 };
 
-// ------------------------------------------------------------
-// AgentFormEditor
-// ------------------------------------------------------------
-
 export interface AgentFormEditorProps {
   content: string;
   onChange: (content: string) => void;
@@ -431,22 +391,19 @@ export interface AgentFormEditorProps {
 }
 
 export const AgentFormEditor = ({ content, onChange, disabled }: AgentFormEditorProps) => {
+  // Parse once on mount. External content changes (e.g. file load) are detected
+  // via lastExternalContent and re-parsed in the effect below.
   const { frontmatter: initialFm, body: initialBody } = useMemo(
     () => parseFrontmatter(content),
-    // Only re-parse when content changes from outside (not from our own onChange).
-    // We use a ref to detect external changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
     []
   );
 
   const [fm, setFm] = useState<AgentFrontmatter>(initialFm);
   const [body, setBody] = useState(initialBody);
-
-  // Track whether we've already initialized from this content value
   const lastExternalContent = useRef(content);
 
   useEffect(() => {
-    // If content changed from outside (e.g. file load), re-parse
     if (content !== lastExternalContent.current) {
       lastExternalContent.current = content;
       const { frontmatter, body: newBody } = parseFrontmatter(content);
@@ -457,6 +414,7 @@ export const AgentFormEditor = ({ content, onChange, disabled }: AgentFormEditor
 
   const emit = (nextFm: AgentFrontmatter, nextBody: string) => {
     const serialized = serializeFrontmatter(nextFm, nextBody);
+    // Update the ref so the effect above doesn't re-parse our own emission.
     lastExternalContent.current = serialized;
     onChange(serialized);
   };
@@ -477,9 +435,7 @@ export const AgentFormEditor = ({ content, onChange, disabled }: AgentFormEditor
 
   return (
     <div className="h-full flex flex-col bg-[#0d0d10]">
-      {/* Scrollable form fields */}
       <div className="shrink-0 overflow-y-auto px-5 py-4" style={{ maxHeight: '320px' }}>
-        {/* name */}
         <div className="mb-4">
           <label className={labelClass}>Name</label>
           <input
@@ -492,7 +448,6 @@ export const AgentFormEditor = ({ content, onChange, disabled }: AgentFormEditor
           />
         </div>
 
-        {/* description */}
         <div className="mb-4">
           <label className={labelClass}>Description</label>
           <textarea
@@ -505,11 +460,9 @@ export const AgentFormEditor = ({ content, onChange, disabled }: AgentFormEditor
           />
         </div>
 
-        {/* Advanced collapsible */}
         <AdvancedSection fm={fm} onFieldChange={handleFieldChange} disabled={disabled} />
       </div>
 
-      {/* System prompt — fills remaining space */}
       <div className="flex-1 min-h-0 flex flex-col border-t border-white/6">
         <div className="px-5 py-2 shrink-0">
           <span className={labelClass + ' mb-0'}>System Prompt</span>

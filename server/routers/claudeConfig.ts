@@ -5,19 +5,15 @@ import {
   listMcpServers,
   listSkills,
 } from "../services/claudeConfig.js";
-import { validateProjectPath } from "../utils/parsing.js";
+import { requireProjectPath } from "../utils/parsing.js";
 
 const router: Router = express.Router();
 
 router.get(
   "/skills",
   async (req: Request, res: Response, next: NextFunction) => {
-    let projectPath: string;
-    try {
-      projectPath = validateProjectPath(req.query.projectPath);
-    } catch (e) {
-      return res.status(400).json({ message: (e as Error).message });
-    }
+    const projectPath = requireProjectPath(req.query.projectPath, res);
+    if (projectPath === null) return;
     try {
       const skills = await listSkills(projectPath);
       res.json({ skills });
@@ -30,12 +26,8 @@ router.get(
 router.get(
   "/agents",
   async (req: Request, res: Response, next: NextFunction) => {
-    let projectPath: string;
-    try {
-      projectPath = validateProjectPath(req.query.projectPath);
-    } catch (e) {
-      return res.status(400).json({ message: (e as Error).message });
-    }
+    const projectPath = requireProjectPath(req.query.projectPath, res);
+    if (projectPath === null) return;
     try {
       const agents = await listAgents(projectPath);
       res.json({ agents });
@@ -48,12 +40,8 @@ router.get(
 router.get(
   "/mcp-servers",
   async (req: Request, res: Response, next: NextFunction) => {
-    let projectPath: string;
-    try {
-      projectPath = validateProjectPath(req.query.projectPath);
-    } catch (e) {
-      return res.status(400).json({ message: (e as Error).message });
-    }
+    const projectPath = requireProjectPath(req.query.projectPath, res);
+    if (projectPath === null) return;
     try {
       const mcpServers = await listMcpServers(projectPath);
       res.json({ mcpServers });
