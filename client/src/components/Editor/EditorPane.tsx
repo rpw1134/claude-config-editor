@@ -326,6 +326,7 @@ export const EditorPane = ({ name, type, onClose, onCreated, onDeleted }: Editor
         e.preventDefault();
         handleSave();
       } else if (e.key === "Escape" && !dirty) {
+        (document.activeElement as HTMLElement)?.blur();
         onClose();
       }
     };
