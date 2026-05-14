@@ -15,6 +15,9 @@ import {
   updateProjectContent,
 } from "../../lib/api";
 import { Editor } from "./Editor";
+import { AgentFormEditor } from "./AgentFormEditor";
+
+type ViewMode = "form" | "raw";
 
 interface EditorPaneProps {
   name: string | null;
@@ -37,7 +40,42 @@ function filePath(name: string, type: "agent" | "skill" | "mcp-server" | "projec
 }
 
 // ------------------------------------------------------------
-// Create mode
+// ViewModeToggle
+// ------------------------------------------------------------
+
+interface ViewModeToggleProps {
+  viewMode: ViewMode;
+  onToggle: (mode: ViewMode) => void;
+}
+
+const ViewModeToggle = ({ viewMode, onToggle }: ViewModeToggleProps) => (
+  <div className="flex items-center gap-2">
+    <button
+      type="button"
+      onClick={() => onToggle("form")}
+      className={[
+        "font-mono text-[11px] transition-colors",
+        viewMode === "form" ? "text-white/70" : "text-white/25 hover:text-white/50",
+      ].join(" ")}
+    >
+      Form
+    </button>
+    <span className="text-white/15 text-[11px]">/</span>
+    <button
+      type="button"
+      onClick={() => onToggle("raw")}
+      className={[
+        "font-mono text-[11px] transition-colors",
+        viewMode === "raw" ? "text-white/70" : "text-white/25 hover:text-white/50",
+      ].join(" ")}
+    >
+      Raw
+    </button>
+  </div>
+);
+
+// ------------------------------------------------------------
+// Create mode header
 // ------------------------------------------------------------
 
 interface CreateHeaderProps {
@@ -47,6 +85,8 @@ interface CreateHeaderProps {
   createStatus: CreateStatus;
   onClose: () => void;
   onCreate: () => void;
+  viewMode: ViewMode;
+  onViewModeToggle: (mode: ViewMode) => void;
 }
 
 const CreateHeader = ({
@@ -56,6 +96,8 @@ const CreateHeader = ({
   createStatus,
   onClose,
   onCreate,
+  viewMode,
+  onViewModeToggle,
 }: CreateHeaderProps) => {
   const creating = createStatus === "creating";
   const isError = createStatus === "error";
@@ -94,6 +136,9 @@ const CreateHeader = ({
         />
       </div>
       <div className="flex items-center gap-3">
+        {type === "agent" && (
+          <ViewModeToggle viewMode={viewMode} onToggle={onViewModeToggle} />
+        )}
         <button
           onClick={onCreate}
           disabled={disabled}
@@ -127,6 +172,8 @@ interface EditHeaderProps {
   onClose: () => void;
   deleteStatus: DeleteStatus;
   onDelete: () => void;
+  viewMode: ViewMode;
+  onViewModeToggle: (mode: ViewMode) => void;
 }
 
 const EditHeader = ({
@@ -138,6 +185,8 @@ const EditHeader = ({
   onClose,
   deleteStatus,
   onDelete,
+  viewMode,
+  onViewModeToggle,
 }: EditHeaderProps) => {
   const saveLabel =
     saveStatus === "saving"
@@ -187,6 +236,9 @@ const EditHeader = ({
         {filePath(name, type)}
       </span>
       <div className="flex items-center gap-3">
+        {type === "agent" && (
+          <ViewModeToggle viewMode={viewMode} onToggle={onViewModeToggle} />
+        )}
         {canDelete && (
           <button
             onClick={onDelete}
@@ -239,6 +291,20 @@ export const EditorPane = ({ name, type, projectPath, onClose, onCreated, onDele
 
   // Edit mode derived values
   const currentKey = `${type}:${projectPath}:${name}`;
+
+  // View mode: form for agents, raw for everything else.
+  // Store the key alongside the mode so we can detect when the active file has changed
+  // and reset to the default — without an effect.
+  const defaultMode: ViewMode = type === "agent" ? "form" : "raw";
+  const [storedViewMode, setStoredViewMode] = useState<{ key: string; mode: ViewMode }>({
+    key: currentKey,
+    mode: defaultMode,
+  });
+  const viewMode =
+    storedViewMode.key === currentKey ? storedViewMode.mode : defaultMode;
+  const setViewMode = (mode: ViewMode) =>
+    setStoredViewMode({ key: currentKey, mode });
+
   const loading = !isCreateMode && loadedKey !== currentKey;
   const dirty = !loading && !isCreateMode && content !== savedContent;
   const saving = saveStatus === "saving";
@@ -359,8 +425,9 @@ export const EditorPane = ({ name, type, projectPath, onClose, onCreated, onDele
     }
   };
 
-  const editorLanguage =
-    type === "mcp-server" ? "json" : "markdown";
+  const editorLanguage = type === "mcp-server" ? "json" : "markdown";
+
+  const showFormView = type === "agent" && viewMode === "form";
 
   return (
     <div className="flex flex-col h-full bg-[#0d0d10] border-l border-white/6">
@@ -372,6 +439,8 @@ export const EditorPane = ({ name, type, projectPath, onClose, onCreated, onDele
           createStatus={createStatus}
           onClose={onClose}
           onCreate={handleCreate}
+          viewMode={viewMode}
+          onViewModeToggle={setViewMode}
         />
       ) : (
         <EditHeader
@@ -383,11 +452,19 @@ export const EditorPane = ({ name, type, projectPath, onClose, onCreated, onDele
           onClose={onClose}
           deleteStatus={deleteStatus}
           onDelete={handleDelete}
+          viewMode={viewMode}
+          onViewModeToggle={setViewMode}
         />
       )}
       <div className="flex-1 min-h-0">
         {loading ? (
           <div className="w-full h-full bg-[#0d0d10]" />
+        ) : showFormView ? (
+          <AgentFormEditor
+            content={content}
+            onChange={setContent}
+            disabled={saving}
+          />
         ) : (
           <Editor
             value={content}

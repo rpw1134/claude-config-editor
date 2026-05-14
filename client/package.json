@@ -14,12 +14,14 @@
     "@tailwindcss/forms": "^0.5.11",
     "@tailwindcss/typography": "^0.5.19",
     "@tailwindcss/vite": "^4.3.0",
+    "js-yaml": "^4.1.1",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
     "tailwindcss": "^4.3.0"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@types/js-yaml": "^4.0.9",
     "@types/node": "^24.12.2",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
