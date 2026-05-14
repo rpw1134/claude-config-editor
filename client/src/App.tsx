@@ -45,10 +45,22 @@ export default function App() {
     setSelectedName(name);
   };
 
-  const isSplitTab = activeTab === 'agents' || activeTab === 'skills' || activeTab === 'mcp-servers';
+  const isSplitTab =
+    activeTab === 'agents' ||
+    activeTab === 'skills' ||
+    activeTab === 'mcp-servers' ||
+    activeTab === 'projects';
+
   const showEditor = isSplitTab && (selectedName !== null || creatingType !== null);
 
-  const editorType = activeTab === 'agents' ? 'agent' : activeTab === 'mcp-servers' ? 'mcp-server' : 'skill';
+  const editorType =
+    activeTab === 'projects'
+      ? 'project'
+      : activeTab === 'agents'
+      ? 'agent'
+      : activeTab === 'mcp-servers'
+      ? 'mcp-server'
+      : 'skill';
 
   // Key that changes whenever we switch between create and edit mode so
   // EditorPane remounts and its local state (draftName, createStatus, content)
@@ -86,7 +98,12 @@ export default function App() {
           />
         );
       default:
-        return <ProjectsSection />;
+        return (
+          <ProjectsSection
+            selectedPath={selectedName}
+            onSelect={setSelectedName}
+          />
+        );
     }
   })();
 

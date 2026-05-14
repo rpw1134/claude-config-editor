@@ -1,115 +1,104 @@
+import { useEffect, useState } from 'react';
+import { fetchProjects } from '../../lib/api';
+import type { ProjectInfo } from '../../lib/api';
 import { SectionHeader } from '../SectionHeader';
+import { Pagination } from '../Pagination';
 
-interface Project {
-  id: string;
-  name: string;
-  path: string;
-  description: string;
-  lastModified: string;
-  isGlobal: boolean;
-  size: string;
-}
-
-const MOCK_PROJECTS: Project[] = [
-  {
-    id: '1',
-    name: 'Global',
-    path: '~/.claude/CLAUDE.md',
-    description:
-      'Personal defaults for Claude Code. Hard rules, verification steps, communication baseline, and agent routing preferences applied across all projects.',
-    lastModified: '2 hours ago',
-    isGlobal: true,
-    size: '1.4 KB',
-  },
-  {
-    id: '2',
-    name: 'claude-config-editor',
-    path: '~/Projects/claude-config-editor/CLAUDE.md',
-    description:
-      'Claude Config Studio — local tool for managing Claude Code configuration files. Phase 1 web app scope, stack decisions, and working agreement.',
-    lastModified: '1 day ago',
-    isGlobal: false,
-    size: '2.1 KB',
-  },
-  {
-    id: '3',
-    name: 'api-gateway',
-    path: '~/Projects/api-gateway/CLAUDE.md',
-    description:
-      'Internal API gateway service. Go + Postgres. Migration safety rules, deployment checklist, and module boundaries for the auth subsystem.',
-    lastModified: '5 days ago',
-    isGlobal: false,
-    size: '986 B',
-  },
-  {
-    id: '4',
-    name: 'design-system',
-    path: '~/Projects/design-system/CLAUDE.md',
-    description:
-      'Shared component library. Token-first design rules, Storybook conventions, and accessibility requirements. Chromatic visual regression is mandatory.',
-    lastModified: '12 days ago',
-    isGlobal: false,
-    size: '743 B',
-  },
-];
-
-const ExternalLinkIcon = () => (
-  <svg width="12" height="12" viewBox="0 0 11 11" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M2 9L9 2M9 2H4.5M9 2V6.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
-  </svg>
-);
+const PAGE_SIZE = 10;
 
 interface ProjectCardProps {
-  project: Project;
+  project: ProjectInfo;
+  isSelected: boolean;
+  onSelect: (path: string | null) => void;
 }
 
-const ProjectCard = ({ project }: ProjectCardProps) => {
-  return (
-    <button className="group w-full text-left px-5 py-4 rounded-lg bg-white/2.5 border border-white/7 hover:bg-white/4.5 hover:border-white/12 transition-all duration-150 block">
-      <div className="flex items-start justify-between gap-4">
-        <div className="min-w-0 flex-1">
-          {/* Name row */}
-          <div className="flex items-center gap-2 mb-1.5">
-            <span className="text-[14px] font-semibold text-white/85 group-hover:text-white transition-colors leading-tight">
-              {project.name}
-            </span>
-            {project.isGlobal && (
-              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-orange-500/15 text-orange-400/90 border border-orange-500/20">
-                Global
-              </span>
-            )}
-            <span className="ml-auto text-[11px] text-white/20 font-mono shrink-0">{project.lastModified}</span>
-          </div>
-          {/* Path */}
-          <p className="font-mono text-[11px] text-white/25 mb-2.5 truncate">{project.path}</p>
-          {/* Description */}
-          <p className="text-[12px] text-white/40 leading-[1.6] line-clamp-2">{project.description}</p>
-        </div>
-        <div className="shrink-0 flex flex-col items-end gap-3 pt-0.5">
-          <span className="opacity-0 group-hover:opacity-100 transition-opacity text-white/35">
-            <ExternalLinkIcon />
+const ProjectCard = ({ project, isSelected, onSelect }: ProjectCardProps) => (
+  <button
+    onClick={() => onSelect(isSelected ? null : project.path)}
+    className={[
+      'group w-full text-left px-5 py-4 rounded-lg border transition-all duration-150 block',
+      isSelected
+        ? 'bg-white/6 border-white/14'
+        : 'bg-white/2.5 border-white/7 hover:bg-white/4.5 hover:border-white/12',
+    ].join(' ')}
+  >
+    <div className="min-w-0">
+      <div className="flex items-center gap-2 mb-1.5">
+        <span className={[
+          'text-[14px] font-semibold leading-tight transition-colors',
+          isSelected ? 'text-white/95' : 'text-white/85 group-hover:text-white',
+        ].join(' ')}>
+          {project.name}
+        </span>
+        {project.name === 'global' && (
+          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-orange-500/15 text-orange-400/90 border border-orange-500/20">
+            Global
           </span>
-          <span className="text-[11px] text-white/20 font-mono">{project.size}</span>
-        </div>
+        )}
       </div>
-    </button>
-  );
-};
+      <p className="font-mono text-[11px] text-white/30 truncate">{project.path}</p>
+    </div>
+  </button>
+);
 
-export const ProjectsSection = () => {
+interface ProjectsSectionProps {
+  selectedPath: string | null;
+  onSelect: (path: string | null) => void;
+}
+
+export const ProjectsSection = ({ selectedPath, onSelect }: ProjectsSectionProps) => {
+  const [projects, setProjects] = useState<ProjectInfo[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+
+  useEffect(() => {
+    fetchProjects()
+      .then((data) => {
+        setProjects(data);
+        setPage(1);
+        setLoading(false);
+      })
+      .catch((err: unknown) => {
+        setError(err instanceof Error ? err.message : 'Failed to load projects');
+        setLoading(false);
+      });
+  }, []);
+
+  const totalPages = Math.ceil(projects.length / PAGE_SIZE);
+  const pageItems = projects.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
   return (
     <div>
       <SectionHeader
         title="Projects"
         description="CLAUDE.md files that shape Claude's behavior — global defaults and per-project overrides."
-        actionLabel="Add Project"
-        count={MOCK_PROJECTS.length}
+        count={projects.length}
       />
-      <div className="space-y-2.5">
-        {MOCK_PROJECTS.map((project) => (
-          <ProjectCard key={project.id} project={project} />
-        ))}
-      </div>
+
+      {loading && (
+        <p className="text-[12px] text-white/25 font-mono px-1">Loading…</p>
+      )}
+
+      {error && (
+        <p className="text-[12px] text-rose-400/60 font-mono px-1">{error}</p>
+      )}
+
+      {!loading && !error && (
+        <>
+          <div className="space-y-2.5">
+            {pageItems.map((project) => (
+              <ProjectCard
+                key={project.path}
+                project={project}
+                isSelected={selectedPath === project.path}
+                onSelect={onSelect}
+              />
+            ))}
+          </div>
+          <Pagination page={page} totalPages={totalPages} onPage={setPage} />
+        </>
+      )}
     </div>
   );
 };

@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react';
 import { fetchMcpServers } from '../../lib/api';
 import { SectionHeader } from '../SectionHeader';
+import { Pagination } from '../Pagination';
+
+const PAGE_SIZE = 10;
 
 interface McpServersSection {
   selectedName: string | null;
@@ -44,11 +47,13 @@ export const McpServersSection = ({ selectedName, onSelect, onNew, refreshKey }:
   const [servers, setServers] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
 
   useEffect(() => {
     fetchMcpServers()
       .then((data) => {
         setServers(data);
+        setPage(1);
         setLoading(false);
       })
       .catch((err: unknown) => {
@@ -56,6 +61,9 @@ export const McpServersSection = ({ selectedName, onSelect, onNew, refreshKey }:
         setLoading(false);
       });
   }, [refreshKey]);
+
+  const totalPages = Math.ceil(servers.length / PAGE_SIZE);
+  const pageItems = servers.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   return (
     <div>
@@ -76,16 +84,19 @@ export const McpServersSection = ({ selectedName, onSelect, onNew, refreshKey }:
       )}
 
       {!loading && !error && (
-        <div className="space-y-2.5">
-          {servers.map((name) => (
-            <McpServerRow
-              key={name}
-              name={name}
-              selected={name === selectedName}
-              onClick={() => onSelect(name)}
-            />
-          ))}
-        </div>
+        <>
+          <div className="space-y-2.5">
+            {pageItems.map((name) => (
+              <McpServerRow
+                key={name}
+                name={name}
+                selected={name === selectedName}
+                onClick={() => onSelect(name)}
+              />
+            ))}
+          </div>
+          <Pagination page={page} totalPages={totalPages} onPage={setPage} />
+        </>
       )}
 
       <p className="mt-5 px-1 text-[11px] text-white/20 font-mono">

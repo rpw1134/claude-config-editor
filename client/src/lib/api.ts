@@ -83,3 +83,22 @@ export async function updateMcpServerContent(name: string, content: string): Pro
 export async function createMcpServer(name: string, content: string): Promise<void> {
   await post("/api/mcp-servers", { name, content });
 }
+
+export interface ProjectInfo {
+  path: string;
+  name: string;
+}
+
+export async function fetchProjects(): Promise<ProjectInfo[]> {
+  const data = await get<{ projects: ProjectInfo[] }>('/api/projects');
+  return data.projects;
+}
+
+export async function fetchProjectContent(projectPath: string): Promise<string> {
+  const data = await get<{ content: string }>(`/api/projects/file?path=${encodeURIComponent(projectPath)}`);
+  return data.content;
+}
+
+export async function updateProjectContent(projectPath: string, content: string): Promise<void> {
+  await put(`/api/projects/file?path=${encodeURIComponent(projectPath)}`, { content });
+}

@@ -1,6 +1,83 @@
+import { basename } from "path";
 import { fileExists, listDir, readFileContent, writeFileContent } from "../utils/fileIO.js";
 import { resolveHome } from "../utils/parsing.js";
 import type { ClaudeConfig } from "../types/claudeConfig.js";
+
+export interface ProjectInfo {
+  path: string;
+  name: string;
+}
+
+/** Returns all projects from ~/.claude.json that have a CLAUDE.md file. */
+export async function listProjects(): Promise<ProjectInfo[]> {
+  let raw: string;
+  try {
+    raw = await readFileContent(resolveHome("~/.claude.json"));
+  } catch (e) {
+    const error = e as NodeJS.ErrnoException;
+    if (error.code === "ENOENT") return [];
+    throw error;
+  }
+
+  const config = JSON.parse(raw) as ClaudeConfig;
+  const projectPaths = Object.keys(config.projects ?? {});
+  const globalKey = resolveHome("~/.claude");
+
+  const checks = await Promise.all(
+    projectPaths.map((p) => fileExists(`${p}/CLAUDE.md`))
+  );
+
+  return projectPaths
+    .filter((_, i) => checks[i])
+    .map((p) => ({
+      path: p,
+      name: p === globalKey ? "global" : basename(p),
+    }));
+}
+
+/** Returns the content of {projectPath}/CLAUDE.md, or null if not found. */
+export async function getProjectContent(projectPath: string): Promise<string | null> {
+  let raw: string;
+  try {
+    raw = await readFileContent(resolveHome("~/.claude.json"));
+  } catch (e) {
+    const error = e as NodeJS.ErrnoException;
+    if (error.code === "ENOENT") return null;
+    throw error;
+  }
+
+  const config = JSON.parse(raw) as ClaudeConfig;
+  if (!(projectPath in (config.projects ?? {}))) {
+    throw new Error("Project not found");
+  }
+
+  try {
+    return await readFileContent(`${projectPath}/CLAUDE.md`);
+  } catch (e) {
+    const error = e as NodeJS.ErrnoException;
+    if (error.code === "ENOENT") return null;
+    throw error;
+  }
+}
+
+/** Writes content to {projectPath}/CLAUDE.md. Throws if directory or project doesn't exist. */
+export async function setProjectContent(projectPath: string, content: string): Promise<void> {
+  let raw: string;
+  try {
+    raw = await readFileContent(resolveHome("~/.claude.json"));
+  } catch (e) {
+    const error = e as NodeJS.ErrnoException;
+    if (error.code === "ENOENT") throw new Error("Project not found");
+    throw error;
+  }
+
+  const config = JSON.parse(raw) as ClaudeConfig;
+  if (!(projectPath in (config.projects ?? {}))) {
+    throw new Error("Project not found");
+  }
+
+  await writeFileContent(`${projectPath}/CLAUDE.md`, content);
+}
 
 /** Returns skill directory names under ~/.claude/skills/ that contain a SKILL.md file. */
 export async function listSkills(): Promise<string[]> {

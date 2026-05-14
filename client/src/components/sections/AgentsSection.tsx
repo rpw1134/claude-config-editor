@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react';
 import { fetchAgents } from '../../lib/api';
 import { SectionHeader } from '../SectionHeader';
+import { Pagination } from '../Pagination';
+
+const PAGE_SIZE = 10;
 
 interface AgentCardProps {
   name: string;
@@ -44,11 +47,13 @@ export const AgentsSection = ({ selectedName, onSelect, onNew, refreshKey }: Age
   const [agents, setAgents] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
 
   useEffect(() => {
     fetchAgents()
       .then((data) => {
         setAgents(data);
+        setPage(1);
         setLoading(false);
       })
       .catch((err: unknown) => {
@@ -56,6 +61,9 @@ export const AgentsSection = ({ selectedName, onSelect, onNew, refreshKey }: Age
         setLoading(false);
       });
   }, [refreshKey]);
+
+  const totalPages = Math.ceil(agents.length / PAGE_SIZE);
+  const pageItems = agents.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   return (
     <div>
@@ -76,16 +84,19 @@ export const AgentsSection = ({ selectedName, onSelect, onNew, refreshKey }: Age
       )}
 
       {!loading && !error && (
-        <div className="space-y-2.5">
-          {agents.map((name) => (
-            <AgentCard
-              key={name}
-              name={name}
-              isSelected={selectedName === name}
-              onSelect={onSelect}
-            />
-          ))}
-        </div>
+        <>
+          <div className="space-y-2.5">
+            {pageItems.map((name) => (
+              <AgentCard
+                key={name}
+                name={name}
+                isSelected={selectedName === name}
+                onSelect={onSelect}
+              />
+            ))}
+          </div>
+          <Pagination page={page} totalPages={totalPages} onPage={setPage} />
+        </>
       )}
     </div>
   );

@@ -9,12 +9,14 @@ import {
   fetchMcpServerContent,
   updateMcpServerContent,
   createMcpServer,
+  fetchProjectContent,
+  updateProjectContent,
 } from "../../lib/api";
 import { Editor } from "./Editor";
 
 interface EditorPaneProps {
   name: string | null;
-  type: "agent" | "skill" | "mcp-server";
+  type: "agent" | "skill" | "mcp-server" | "project";
   onClose: () => void;
   onCreated?: (name: string) => void;
 }
@@ -22,9 +24,10 @@ interface EditorPaneProps {
 type SaveStatus = "idle" | "saving" | "saved" | "error";
 type CreateStatus = "idle" | "creating" | "error";
 
-function filePath(name: string, type: "agent" | "skill" | "mcp-server"): string {
+function filePath(name: string, type: "agent" | "skill" | "mcp-server" | "project"): string {
   if (type === "agent") return `~/.claude/agents/${name}`;
   if (type === "skill") return `~/.claude/skills/${name}/SKILL.md`;
+  if (type === "project") return `${name}/CLAUDE.md`;
   return `~/.claude.json → mcpServers → ${name}`;
 }
 
@@ -33,7 +36,7 @@ function filePath(name: string, type: "agent" | "skill" | "mcp-server"): string 
 // ------------------------------------------------------------
 
 interface CreateHeaderProps {
-  type: "agent" | "skill" | "mcp-server";
+  type: "agent" | "skill" | "mcp-server" | "project";
   draftName: string;
   onDraftNameChange: (val: string) => void;
   createStatus: CreateStatus;
@@ -112,7 +115,7 @@ const CreateHeader = ({
 
 interface EditHeaderProps {
   name: string;
-  type: "agent" | "skill" | "mcp-server";
+  type: "agent" | "skill" | "mcp-server" | "project";
   saveStatus: SaveStatus;
   saveDisabled: boolean;
   onSave: () => void;
@@ -205,6 +208,8 @@ export const EditorPane = ({ name, type, onClose, onCreated }: EditorPaneProps) 
         ? fetchAgentContent
         : type === "skill"
         ? fetchSkillContent
+        : type === "project"
+        ? fetchProjectContent
         : fetchMcpServerContent;
     fetchFn(name)
       .then((text) => {
@@ -232,13 +237,15 @@ export const EditorPane = ({ name, type, onClose, onCreated }: EditorPaneProps) 
     if (loading || !dirty || saving || isCreateMode) return;
     setSaveStatus("saving");
     try {
-      const updateFn =
-        type === "agent"
-          ? updateAgentContent
-          : type === "skill"
-          ? updateSkillContent
-          : updateMcpServerContent;
-      await updateFn(name, content);
+      if (type === "agent") {
+        await updateAgentContent(name, content);
+      } else if (type === "skill") {
+        await updateSkillContent(name, content);
+      } else if (type === "project") {
+        await updateProjectContent(name, content);
+      } else {
+        await updateMcpServerContent(name, content);
+      }
       setSavedContent(content);
       setSaveStatus("saved");
       statusTimer.current = setTimeout(() => setSaveStatus("idle"), 1500);
@@ -267,6 +274,9 @@ export const EditorPane = ({ name, type, onClose, onCreated }: EditorPaneProps) 
     }
   };
 
+  const editorLanguage =
+    type === "mcp-server" ? "json" : "markdown";
+
   return (
     <div className="flex flex-col h-full bg-[#0d0d10] border-l border-white/6">
       {isCreateMode ? (
@@ -292,7 +302,7 @@ export const EditorPane = ({ name, type, onClose, onCreated }: EditorPaneProps) 
         <Editor
           value={loading ? "" : content}
           onChange={(val) => setContent(val ?? "")}
-          language={type === "mcp-server" ? "json" : "markdown"}
+          language={editorLanguage}
           readOnly={loading}
         />
       </div>
