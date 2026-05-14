@@ -6,12 +6,15 @@ import {
   updateSkillContent,
   createAgent,
   createSkill,
+  fetchMcpServerContent,
+  updateMcpServerContent,
+  createMcpServer,
 } from "../../lib/api";
 import { Editor } from "./Editor";
 
 interface EditorPaneProps {
   name: string | null;
-  type: "agent" | "skill";
+  type: "agent" | "skill" | "mcp-server";
   onClose: () => void;
   onCreated?: (name: string) => void;
 }
@@ -19,10 +22,10 @@ interface EditorPaneProps {
 type SaveStatus = "idle" | "saving" | "saved" | "error";
 type CreateStatus = "idle" | "creating" | "error";
 
-function filePath(name: string, type: "agent" | "skill"): string {
-  return type === "agent"
-    ? `~/.claude/agents/${name}`
-    : `~/.claude/skills/${name}/SKILL.md`;
+function filePath(name: string, type: "agent" | "skill" | "mcp-server"): string {
+  if (type === "agent") return `~/.claude/agents/${name}`;
+  if (type === "skill") return `~/.claude/skills/${name}/SKILL.md`;
+  return `~/.claude.json → mcpServers → ${name}`;
 }
 
 // ------------------------------------------------------------
@@ -30,7 +33,7 @@ function filePath(name: string, type: "agent" | "skill"): string {
 // ------------------------------------------------------------
 
 interface CreateHeaderProps {
-  type: "agent" | "skill";
+  type: "agent" | "skill" | "mcp-server";
   draftName: string;
   onDraftNameChange: (val: string) => void;
   createStatus: CreateStatus;
@@ -65,7 +68,11 @@ const CreateHeader = ({
     <div className="px-5 border-b border-white/6 flex items-center justify-between shrink-0" style={{ minHeight: '44px' }}>
       <div className="flex items-center gap-1.5">
         <span className="font-mono text-[12px] text-white/25">
-          {type === "agent" ? "~/.claude/agents/" : "~/.claude/skills/"}
+          {type === "agent"
+            ? "~/.claude/agents/"
+            : type === "skill"
+            ? "~/.claude/skills/"
+            : "~/.claude.json → mcpServers → "}
         </span>
         <input
           type="text"
@@ -105,7 +112,7 @@ const CreateHeader = ({
 
 interface EditHeaderProps {
   name: string;
-  type: "agent" | "skill";
+  type: "agent" | "skill" | "mcp-server";
   saveStatus: SaveStatus;
   saveDisabled: boolean;
   onSave: () => void;
@@ -193,7 +200,12 @@ export const EditorPane = ({ name, type, onClose, onCreated }: EditorPaneProps) 
   // Fetch content in edit mode
   useEffect(() => {
     if (isCreateMode) return;
-    const fetchFn = type === "agent" ? fetchAgentContent : fetchSkillContent;
+    const fetchFn =
+      type === "agent"
+        ? fetchAgentContent
+        : type === "skill"
+        ? fetchSkillContent
+        : fetchMcpServerContent;
     fetchFn(name)
       .then((text) => {
         setContent(text);
@@ -220,7 +232,12 @@ export const EditorPane = ({ name, type, onClose, onCreated }: EditorPaneProps) 
     if (loading || !dirty || saving || isCreateMode) return;
     setSaveStatus("saving");
     try {
-      const updateFn = type === "agent" ? updateAgentContent : updateSkillContent;
+      const updateFn =
+        type === "agent"
+          ? updateAgentContent
+          : type === "skill"
+          ? updateSkillContent
+          : updateMcpServerContent;
       await updateFn(name, content);
       setSavedContent(content);
       setSaveStatus("saved");
@@ -236,7 +253,12 @@ export const EditorPane = ({ name, type, onClose, onCreated }: EditorPaneProps) 
     if (trimmed === "" || createStatus === "creating") return;
     setCreateStatus("creating");
     try {
-      const createFn = type === "agent" ? createAgent : createSkill;
+      const createFn =
+        type === "agent"
+          ? createAgent
+          : type === "skill"
+          ? createSkill
+          : createMcpServer;
       await createFn(trimmed, content);
       onCreated?.(trimmed);
     } catch {
@@ -270,7 +292,7 @@ export const EditorPane = ({ name, type, onClose, onCreated }: EditorPaneProps) 
         <Editor
           value={loading ? "" : content}
           onChange={(val) => setContent(val ?? "")}
-          language="markdown"
+          language={type === "mcp-server" ? "json" : "markdown"}
           readOnly={loading}
         />
       </div>

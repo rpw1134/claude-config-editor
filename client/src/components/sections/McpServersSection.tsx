@@ -2,22 +2,45 @@ import { useEffect, useState } from 'react';
 import { fetchMcpServers } from '../../lib/api';
 import { SectionHeader } from '../SectionHeader';
 
-interface McpServerRowProps {
-  name: string;
+interface McpServersSection {
+  selectedName: string | null;
+  onSelect: (name: string) => void;
+  onNew: () => void;
+  refreshKey: number;
 }
 
-const McpServerRow = ({ name }: McpServerRowProps) => (
-  <div className="group px-5 py-4 rounded-lg bg-white/2.5 border border-white/7 hover:bg-white/4.5 hover:border-white/12 transition-all duration-150">
+interface McpServerRowProps {
+  name: string;
+  selected: boolean;
+  onClick: () => void;
+}
+
+const McpServerRow = ({ name, selected, onClick }: McpServerRowProps) => (
+  <button
+    onClick={onClick}
+    className={[
+      "w-full text-left group px-5 py-4 rounded-lg border transition-all duration-150",
+      selected
+        ? "bg-white/6 border-white/12"
+        : "bg-white/2.5 border-white/7 hover:bg-white/4.5 hover:border-white/12",
+    ].join(" ")}
+  >
     <div className="flex items-center gap-3">
-      <div className="shrink-0 w-1.5 h-1.5 rounded-full bg-white/20 group-hover:bg-white/35 transition-colors" />
-      <span className="text-[14px] font-semibold text-white/70 group-hover:text-white/90 transition-colors font-mono leading-tight">
+      <div className={[
+        "shrink-0 w-1.5 h-1.5 rounded-full transition-colors",
+        selected ? "bg-white/50" : "bg-white/20 group-hover:bg-white/35",
+      ].join(" ")} />
+      <span className={[
+        "text-[14px] font-semibold font-mono leading-tight transition-colors",
+        selected ? "text-white/90" : "text-white/70 group-hover:text-white/90",
+      ].join(" ")}>
         {name}
       </span>
     </div>
-  </div>
+  </button>
 );
 
-export const McpServersSection = () => {
+export const McpServersSection = ({ selectedName, onSelect, onNew, refreshKey }: McpServersSection) => {
   const [servers, setServers] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -32,7 +55,7 @@ export const McpServersSection = () => {
         setError(err instanceof Error ? err.message : 'Failed to load MCP servers');
         setLoading(false);
       });
-  }, []);
+  }, [refreshKey]);
 
   return (
     <div>
@@ -40,6 +63,7 @@ export const McpServersSection = () => {
         title="MCP Servers"
         description="Model Context Protocol servers configured in ~/.claude.json. Each server extends Claude's tool capabilities."
         actionLabel="Add Server"
+        onAction={onNew}
         count={servers.length}
       />
 
@@ -54,7 +78,12 @@ export const McpServersSection = () => {
       {!loading && !error && (
         <div className="space-y-2.5">
           {servers.map((name) => (
-            <McpServerRow key={name} name={name} />
+            <McpServerRow
+              key={name}
+              name={name}
+              selected={name === selectedName}
+              onClick={() => onSelect(name)}
+            />
           ))}
         </div>
       )}

@@ -70,3 +70,16 @@ export async function createAgent(name: string, content: string): Promise<void> 
 export async function createSkill(name: string, content: string): Promise<void> {
   await post("/api/skills", { name, content });
 }
+
+export async function fetchMcpServerContent(name: string): Promise<string> {
+  const data = await get<{ content: string }>(`/api/mcp-servers/${encodeURIComponent(name)}`);
+  return data.content;
+}
+
+export async function updateMcpServerContent(name: string, content: string): Promise<void> {
+  await put(`/api/mcp-servers/${encodeURIComponent(name)}`, { content });
+}
+
+export async function createMcpServer(name: string, content: string): Promise<void> {
+  await post("/api/mcp-servers", { name, content });
+}

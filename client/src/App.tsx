@@ -11,9 +11,10 @@ type ActiveTab = 'projects' | 'agents' | 'skills' | 'mcp-servers';
 export default function App() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('projects');
   const [selectedName, setSelectedName] = useState<string | null>(null);
-  const [creatingType, setCreatingType] = useState<'agent' | 'skill' | null>(null);
+  const [creatingType, setCreatingType] = useState<'agent' | 'skill' | 'mcp-server' | null>(null);
   const [agentsRefreshKey, setAgentsRefreshKey] = useState(0);
   const [skillsRefreshKey, setSkillsRefreshKey] = useState(0);
+  const [mcpRefreshKey, setMcpRefreshKey] = useState(0);
 
   const handleTabChange = (tab: string) => {
     setActiveTab(tab as ActiveTab);
@@ -31,15 +32,23 @@ export default function App() {
     setCreatingType('skill');
   };
 
+  const handleNewMcpServer = () => {
+    setSelectedName(null);
+    setCreatingType('mcp-server');
+  };
+
   const handleCreated = (name: string) => {
     if (activeTab === 'agents') setAgentsRefreshKey((k) => k + 1);
-    else setSkillsRefreshKey((k) => k + 1);
+    else if (activeTab === 'skills') setSkillsRefreshKey((k) => k + 1);
+    else if (activeTab === 'mcp-servers') setMcpRefreshKey((k) => k + 1);
     setCreatingType(null);
     setSelectedName(name);
   };
 
-  const isSplitTab = activeTab === 'agents' || activeTab === 'skills';
+  const isSplitTab = activeTab === 'agents' || activeTab === 'skills' || activeTab === 'mcp-servers';
   const showEditor = isSplitTab && (selectedName !== null || creatingType !== null);
+
+  const editorType = activeTab === 'agents' ? 'agent' : activeTab === 'mcp-servers' ? 'mcp-server' : 'skill';
 
   // Key that changes whenever we switch between create and edit mode so
   // EditorPane remounts and its local state (draftName, createStatus, content)
@@ -68,7 +77,14 @@ export default function App() {
           />
         );
       case 'mcp-servers':
-        return <McpServersSection />;
+        return (
+          <McpServersSection
+            selectedName={selectedName}
+            onSelect={setSelectedName}
+            onNew={handleNewMcpServer}
+            refreshKey={mcpRefreshKey}
+          />
+        );
       default:
         return <ProjectsSection />;
     }
@@ -86,7 +102,7 @@ export default function App() {
             <EditorPane
               key={editorKey}
               name={creatingType !== null ? null : selectedName}
-              type={activeTab === 'agents' ? 'agent' : 'skill'}
+              type={editorType}
               onClose={() => { setSelectedName(null); setCreatingType(null); }}
               onCreated={handleCreated}
             />
