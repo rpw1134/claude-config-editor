@@ -407,7 +407,7 @@ export const EditorPane = ({ name, type, projectPath, onClose, onCreated, onDele
   const showFormView = type === "agent" && viewMode === "form";
 
   return (
-    <div className="flex flex-col h-full bg-[#0d0d10] border-l border-white/6">
+    <div className="flex flex-1 flex-col h-full w-full bg-[#0d0d10] border-l border-white/6">
       {isCreateMode ? (
         <CreateHeader
           type={type}

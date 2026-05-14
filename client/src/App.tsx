@@ -1,8 +1,11 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { SidebarAgentsList, SidebarSkillsList, SidebarMcpList } from './components/SidebarLists';
 import { EditorPane } from './components/Editor/EditorPane';
 import { WelcomePane, NoProjectPane } from './components/WelcomePane';
+import { fetchProjects } from './lib/api';
+
+const RECENT_PROJECT_KEY = 'ccs:recentProject';
 
 type ActiveTab = 'claude-md' | 'agents' | 'skills' | 'mcp-servers' | 'welcome';
 
@@ -14,12 +17,29 @@ export default function App() {
   const [agentsRefreshKey, setAgentsRefreshKey] = useState(0);
   const [skillsRefreshKey, setSkillsRefreshKey] = useState(0);
   const [mcpRefreshKey, setMcpRefreshKey] = useState(0);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  // Auto-load the most recent project on mount
+  useEffect(() => {
+    fetchProjects().then((projects) => {
+      if (projects.length === 0) return;
+      const stored = localStorage.getItem(RECENT_PROJECT_KEY);
+      const match = stored ? projects.find((p) => p.path === stored) : null;
+      const fallback = projects.find((p) => p.name === 'global') ?? projects[0];
+      const target = match ?? fallback;
+      if (target) {
+        setSelectedProjectPath(target.path);
+        setActiveTab('welcome');
+      }
+    }).catch(() => {/* server not ready — stay on no-project screen */});
+  }, []);
 
   const handleProjectSelect = (path: string) => {
+    localStorage.setItem(RECENT_PROJECT_KEY, path);
     setSelectedProjectPath(path);
     setSelectedName(null);
     setCreatingType(null);
-    setActiveTab('claude-md');
+    setActiveTab('welcome');
   };
 
   const handleTabChange = (tab: string) => {
@@ -183,6 +203,8 @@ export default function App() {
         selectedProjectPath={selectedProjectPath}
         onProjectSelect={handleProjectSelect}
         listContent={listContent}
+        collapsed={sidebarCollapsed}
+        onToggleCollapsed={() => setSidebarCollapsed((v) => !v)}
       />
 
       <main className="flex flex-1 overflow-hidden">

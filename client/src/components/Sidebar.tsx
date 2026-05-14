@@ -17,6 +17,24 @@ const SettingsIcon = () => (
   </svg>
 );
 
+interface ChevronProps {
+  /** Direction the chevron points. Default: left. */
+  direction?: 'left' | 'right';
+}
+
+const ChevronIcon = ({ direction = 'left' }: ChevronProps) => (
+  <svg
+    width="12"
+    height="12"
+    viewBox="0 0 12 12"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    style={{ transform: direction === 'right' ? 'rotate(180deg)' : undefined }}
+  >
+    <path d="M7.5 2L4 6L7.5 10" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>
+);
+
 // ── Sidebar ───────────────────────────────────────────────────────────────────
 
 interface SidebarProps {
@@ -26,6 +44,8 @@ interface SidebarProps {
   onProjectSelect: (path: string) => void;
   /** Compact inline lists — agents, skills, MCP — rendered in the scrollable body. */
   listContent?: React.ReactNode;
+  collapsed: boolean;
+  onToggleCollapsed: () => void;
 }
 
 export const Sidebar = ({
@@ -34,9 +54,61 @@ export const Sidebar = ({
   selectedProjectPath,
   onProjectSelect,
   listContent,
+  collapsed,
+  onToggleCollapsed,
 }: SidebarProps) => {
   const hasProject = selectedProjectPath !== null;
   const isClaudeMdActive = activeTab === 'claude-md';
+
+  if (collapsed) {
+    return (
+      <aside className="w-13 shrink-0 flex flex-col items-center bg-[#0d0d0f] border-r border-white/6 h-full">
+        {/* Logo + toggle */}
+        <div className="pt-4 pb-3 flex flex-col items-center gap-2 border-b border-white/6 w-full shrink-0">
+          <button
+            onClick={onToggleCollapsed}
+            className="w-8 h-8 rounded-lg bg-orange-500 flex items-center justify-center shadow-[0_0_12px_rgba(249,115,22,0.25)] hover:bg-orange-400 transition-colors"
+            title="Expand sidebar"
+          >
+            <span className="text-[13px] font-bold text-white leading-none">C</span>
+          </button>
+        </div>
+
+        {/* CLAUDE.md icon */}
+        <div className="pt-3 px-2 w-full shrink-0">
+          <button
+            onClick={() => hasProject && onTabChange('claude-md')}
+            disabled={!hasProject}
+            title="CLAUDE.md"
+            className={[
+              'w-full flex items-center justify-center p-2 rounded-md transition-all duration-150',
+              !hasProject
+                ? 'text-white/15 cursor-not-allowed'
+                : isClaudeMdActive
+                ? 'bg-orange-500/15 text-orange-400'
+                : 'text-white/30 hover:text-white/60 hover:bg-white/5',
+            ].join(' ')}
+            style={{ minHeight: '36px' }}
+          >
+            <DocumentIcon />
+          </button>
+        </div>
+
+        <div className="flex-1" />
+
+        {/* Settings icon */}
+        <div className="px-2 pb-4 border-t border-white/6 pt-3 w-full shrink-0">
+          <button
+            className="w-full flex items-center justify-center p-2 rounded-md text-white/25 hover:text-white/55 hover:bg-white/5 transition-all duration-150"
+            title="Settings"
+            style={{ minHeight: '36px' }}
+          >
+            <SettingsIcon />
+          </button>
+        </div>
+      </aside>
+    );
+  }
 
   return (
     <aside className="w-65 shrink-0 flex flex-col bg-[#0d0d0f] border-r border-white/6 h-full">
@@ -46,10 +118,18 @@ export const Sidebar = ({
           <div className="w-8 h-8 rounded-lg bg-orange-500 flex items-center justify-center shrink-0 shadow-[0_0_12px_rgba(249,115,22,0.25)]">
             <span className="text-[13px] font-bold text-white leading-none">C</span>
           </div>
-          <div>
+          <div className="flex-1 min-w-0">
             <p className="text-[13px] font-semibold text-white/90 leading-tight tracking-tight">Config Studio</p>
             <p className="text-[11px] text-white/30 font-mono leading-tight mt-0.5">~/.claude/</p>
           </div>
+          {/* Collapse toggle */}
+          <button
+            onClick={onToggleCollapsed}
+            className="shrink-0 text-white/20 hover:text-white/55 transition-colors p-1 rounded hover:bg-white/5"
+            title="Collapse sidebar"
+          >
+            <ChevronIcon direction="left" />
+          </button>
         </div>
       </div>
 
