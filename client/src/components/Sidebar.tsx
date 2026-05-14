@@ -79,7 +79,6 @@ const CreateNewDropdown = ({ onSelect, onClose }: CreateNewDropdownProps) => {
     const handler = (e: MouseEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) onClose();
     };
-    // Small delay so the click that opened the dropdown doesn't immediately close it
     const t = setTimeout(() => document.addEventListener('mousedown', handler), 50);
     return () => {
       clearTimeout(t);
@@ -96,15 +95,49 @@ const CreateNewDropdown = ({ onSelect, onClose }: CreateNewDropdownProps) => {
   return (
     <div
       ref={ref}
-      className="absolute top-full left-0 right-0 mt-1.5 z-30 bg-[#18181b] border border-white/10 rounded-xl shadow-[0_8px_32px_rgba(0,0,0,0.5)] overflow-hidden"
+      style={{
+        position: 'absolute',
+        top: '100%',
+        left: 0,
+        right: 0,
+        marginTop: '6px',
+        zIndex: 30,
+        background: 'var(--bg-elevated)',
+        border: '1px solid var(--border-default)',
+        borderRadius: '8px',
+        boxShadow: '0 4px 24px rgba(0,0,0,0.4)',
+        overflow: 'hidden',
+      }}
     >
       {options.map(({ type, label, icon }) => (
         <button
           key={type}
           onClick={() => { onSelect(type); onClose(); }}
-          className="w-full flex items-center gap-3 px-3.5 py-2.5 text-left text-[12px] font-medium text-white/55 hover:text-white/90 hover:bg-white/6 transition-colors duration-100"
+          style={{
+            width: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px',
+            padding: '9px 14px',
+            textAlign: 'left',
+            fontSize: '14px',
+            fontWeight: 500,
+            color: 'var(--text-secondary)',
+            background: 'transparent',
+            transition: 'background 150ms ease, color 150ms ease',
+            border: 'none',
+            cursor: 'pointer',
+          }}
+          onMouseEnter={(e) => {
+            (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-hover)';
+            (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-primary)';
+          }}
+          onMouseLeave={(e) => {
+            (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
+            (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-secondary)';
+          }}
         >
-          <span className="text-white/30">{icon}</span>
+          <span style={{ color: 'var(--text-muted)' }}>{icon}</span>
           {label}
         </button>
       ))}
@@ -126,31 +159,55 @@ const NavButton = ({ icon, label, active, disabled = false, onClick }: NavButton
   <button
     onClick={onClick}
     disabled={disabled}
-    className={[
-      'w-full flex items-center gap-3 px-3 py-2 rounded-md text-left transition-all duration-150',
-      'text-[13px] font-medium',
-      disabled
-        ? 'text-white/18 cursor-not-allowed'
+    style={{
+      width: '100%',
+      display: 'flex',
+      alignItems: 'center',
+      gap: '10px',
+      padding: '6px 10px',
+      paddingLeft: '8px',
+      borderRadius: '6px',
+      textAlign: 'left',
+      fontSize: '14px',
+      fontWeight: 500,
+      minHeight: '34px',
+      transition: 'all 150ms ease',
+      border: 'none',
+      cursor: disabled ? 'not-allowed' : 'pointer',
+      // Active: 3px left border + subtle tint
+      borderLeft: active ? '3px solid var(--accent)' : '3px solid transparent',
+      background: active ? 'var(--bg-surface)' : 'transparent',
+      color: disabled
+        ? 'var(--text-muted)'
         : active
-        ? 'bg-orange-500/15 text-orange-300'
-        : 'text-white/45 hover:text-white/75 hover:bg-white/5',
-    ].join(' ')}
-    style={{ minHeight: '34px' }}
+        ? 'var(--text-primary)'
+        : 'var(--text-secondary)',
+    }}
+    onMouseEnter={(e) => {
+      if (!disabled && !active) {
+        (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-hover)';
+        (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-primary)';
+      }
+    }}
+    onMouseLeave={(e) => {
+      if (!disabled && !active) {
+        (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
+        (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-secondary)';
+      }
+    }}
   >
-    <span className={[
-      'shrink-0 transition-colors',
-      disabled ? 'text-white/15' : active ? 'text-orange-400' : 'text-white/30',
-    ].join(' ')}>
+    <span style={{
+      flexShrink: 0,
+      color: disabled ? 'var(--text-muted)' : active ? 'var(--accent)' : 'var(--text-muted)',
+      transition: 'color 150ms ease',
+    }}>
       {icon}
     </span>
-    <span className="truncate">{label}</span>
-    {active && !disabled && (
-      <span className="ml-auto w-1.5 h-1.5 rounded-full bg-orange-500 shrink-0" />
-    )}
+    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{label}</span>
   </button>
 );
 
-// ── Sidebar (expanded) ────────────────────────────────────────────────────────
+// ── Sidebar ────────────────────────────────────────────────────────────────────
 
 interface SidebarProps {
   activeTab: string;
@@ -182,117 +239,119 @@ export const Sidebar = ({
 
   if (collapsed) {
     return (
-      <aside className="w-13 shrink-0 flex flex-col items-center bg-[#0d0d0f] border-r border-white/6 h-full">
+      <aside style={{
+        width: '52px',
+        flexShrink: 0,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        background: 'var(--bg-sidebar)',
+        borderRight: '1px solid var(--border-faint)',
+        height: '100%',
+      }}>
         {/* Logo / expand */}
-        <div className="pt-4 pb-3 flex flex-col items-center gap-2 border-b border-white/6 w-full shrink-0">
+        <div style={{
+          paddingTop: '16px',
+          paddingBottom: '12px',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: '8px',
+          borderBottom: '1px solid var(--border-faint)',
+          width: '100%',
+          flexShrink: 0,
+        }}>
           <button
             onClick={onToggleCollapsed}
-            className="w-8 h-8 rounded-lg bg-orange-500 flex items-center justify-center shadow-[0_0_12px_rgba(249,115,22,0.25)] hover:bg-orange-400 transition-colors"
             title="Expand sidebar"
+            style={{
+              width: '32px',
+              height: '32px',
+              borderRadius: '8px',
+              background: '#2a2a30',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              border: 'none',
+              cursor: 'pointer',
+              transition: 'background 150ms ease',
+            }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = '#333340'; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = '#2a2a30'; }}
           >
-            <span className="text-[13px] font-bold text-white leading-none">C</span>
+            <span style={{ fontSize: '13px', fontWeight: 700, color: 'white', lineHeight: 1 }}>C</span>
           </button>
         </div>
 
         {/* Create New (+) */}
-        <div className="pt-3 px-2 w-full shrink-0">
+        <div style={{ padding: '12px 8px 0', width: '100%', flexShrink: 0 }}>
           <button
             onClick={() => hasProject && onCreateNew('agent')}
             disabled={!hasProject}
             title="Create New"
-            className={[
-              'w-full flex items-center justify-center p-2 rounded-md transition-all duration-150',
-              !hasProject
-                ? 'text-white/15 cursor-not-allowed'
-                : 'text-white/30 hover:text-white/60 hover:bg-white/5',
-            ].join(' ')}
-            style={{ minHeight: '34px' }}
+            style={{
+              width: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '8px',
+              borderRadius: '6px',
+              minHeight: '34px',
+              border: 'none',
+              cursor: hasProject ? 'pointer' : 'not-allowed',
+              color: 'white',
+              background: hasProject ? 'var(--accent)' : 'var(--bg-surface)',
+              transition: 'background 150ms ease',
+              opacity: hasProject ? 1 : 0.4,
+            }}
+            onMouseEnter={(e) => {
+              if (hasProject) (e.currentTarget as HTMLButtonElement).style.background = 'var(--accent-hover)';
+            }}
+            onMouseLeave={(e) => {
+              if (hasProject) (e.currentTarget as HTMLButtonElement).style.background = 'var(--accent)';
+            }}
           >
             <PlusIcon />
           </button>
         </div>
 
-        {/* CLAUDE.md */}
-        <div className="px-2 w-full shrink-0">
-          <button
-            onClick={() => hasProject && onTabChange('claude-md')}
-            disabled={!hasProject}
-            title="CLAUDE.md"
-            className={[
-              'w-full flex items-center justify-center p-2 rounded-md transition-all duration-150',
-              !hasProject
-                ? 'text-white/15 cursor-not-allowed'
-                : activeTab === 'claude-md'
-                ? 'bg-orange-500/15 text-orange-400'
-                : 'text-white/30 hover:text-white/60 hover:bg-white/5',
-            ].join(' ')}
-            style={{ minHeight: '34px' }}
-          >
-            <DocumentIcon />
-          </button>
-        </div>
+        {/* Icon nav items */}
+        {[
+          { tab: 'claude-md', matchTabs: ['claude-md'], icon: <DocumentIcon />, title: 'CLAUDE.md' },
+          { tab: 'landing-agents', matchTabs: ['landing-agents', 'agents'], icon: <AgentIcon />, title: 'Agents' },
+          { tab: 'landing-skills', matchTabs: ['landing-skills', 'skills'], icon: <SkillIcon />, title: 'Skills' },
+          { tab: 'landing-mcp', matchTabs: ['landing-mcp', 'mcp-servers'], icon: <McpIcon />, title: 'MCP Servers' },
+        ].map(({ tab, matchTabs, icon, title }) => {
+          const isActive = matchTabs.includes(activeTab);
+          return (
+            <div key={tab} style={{ padding: '2px 8px', width: '100%', flexShrink: 0 }}>
+              <button
+                onClick={() => hasProject && onTabChange(tab)}
+                disabled={!hasProject}
+                title={title}
+                style={{
+                  width: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: '8px',
+                  borderRadius: '6px',
+                  minHeight: '34px',
+                  border: 'none',
+                  cursor: hasProject ? 'pointer' : 'not-allowed',
+                  background: isActive ? 'var(--bg-surface)' : 'transparent',
+                  color: isActive ? 'var(--accent)' : hasProject ? 'var(--text-muted)' : 'var(--text-muted)',
+                  transition: 'background 150ms ease, color 150ms ease',
+                  opacity: hasProject ? 1 : 0.4,
+                }}
+              >
+                {icon}
+              </button>
+            </div>
+          );
+        })}
 
-        {/* Agents */}
-        <div className="px-2 w-full shrink-0">
-          <button
-            onClick={() => hasProject && onTabChange('landing-agents')}
-            disabled={!hasProject}
-            title="Agents"
-            className={[
-              'w-full flex items-center justify-center p-2 rounded-md transition-all duration-150',
-              !hasProject
-                ? 'text-white/15 cursor-not-allowed'
-                : activeTab === 'landing-agents' || activeTab === 'agents'
-                ? 'bg-orange-500/15 text-orange-400'
-                : 'text-white/30 hover:text-white/60 hover:bg-white/5',
-            ].join(' ')}
-            style={{ minHeight: '34px' }}
-          >
-            <AgentIcon />
-          </button>
-        </div>
-
-        {/* Skills */}
-        <div className="px-2 w-full shrink-0">
-          <button
-            onClick={() => hasProject && onTabChange('landing-skills')}
-            disabled={!hasProject}
-            title="Skills"
-            className={[
-              'w-full flex items-center justify-center p-2 rounded-md transition-all duration-150',
-              !hasProject
-                ? 'text-white/15 cursor-not-allowed'
-                : activeTab === 'landing-skills' || activeTab === 'skills'
-                ? 'bg-orange-500/15 text-orange-400'
-                : 'text-white/30 hover:text-white/60 hover:bg-white/5',
-            ].join(' ')}
-            style={{ minHeight: '34px' }}
-          >
-            <SkillIcon />
-          </button>
-        </div>
-
-        {/* MCP Servers */}
-        <div className="px-2 w-full shrink-0">
-          <button
-            onClick={() => hasProject && onTabChange('landing-mcp')}
-            disabled={!hasProject}
-            title="MCP Servers"
-            className={[
-              'w-full flex items-center justify-center p-2 rounded-md transition-all duration-150',
-              !hasProject
-                ? 'text-white/15 cursor-not-allowed'
-                : activeTab === 'landing-mcp' || activeTab === 'mcp-servers'
-                ? 'bg-orange-500/15 text-orange-400'
-                : 'text-white/30 hover:text-white/60 hover:bg-white/5',
-            ].join(' ')}
-            style={{ minHeight: '34px' }}
-          >
-            <McpIcon />
-          </button>
-        </div>
-
-        <div className="flex-1" />
+        <div style={{ flex: 1 }} />
       </aside>
     );
   }
@@ -300,21 +359,66 @@ export const Sidebar = ({
   // ── Expanded sidebar ───────────────────────────────────────────────────────
 
   return (
-    <aside className="w-65 shrink-0 flex flex-col bg-[#0d0d0f] border-r border-white/6 h-full">
+    <aside style={{
+      width: '260px',
+      flexShrink: 0,
+      display: 'flex',
+      flexDirection: 'column',
+      background: 'var(--bg-sidebar)',
+      borderRight: '1px solid var(--border-faint)',
+      height: '100%',
+    }}>
       {/* App header */}
-      <div className="px-4 pt-5 pb-4 border-b border-white/6 shrink-0">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-orange-500 flex items-center justify-center shrink-0 shadow-[0_0_12px_rgba(249,115,22,0.25)]">
-            <span className="text-[13px] font-bold text-white leading-none">C</span>
+      <div style={{
+        padding: '20px 16px 16px',
+        borderBottom: '1px solid var(--border-faint)',
+        flexShrink: 0,
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{
+            width: '32px',
+            height: '32px',
+            borderRadius: '8px',
+            background: '#2a2a30',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0,
+          }}>
+            <span style={{ fontSize: '13px', fontWeight: 700, color: 'white', lineHeight: 1 }}>C</span>
           </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-[13px] font-semibold text-white/90 leading-tight tracking-tight">Config Studio</p>
-            <p className="text-[11px] text-white/30 font-mono leading-tight mt-0.5">~/.claude/</p>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <p style={{
+              fontSize: '14px',
+              fontWeight: 600,
+              color: 'var(--text-primary)',
+              lineHeight: 1.2,
+            }}>Config Studio</p>
+            <p style={{
+              fontSize: '12px',
+              color: 'var(--text-muted)',
+              fontFamily: 'Fira Code, monospace',
+              lineHeight: 1.2,
+              marginTop: '2px',
+            }}>~/.claude/</p>
           </div>
           <button
             onClick={onToggleCollapsed}
-            className="shrink-0 text-white/20 hover:text-white/55 transition-colors p-1 rounded hover:bg-white/5"
             title="Collapse sidebar"
+            style={{
+              flexShrink: 0,
+              color: 'var(--text-muted)',
+              background: 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+              padding: '4px',
+              borderRadius: '4px',
+              transition: 'color 150ms ease',
+              display: 'flex',
+              alignItems: 'center',
+            }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-secondary)'; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-muted)'; }}
           >
             <ChevronIcon direction="left" />
           </button>
@@ -322,36 +426,56 @@ export const Sidebar = ({
       </div>
 
       {/* Project picker */}
-      <div className="shrink-0">
+      <div style={{ flexShrink: 0 }}>
         <ProjectPicker selectedPath={selectedProjectPath} onSelect={onProjectSelect} />
       </div>
 
       {/* Nav area */}
-      <div className="px-3 pt-3 shrink-0 flex flex-col gap-0.5">
-        {/* Create New */}
-        <div className="relative mb-1.5">
+      <div style={{ padding: '12px 10px 0', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '2px' }}>
+        {/* Create New button */}
+        <div style={{ position: 'relative', marginBottom: '6px' }}>
           <button
             onClick={() => hasProject && setCreateDropdownOpen((v) => !v)}
             disabled={!hasProject}
-            className={[
-              'w-full flex items-center gap-2.5 px-3 py-2 rounded-md text-left transition-all duration-150',
-              'text-[13px] font-semibold',
-              !hasProject
-                ? 'text-white/18 cursor-not-allowed bg-white/2 border border-white/6'
-                : createDropdownOpen
-                ? 'bg-orange-500/20 text-orange-300 border border-orange-500/20'
-                : 'bg-orange-500/10 text-orange-400 border border-orange-500/15 hover:bg-orange-500/15 hover:text-orange-300',
-            ].join(' ')}
-            style={{ minHeight: '34px' }}
+            style={{
+              width: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+              padding: '7px 12px',
+              borderRadius: '8px',
+              textAlign: 'left',
+              fontSize: '14px',
+              fontWeight: 500,
+              minHeight: '34px',
+              transition: 'background 150ms ease',
+              cursor: hasProject ? 'pointer' : 'not-allowed',
+              background: hasProject ? 'var(--accent)' : 'var(--bg-surface)',
+              color: hasProject ? 'white' : 'var(--text-muted)',
+              border: hasProject ? 'none' : '1px solid var(--border-faint)',
+              opacity: hasProject ? 1 : 0.5,
+            }}
+            onMouseEnter={(e) => {
+              if (hasProject) {
+                (e.currentTarget as HTMLButtonElement).style.background = 'var(--accent-hover)';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (hasProject) {
+                (e.currentTarget as HTMLButtonElement).style.background = 'var(--accent)';
+              }
+            }}
           >
-            <span className={!hasProject ? 'text-white/15' : 'text-orange-400'}>
+            <span style={{ color: hasProject ? 'white' : 'var(--text-muted)' }}>
               <PlusIcon />
             </span>
             <span>Create New</span>
-            <span className={[
-              'ml-auto text-[10px] transition-transform duration-150',
-              createDropdownOpen ? 'rotate-180' : '',
-            ].join(' ')}>
+            <span style={{
+              marginLeft: 'auto',
+              transition: 'transform 150ms ease',
+              transform: createDropdownOpen ? 'rotate(180deg)' : 'none',
+              opacity: 0.7,
+            }}>
               <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
                 <path d="M2 3.5L5 6.5L8 3.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
@@ -406,27 +530,70 @@ export const Sidebar = ({
       {/* Recents */}
       {hasProject && recents.length > 0 && (
         <>
-          <div className="mx-3 mt-4 mb-2 border-t border-white/6 shrink-0" />
-          <div className="flex-1 overflow-y-auto min-h-0 pb-2">
-            <div className="px-4 mb-1.5" style={{ minHeight: '24px', display: 'flex', alignItems: 'center' }}>
-              <span className="text-[10px] font-semibold uppercase tracking-widest text-white/20">
+          <div style={{ margin: '16px 12px 8px', borderTop: '1px solid var(--border-faint)', flexShrink: 0 }} />
+          <div style={{ flex: 1, overflowY: 'auto', minHeight: 0, paddingBottom: '8px' }}>
+            <div style={{
+              padding: '0 16px',
+              marginBottom: '6px',
+              minHeight: '24px',
+              display: 'flex',
+              alignItems: 'center',
+            }}>
+              <span style={{
+                fontSize: '11px',
+                fontWeight: 600,
+                textTransform: 'uppercase',
+                letterSpacing: '0.12em',
+                color: 'var(--text-muted)',
+              }}>
                 Recents
               </span>
             </div>
-            <ul>
+            <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
               {recents.map((item, i) => (
                 <li key={`${item.type}:${item.name}:${i}`}>
                   <button
                     onClick={() => onRecentClick(item)}
-                    className="w-full text-left px-4 flex items-center gap-2.5 transition-colors duration-100 text-white/35 hover:text-white/70 hover:bg-white/5"
-                    style={{ minHeight: '28px' }}
                     title={`${recentTypeLabel(item.type)} — ${item.name}`}
+                    style={{
+                      width: '100%',
+                      textAlign: 'left',
+                      padding: '0 16px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '10px',
+                      minHeight: '30px',
+                      background: 'transparent',
+                      border: 'none',
+                      cursor: 'pointer',
+                      color: 'var(--text-secondary)',
+                      transition: 'background 150ms ease, color 150ms ease',
+                    }}
+                    onMouseEnter={(e) => {
+                      (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-hover)';
+                      (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-primary)';
+                    }}
+                    onMouseLeave={(e) => {
+                      (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
+                      (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-secondary)';
+                    }}
                   >
-                    <span className="text-white/20 shrink-0">{recentTypeIcon(item.type)}</span>
-                    <span className="text-[10px] font-semibold uppercase tracking-[0.07em] text-white/20 shrink-0">
+                    <span style={{ color: 'var(--text-muted)', flexShrink: 0 }}>{recentTypeIcon(item.type)}</span>
+                    <span style={{
+                      fontSize: '12px',
+                      fontWeight: 500,
+                      color: 'var(--text-muted)',
+                      flexShrink: 0,
+                    }}>
                       {recentTypeLabel(item.type)}
                     </span>
-                    <span className="text-[12px] font-mono truncate">{item.name}</span>
+                    <span style={{
+                      fontSize: '13px',
+                      fontFamily: "'Instrument Sans', sans-serif",
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                    }}>{item.name}</span>
                   </button>
                 </li>
               ))}
@@ -435,11 +602,21 @@ export const Sidebar = ({
         </>
       )}
 
-      {(!hasProject || recents.length === 0) && <div className="flex-1" />}
+      {(!hasProject || recents.length === 0) && <div style={{ flex: 1 }} />}
 
       {/* Bottom */}
-      <div className="px-3 pb-4 border-t border-white/6 pt-3 shrink-0">
-        <p className="px-3 text-[10px] font-mono text-white/12">v0.1.0-pre</p>
+      <div style={{
+        padding: '12px 12px 16px',
+        borderTop: '1px solid var(--border-faint)',
+        flexShrink: 0,
+      }}>
+        <p style={{
+          padding: '0 10px',
+          fontSize: '11px',
+          fontFamily: 'Fira Code, monospace',
+          color: 'var(--text-muted)',
+          opacity: 0.6,
+        }}>v0.1.0-pre</p>
       </div>
     </aside>
   );

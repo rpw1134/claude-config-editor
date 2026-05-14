@@ -29,9 +29,10 @@ const PlusIcon = () => (
   </svg>
 );
 
-const ChevronRightIcon = () => (
-  <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M4.5 2L8 6L4.5 10" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
+const SearchIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="7" cy="7" r="4.5" stroke="currentColor" strokeWidth="1.3"/>
+    <path d="M10.5 10.5L13.5 13.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
   </svg>
 );
 
@@ -55,58 +56,63 @@ interface TypeLandingPageProps {
 
 interface ItemRowProps {
   name: string;
-  isSelected: boolean;
-  typeIcon: React.ReactNode;
+  isLast: boolean;
   onClick: () => void;
 }
 
-const ItemRow = ({ name, isSelected, typeIcon, onClick }: ItemRowProps) => (
+const ItemRow = ({ name, isLast, onClick }: ItemRowProps) => (
   <button
     onClick={onClick}
-    className={[
-      'group w-full flex items-center gap-3 px-4 py-3 rounded-lg border text-left transition-all duration-150',
-      isSelected
-        ? 'bg-orange-500/10 border-orange-500/25 text-orange-300'
-        : 'bg-white/[0.02] border-white/6 text-white/65 hover:bg-white/[0.04] hover:border-white/10 hover:text-white/90',
-    ].join(' ')}
+    style={{
+      width: '100%',
+      display: 'flex',
+      alignItems: 'center',
+      padding: '0 4px 0 16px',
+      minHeight: '64px',
+      borderRadius: 0,
+      border: 'none',
+      borderBottom: isLast ? 'none' : '1px solid var(--border-faint)',
+      textAlign: 'left',
+      cursor: 'pointer',
+      background: 'transparent',
+      color: 'var(--text-secondary)',
+      transition: 'background 120ms ease, color 120ms ease',
+    }}
+    onMouseEnter={(e) => {
+      const el = e.currentTarget as HTMLButtonElement;
+      el.style.background = 'var(--bg-hover)';
+      el.style.color = 'var(--text-primary)';
+    }}
+    onMouseLeave={(e) => {
+      const el = e.currentTarget as HTMLButtonElement;
+      el.style.background = 'transparent';
+      el.style.color = 'var(--text-secondary)';
+    }}
   >
-    <span className={[
-      'shrink-0 transition-colors',
-      isSelected ? 'text-orange-400' : 'text-white/25 group-hover:text-white/45',
-    ].join(' ')}>
-      {typeIcon}
-    </span>
-    <span className="flex-1 font-mono text-[13px] truncate">{name}</span>
-    <span className={[
-      'shrink-0 transition-colors',
-      isSelected ? 'text-orange-400/70' : 'text-white/15 group-hover:text-white/35',
-    ].join(' ')}>
-      <ChevronRightIcon />
+    <span style={{
+      fontFamily: "'Instrument Sans', sans-serif",
+      fontSize: '17px',
+      fontWeight: 500,
+      overflow: 'hidden',
+      textOverflow: 'ellipsis',
+      whiteSpace: 'nowrap',
+    }}>
+      {name}
     </span>
   </button>
 );
 
 // ── Generic landing page ──────────────────────────────────────────────────────
 
-export const TypeLandingPage = ({
-  type,
-  title,
-  description,
-  icon,
-  projectPath,
-  selectedName,
-  refreshKey,
-  onSelect,
-  onNew,
-}: TypeLandingPageProps) => {
+export const TypeLandingPage = (props: TypeLandingPageProps) => {
+  const { type, title, projectPath, refreshKey, onSelect, onNew } = props;
   const [items, setItems] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [query, setQuery] = useState('');
 
   useEffect(() => {
     let cancelled = false;
-    setLoading(true);
-    setError(null);
 
     const fetcher =
       type === 'agent'
@@ -119,6 +125,7 @@ export const TypeLandingPage = ({
       .then((data) => {
         if (cancelled) return;
         setItems(data);
+        setError(null);
         setLoading(false);
       })
       .catch((err: unknown) => {
@@ -130,56 +137,130 @@ export const TypeLandingPage = ({
     return () => { cancelled = true; };
   }, [projectPath, type, refreshKey]);
 
-  const smallIcon = type === 'agent'
-    ? <AgentIcon size={14} />
-    : type === 'skill'
-    ? <SkillIcon size={14} />
-    : <McpIcon size={14} />;
+  const filtered = query.trim()
+    ? items.filter((name) => name.toLowerCase().includes(query.trim().toLowerCase()))
+    : items;
+
+  // singular label for new button: strip trailing 's', handle 'MCP Servers' edge case
+  const singularType = title === 'MCP Servers' ? 'MCP Server' : title.replace(/s$/, '');
 
   return (
-    <div className="flex-1 flex flex-col min-h-0 overflow-y-auto">
-      <div className="w-full max-w-2xl mx-auto px-8 py-10">
-        {/* Page header */}
-        <div className="flex items-start justify-between mb-8">
-          <div className="flex items-center gap-4">
-            <div className="w-10 h-10 rounded-xl bg-white/[0.04] border border-white/8 flex items-center justify-center text-white/40 shrink-0">
-              {icon}
-            </div>
-            <div>
-              <h1 className="text-[20px] font-semibold text-white/90 tracking-tight leading-tight">
-                {title}
-              </h1>
-              <p className="mt-0.5 text-[12px] text-white/35 leading-snug">{description}</p>
-            </div>
-          </div>
+    <div style={{
+      flex: 1,
+      display: 'flex',
+      flexDirection: 'column',
+      minHeight: 0,
+      overflowY: 'auto',
+      background: 'var(--bg-base)',
+    }}>
+      <div style={{
+        width: '100%',
+        padding: '48px 56px',
+      }}>
+
+        {/* Heading row */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: '32px',
+        }}>
+          <h1 style={{
+            fontFamily: "'Bricolage Grotesque', sans-serif",
+            fontSize: '40px',
+            fontWeight: 700,
+            color: 'var(--text-primary)',
+            letterSpacing: '-0.03em',
+            lineHeight: 1.05,
+            margin: 0,
+          }}>
+            {title}
+          </h1>
 
           <button
             onClick={onNew}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-orange-500 text-white text-[13px] font-semibold hover:bg-orange-400 transition-colors shadow-[0_0_16px_rgba(249,115,22,0.25)] shrink-0 ml-4"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '7px',
+              padding: '8px 16px',
+              borderRadius: '8px',
+              background: 'var(--accent)',
+              color: 'white',
+              fontSize: '14px',
+              fontWeight: 500,
+              border: 'none',
+              cursor: 'pointer',
+              flexShrink: 0,
+              transition: 'background 150ms ease',
+            }}
+            onMouseEnter={(e) => {
+              (e.currentTarget as HTMLButtonElement).style.background = 'var(--accent-hover)';
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLButtonElement).style.background = 'var(--accent)';
+            }}
           >
             <PlusIcon />
-            New {title.replace(/s$/, '')}
+            New {singularType}
           </button>
         </div>
 
-        {/* Divider */}
-        <div className="border-t border-white/6 mb-6" />
-
-        {/* Item count label */}
-        {!loading && !error && items.length > 0 && (
-          <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-white/20 mb-3">
-            {items.length} {items.length === 1 ? title.replace(/s$/, '') : title}
-          </p>
-        )}
+        {/* Search bar */}
+        <div style={{ position: 'relative', marginBottom: '24px' }}>
+          <span style={{
+            position: 'absolute',
+            left: '14px',
+            top: '50%',
+            transform: 'translateY(-50%)',
+            color: 'var(--text-muted)',
+            display: 'flex',
+            alignItems: 'center',
+            pointerEvents: 'none',
+          }}>
+            <SearchIcon />
+          </span>
+          <input
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder={`Search ${title.toLowerCase()}...`}
+            style={{
+              width: '100%',
+              height: '44px',
+              paddingLeft: '40px',
+              paddingRight: '14px',
+              background: 'var(--bg-surface)',
+              border: '1px solid var(--border-subtle)',
+              borderRadius: '10px',
+              fontSize: '15px',
+              color: 'var(--text-primary)',
+              outline: 'none',
+              boxSizing: 'border-box',
+              transition: 'border-color 120ms ease',
+            }}
+            onFocus={(e) => {
+              e.currentTarget.style.borderColor = 'var(--border-default)';
+            }}
+            onBlur={(e) => {
+              e.currentTarget.style.borderColor = 'var(--border-subtle)';
+            }}
+          />
+        </div>
 
         {/* Loading */}
         {loading && (
-          <div className="flex flex-col gap-2">
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
             {[1, 2, 3].map((i) => (
               <div
                 key={i}
-                className="h-12 rounded-lg bg-white/[0.025] border border-white/6 animate-pulse"
-                style={{ opacity: 1 - i * 0.2 }}
+                className="shimmer"
+                style={{
+                  height: '64px',
+                  borderBottom: i < 3 ? '1px solid var(--border-faint)' : 'none',
+                  background: 'var(--bg-surface)',
+                  animationDelay: `${(i - 1) * 0.15}s`,
+                }}
               />
             ))}
           </div>
@@ -187,42 +268,58 @@ export const TypeLandingPage = ({
 
         {/* Error */}
         {error && !loading && (
-          <div className="px-4 py-3 rounded-lg bg-rose-500/8 border border-rose-500/15 text-rose-400 text-[12px] font-mono">
+          <div style={{
+            padding: '12px 16px',
+            borderRadius: '8px',
+            background: 'rgba(248, 113, 113, 0.08)',
+            border: '1px solid rgba(248, 113, 113, 0.2)',
+            color: 'var(--error)',
+            fontSize: '13px',
+          }}>
             {error}
           </div>
         )}
 
-        {/* Empty state */}
+        {/* Empty state — no items at all */}
         {!loading && !error && items.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-16 text-center">
-            <div className="w-12 h-12 rounded-xl bg-white/[0.03] border border-white/6 flex items-center justify-center text-white/20 mb-4">
-              {icon}
-            </div>
-            <p className="text-[13px] text-white/35 leading-snug">
+          <div style={{
+            paddingTop: '64px',
+            textAlign: 'center',
+          }}>
+            <p style={{
+              fontSize: '15px',
+              color: 'var(--text-muted)',
+              margin: 0,
+            }}>
               No {title.toLowerCase()} yet
             </p>
-            <p className="mt-1 text-[12px] text-white/20">
-              Create one to get started
+          </div>
+        )}
+
+        {/* Empty state — search has no results */}
+        {!loading && !error && items.length > 0 && filtered.length === 0 && (
+          <div style={{
+            paddingTop: '64px',
+            textAlign: 'center',
+          }}>
+            <p style={{
+              fontSize: '15px',
+              color: 'var(--text-muted)',
+              margin: 0,
+            }}>
+              No results for "{query.trim()}"
             </p>
-            <button
-              onClick={onNew}
-              className="mt-5 flex items-center gap-2 px-4 py-2 rounded-lg bg-white/5 border border-white/8 text-white/50 hover:text-white/80 hover:bg-white/8 text-[12px] font-medium transition-all duration-150"
-            >
-              <PlusIcon />
-              New {title.replace(/s$/, '')}
-            </button>
           </div>
         )}
 
         {/* List */}
-        {!loading && !error && items.length > 0 && (
-          <div className="flex flex-col gap-1.5">
-            {items.map((name) => (
+        {!loading && !error && filtered.length > 0 && (
+          <div>
+            {filtered.map((name, idx) => (
               <ItemRow
                 key={name}
                 name={name}
-                isSelected={selectedName === name}
-                typeIcon={smallIcon}
+                isLast={idx === filtered.length - 1}
                 onClick={() => onSelect(name)}
               />
             ))}

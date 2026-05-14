@@ -50,34 +50,95 @@ export const ProjectPicker = ({ selectedPath, onSelect }: ProjectPickerProps) =>
   };
 
   return (
-    <div ref={containerRef} className="relative px-3 py-3 border-b border-white/6">
-      <p className="px-2 mb-1.5 text-[10px] font-semibold uppercase tracking-[0.1em] text-white/20">Project</p>
+    <div ref={containerRef} style={{
+      position: 'relative',
+      padding: '12px 12px',
+      borderBottom: '1px solid var(--border-faint)',
+    }}>
+      <p style={{
+        padding: '0 8px',
+        marginBottom: '6px',
+        fontSize: '11px',
+        fontWeight: 600,
+        textTransform: 'uppercase',
+        letterSpacing: '0.12em',
+        color: 'var(--text-muted)',
+      }}>Project</p>
       <button
         onClick={() => setOpen((v) => !v)}
-        className={[
-          'w-full flex items-center justify-between gap-2 px-3 py-2 rounded-md transition-all duration-150',
-          'text-left text-[12px]',
-          open ? 'bg-white/8 text-white/80' : 'bg-white/4 text-white/50 hover:bg-white/6 hover:text-white/70',
-        ].join(' ')}
-        style={{ minHeight: '34px' }}
+        style={{
+          width: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '8px',
+          padding: '8px 12px',
+          borderRadius: '6px',
+          textAlign: 'left',
+          fontSize: '14px',
+          minHeight: '36px',
+          cursor: 'pointer',
+          border: '1px solid var(--border-subtle)',
+          background: open ? 'var(--bg-elevated)' : 'var(--bg-surface)',
+          color: open
+            ? 'var(--text-primary)'
+            : selected
+            ? 'var(--text-secondary)'
+            : 'var(--text-muted)',
+          transition: 'all 150ms ease',
+        }}
+        onMouseEnter={(e) => {
+          if (!open) {
+            (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-elevated)';
+            (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-secondary)';
+          }
+        }}
+        onMouseLeave={(e) => {
+          if (!open) {
+            (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-surface)';
+            (e.currentTarget as HTMLButtonElement).style.color = selected ? 'var(--text-secondary)' : 'var(--text-muted)';
+          }
+        }}
       >
         {loading ? (
-          <span className="text-white/25 font-mono">Loading…</span>
+          <span style={{ fontFamily: 'Fira Code, monospace', color: 'var(--text-muted)', fontSize: '13px' }}>Loading…</span>
         ) : selected ? (
-          <span className="font-medium text-white/80 truncate">{selected.name}</span>
+          <span style={{ fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{selected.name}</span>
         ) : (
-          <span className="text-white/30 italic">Select a project…</span>
+          <span style={{ fontStyle: 'italic', color: 'var(--text-muted)' }}>Select a project…</span>
         )}
-        <span className={['shrink-0 transition-transform', open ? 'rotate-180' : ''].join(' ')}>
+        <span style={{
+          flexShrink: 0,
+          transform: open ? 'rotate(180deg)' : 'none',
+          transition: 'transform 150ms ease',
+          color: 'var(--text-muted)',
+        }}>
           <ChevronIcon />
         </span>
       </button>
 
       {open && (
-        <div className="absolute left-3 right-3 top-full mt-1 z-50 rounded-md border border-white/10 bg-[#161618] shadow-xl overflow-hidden">
-          <div className="max-h-[260px] overflow-y-auto">
+        <div style={{
+          position: 'absolute',
+          left: '12px',
+          right: '12px',
+          top: '100%',
+          marginTop: '4px',
+          zIndex: 50,
+          borderRadius: '8px',
+          border: '1px solid var(--border-default)',
+          background: 'var(--bg-elevated)',
+          boxShadow: '0 4px 24px rgba(0,0,0,0.4)',
+          overflow: 'hidden',
+        }}>
+          <div style={{ maxHeight: '260px', overflowY: 'auto' }}>
             {projects.length === 0 ? (
-              <p className="px-3 py-2.5 text-[12px] text-white/25 font-mono">No projects found</p>
+              <p style={{
+                padding: '10px 12px',
+                fontSize: '13px',
+                color: 'var(--text-muted)',
+                fontFamily: 'Fira Code, monospace',
+              }}>No projects found</p>
             ) : (
               projects.map((project) => {
                 const isActive = project.path === selectedPath;
@@ -86,29 +147,72 @@ export const ProjectPicker = ({ selectedPath, onSelect }: ProjectPickerProps) =>
                   <button
                     key={project.path}
                     onClick={() => handleSelect(project)}
-                    className={[
-                      'w-full text-left px-3 py-2.5 flex items-start gap-2 transition-colors duration-100',
-                      isActive ? 'bg-orange-500/12' : 'hover:bg-white/5',
-                    ].join(' ')}
+                    style={{
+                      width: '100%',
+                      textAlign: 'left',
+                      padding: '10px 12px',
+                      display: 'flex',
+                      alignItems: 'flex-start',
+                      gap: '8px',
+                      background: isActive ? 'var(--accent-dim)' : 'transparent',
+                      border: 'none',
+                      cursor: 'pointer',
+                      transition: 'background 100ms ease',
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!isActive) (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-hover)';
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isActive) (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
+                    }}
                   >
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className={[
-                          'text-[12px] font-medium leading-tight',
-                          isActive ? 'text-orange-300' : 'text-white/70',
-                        ].join(' ')}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{
+                          fontSize: '14px',
+                          fontWeight: 500,
+                          lineHeight: 1.3,
+                          color: isActive ? 'var(--text-accent)' : 'var(--text-primary)',
+                        }}>
                           {project.name}
                         </span>
                         {isGlobal && (
-                          <span className="inline-flex items-center px-1 py-px rounded text-[9px] font-bold uppercase tracking-wider bg-orange-500/15 text-orange-400/80 border border-orange-500/20">
+                          <span style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            padding: '1px 5px',
+                            borderRadius: '4px',
+                            fontSize: '11px',
+                            fontWeight: 600,
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.05em',
+                            background: 'var(--bg-surface)',
+                            color: 'var(--text-muted)',
+                            border: '1px solid var(--border-subtle)',
+                          }}>
                             Global
                           </span>
                         )}
                       </div>
-                      <p className="font-mono text-[10px] text-white/25 truncate mt-0.5">{project.path}</p>
+                      <p style={{
+                        fontFamily: 'Fira Code, monospace',
+                        fontSize: '11px',
+                        color: 'var(--text-muted)',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                        marginTop: '2px',
+                      }}>{project.path}</p>
                     </div>
                     {isActive && (
-                      <span className="shrink-0 mt-1 w-1.5 h-1.5 rounded-full bg-orange-500" />
+                      <span style={{
+                        flexShrink: 0,
+                        marginTop: '4px',
+                        width: '6px',
+                        height: '6px',
+                        borderRadius: '50%',
+                        background: 'var(--accent)',
+                      }} />
                     )}
                   </button>
                 );

@@ -32,15 +32,39 @@ export const SidebarListSection = ({
   onSelect,
   onNew,
 }: SidebarListSectionProps) => (
-  <div className="mb-1">
+  <div style={{ marginBottom: '4px' }}>
     {/* Section header */}
-    <div className="flex items-center justify-between px-4 mb-0.5" style={{ minHeight: '28px' }}>
-      <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-white/20">
+    <div style={{
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      padding: '0 16px',
+      minHeight: '28px',
+    }}>
+      <span style={{
+        fontSize: '11px',
+        fontWeight: 600,
+        textTransform: 'uppercase',
+        letterSpacing: '0.12em',
+        color: 'var(--text-muted)',
+      }}>
         {label}
       </span>
       <button
         onClick={onNew}
-        className="text-white/20 hover:text-white/60 transition-colors rounded p-0.5 -mr-0.5"
+        style={{
+          color: 'var(--text-muted)',
+          background: 'transparent',
+          border: 'none',
+          cursor: 'pointer',
+          borderRadius: '4px',
+          padding: '2px',
+          display: 'flex',
+          alignItems: 'center',
+          transition: 'color 150ms ease',
+        }}
+        onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-secondary)'; }}
+        onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-muted)'; }}
         aria-label={`New ${label}`}
       >
         <PlusIcon />
@@ -49,48 +73,90 @@ export const SidebarListSection = ({
 
     {/* Item list */}
     {loading && (
-      <div className="px-4 py-1">
-        <span className="text-[11px] text-white/15 font-mono">Loading…</span>
+      <div style={{ padding: '4px 16px' }}>
+        <span style={{
+          fontSize: '13px',
+          color: 'var(--text-muted)',
+          fontFamily: 'Fira Code, monospace',
+        }}>Loading…</span>
       </div>
     )}
 
     {error && !loading && (
-      <div className="px-4 py-1">
-        <span className="text-[11px] text-rose-400/50 font-mono">Error</span>
+      <div style={{ padding: '4px 16px' }}>
+        <span style={{
+          fontSize: '13px',
+          color: 'var(--error)',
+          fontFamily: 'Fira Code, monospace',
+          opacity: 0.7,
+        }}>Error</span>
       </div>
     )}
 
     {!loading && !error && items.length === 0 && (
-      <div className="px-4 py-1">
-        <span className="text-[11px] text-white/15 font-mono italic">{emptyText}</span>
+      <div style={{ padding: '4px 16px' }}>
+        <span style={{
+          fontSize: '13px',
+          color: 'var(--text-muted)',
+          fontFamily: 'Fira Code, monospace',
+          fontStyle: 'italic',
+        }}>{emptyText}</span>
       </div>
     )}
 
     {!loading && !error && items.length > 0 && (
-      <ul>
+      <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
         {items.map((name) => {
           const isSelected = selectedName === name;
           return (
             <li key={name}>
               <button
                 onClick={() => onSelect(name)}
-                className={[
-                  'w-full text-left px-4 py-0 flex items-center gap-2.5 transition-colors duration-100',
-                  'text-[12px] font-mono truncate',
-                  isSelected
-                    ? 'text-orange-300 bg-orange-500/10'
-                    : 'text-white/40 hover:text-white/75 hover:bg-white/5',
-                ].join(' ')}
-                style={{ minHeight: '28px' }}
                 title={name}
+                style={{
+                  width: '100%',
+                  textAlign: 'left',
+                  padding: '0 16px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px',
+                  minHeight: '28px',
+                  background: isSelected ? 'var(--accent-dim)' : 'transparent',
+                  border: 'none',
+                  cursor: 'pointer',
+                  color: isSelected ? 'var(--text-accent)' : 'var(--text-secondary)',
+                  fontSize: '13px',
+                  fontFamily: 'Fira Code, monospace',
+                  overflow: 'hidden',
+                  transition: 'background 100ms ease, color 100ms ease',
+                }}
+                onMouseEnter={(e) => {
+                  if (!isSelected) {
+                    (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-hover)';
+                    (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-primary)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!isSelected) {
+                    (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
+                    (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-secondary)';
+                  }
+                }}
               >
-                <span
-                  className={[
-                    'shrink-0 w-1 h-1 rounded-full transition-colors',
-                    isSelected ? 'bg-orange-400' : 'bg-white/15',
-                  ].join(' ')}
-                />
-                <span className="truncate">{name}</span>
+                <span style={{
+                  flexShrink: 0,
+                  width: '5px',
+                  height: '5px',
+                  borderRadius: '50%',
+                  background: isSelected ? 'var(--accent)' : 'var(--text-muted)',
+                  opacity: isSelected ? 1 : 0.5,
+                  transition: 'background 100ms ease',
+                }} />
+                <span style={{
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                }}>{name}</span>
               </button>
             </li>
           );
