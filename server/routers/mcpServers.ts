@@ -1,6 +1,7 @@
 import express from "express";
 import type { NextFunction, Request, Response, Router } from "express";
-import { getMcpServer, setMcpServer, createMcpServer } from "../services/claudeConfig.js";
+import { getMcpServer, setMcpServer, createMcpServer, deleteMcpServer } from "../services/claudeConfig.js";
+import { validateProjectPath } from "../utils/parsing.js";
 
 const router: Router = express.Router();
 
@@ -8,8 +9,14 @@ router.get(
   "/:key",
   async (req: Request, res: Response, next: NextFunction) => {
     const { key } = req.params;
+    let projectPath: string;
     try {
-      const server = await getMcpServer(key);
+      projectPath = validateProjectPath(req.query.projectPath);
+    } catch (e) {
+      return res.status(400).json({ message: (e as Error).message });
+    }
+    try {
+      const server = await getMcpServer(projectPath, key);
       if (server === null) {
         return res.status(404).json({ message: "MCP server not found" });
       }
@@ -24,7 +31,13 @@ router.put(
   "/:key",
   async (req: Request, res: Response, next: NextFunction) => {
     const { key } = req.params;
-    const { content } = req.body as { content?: unknown };
+    const { projectPath: rawPath, content } = req.body as { projectPath?: unknown; content?: unknown };
+    let projectPath: string;
+    try {
+      projectPath = validateProjectPath(rawPath);
+    } catch (e) {
+      return res.status(400).json({ message: (e as Error).message });
+    }
     if (typeof content !== "string") {
       return res.status(400).json({ message: "content must be a string" });
     }
@@ -35,7 +48,7 @@ router.put(
       return res.status(400).json({ message: "content must be valid JSON" });
     }
     try {
-      await setMcpServer(key, parsed);
+      await setMcpServer(projectPath, key, parsed);
       res.status(200).json({ message: "MCP server saved" });
     } catch (err) {
       next(err);
@@ -46,7 +59,17 @@ router.put(
 router.post(
   "/",
   async (req: Request, res: Response, next: NextFunction) => {
-    const { name, content } = req.body as { name?: unknown; content?: unknown };
+    const { projectPath: rawPath, name, content } = req.body as {
+      projectPath?: unknown;
+      name?: unknown;
+      content?: unknown;
+    };
+    let projectPath: string;
+    try {
+      projectPath = validateProjectPath(rawPath);
+    } catch (e) {
+      return res.status(400).json({ message: (e as Error).message });
+    }
     if (typeof name !== "string" || typeof content !== "string") {
       return res.status(400).json({ message: "name and content must be strings" });
     }
@@ -60,12 +83,35 @@ router.post(
       return res.status(400).json({ message: "content must be valid JSON" });
     }
     try {
-      await createMcpServer(name, parsed);
+      await createMcpServer(projectPath, name, parsed);
       res.status(201).json({ message: "MCP server created" });
     } catch (err) {
       const error = err as Error;
       if (error.message.includes("already exists")) {
         return res.status(409).json({ message: error.message });
+      }
+      next(err);
+    }
+  },
+);
+
+router.delete(
+  "/:key",
+  async (req: Request, res: Response, next: NextFunction) => {
+    const { key } = req.params;
+    let projectPath: string;
+    try {
+      projectPath = validateProjectPath(req.query.projectPath);
+    } catch (e) {
+      return res.status(400).json({ message: (e as Error).message });
+    }
+    try {
+      await deleteMcpServer(projectPath, key);
+      res.status(200).json({ message: "MCP server deleted" });
+    } catch (err) {
+      const error = err as Error;
+      if (error.message.includes("not found")) {
+        return res.status(404).json({ message: error.message });
       }
       next(err);
     }

@@ -1,15 +1,15 @@
 import { useState } from 'react';
 import { Sidebar } from './components/Sidebar';
-import { ProjectsSection } from './components/sections/ProjectsSection';
 import { AgentsSection } from './components/sections/AgentsSection';
 import { SkillsSection } from './components/sections/SkillsSection';
 import { McpServersSection } from './components/sections/McpServersSection';
 import { EditorPane } from './components/Editor/EditorPane';
 
-type ActiveTab = 'projects' | 'agents' | 'skills' | 'mcp-servers';
+type ActiveTab = 'claude-md' | 'agents' | 'skills' | 'mcp-servers';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<ActiveTab>('projects');
+  const [activeTab, setActiveTab] = useState<ActiveTab>('claude-md');
+  const [selectedProjectPath, setSelectedProjectPath] = useState<string | null>(null);
   const [selectedName, setSelectedName] = useState<string | null>(null);
   const [creatingType, setCreatingType] = useState<'agent' | 'skill' | 'mcp-server' | null>(null);
   const [agentsRefreshKey, setAgentsRefreshKey] = useState(0);
@@ -20,6 +20,14 @@ export default function App() {
     setActiveTab(tab as ActiveTab);
     setSelectedName(null);
     setCreatingType(null);
+  };
+
+  const handleProjectSelect = (path: string) => {
+    setSelectedProjectPath(path);
+    setSelectedName(null);
+    setCreatingType(null);
+    // Reset to CLAUDE.md tab when switching projects
+    setActiveTab('claude-md');
   };
 
   const handleNewAgent = () => {
@@ -51,16 +59,8 @@ export default function App() {
     setSelectedName(null);
   };
 
-  const isSplitTab =
-    activeTab === 'agents' ||
-    activeTab === 'skills' ||
-    activeTab === 'mcp-servers' ||
-    activeTab === 'projects';
-
-  const showEditor = isSplitTab && (selectedName !== null || creatingType !== null);
-
   const editorType =
-    activeTab === 'projects'
+    activeTab === 'claude-md'
       ? 'project'
       : activeTab === 'agents'
       ? 'agent'
@@ -68,17 +68,28 @@ export default function App() {
       ? 'mcp-server'
       : 'skill';
 
-  // Key that changes whenever we switch between create and edit mode so
-  // EditorPane remounts and its local state (draftName, createStatus, content)
-  // starts clean each time.
-  const editorKey =
-    creatingType !== null ? `create:${creatingType}` : `edit:${activeTab}:${selectedName}`;
+  // CLAUDE.md tab: editor is always open for the selected project
+  const isClaudeMdTab = activeTab === 'claude-md';
+  const isSplitTab = activeTab === 'agents' || activeTab === 'skills' || activeTab === 'mcp-servers';
+  const showEditor =
+    (isClaudeMdTab && selectedProjectPath !== null) ||
+    (isSplitTab && (selectedName !== null || creatingType !== null));
+
+  const editorKey = isClaudeMdTab
+    ? `claude-md:${selectedProjectPath}`
+    : creatingType !== null
+    ? `create:${creatingType}:${selectedProjectPath}`
+    : `edit:${activeTab}:${selectedProjectPath}:${selectedName}`;
+
+  const editorName = isClaudeMdTab ? selectedProjectPath : (creatingType !== null ? null : selectedName);
 
   const sectionContent = (() => {
+    if (!selectedProjectPath) return null;
     switch (activeTab) {
       case 'agents':
         return (
           <AgentsSection
+            projectPath={selectedProjectPath}
             selectedName={selectedName}
             onSelect={setSelectedName}
             onNew={handleNewAgent}
@@ -88,6 +99,7 @@ export default function App() {
       case 'skills':
         return (
           <SkillsSection
+            projectPath={selectedProjectPath}
             selectedName={selectedName}
             onSelect={setSelectedName}
             onNew={handleNewSkill}
@@ -97,6 +109,7 @@ export default function App() {
       case 'mcp-servers':
         return (
           <McpServersSection
+            projectPath={selectedProjectPath}
             selectedName={selectedName}
             onSelect={setSelectedName}
             onNew={handleNewMcpServer}
@@ -104,19 +117,58 @@ export default function App() {
           />
         );
       default:
-        return (
-          <ProjectsSection
-            selectedPath={selectedName}
-            onSelect={setSelectedName}
-          />
-        );
+        return null;
     }
   })();
 
+  const sidebar = (
+    <Sidebar
+      activeTab={activeTab}
+      onTabChange={handleTabChange}
+      selectedProjectPath={selectedProjectPath}
+      onProjectSelect={handleProjectSelect}
+    />
+  );
+
+  // No project selected — empty state
+  if (!selectedProjectPath) {
+    return (
+      <div className="flex h-screen bg-[#0a0a0c] text-white overflow-hidden">
+        {sidebar}
+        <main className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <p className="text-[13px] text-white/25 font-mono">Select a project to get started</p>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  // CLAUDE.md tab always shows full-width editor
+  if (isClaudeMdTab) {
+    return (
+      <div className="flex h-screen bg-[#0a0a0c] text-white overflow-hidden">
+        {sidebar}
+        <main className="flex flex-1 overflow-hidden">
+          <EditorPane
+            key={editorKey}
+            name={editorName}
+            type="project"
+            projectPath={selectedProjectPath}
+            onClose={() => {}}
+            onCreated={handleCreated}
+            onDeleted={handleDeleted}
+          />
+        </main>
+      </div>
+    );
+  }
+
+  // Split-pane layout for agents/skills/mcp-servers
   if (showEditor) {
     return (
       <div className="flex h-screen bg-[#0a0a0c] text-white overflow-hidden">
-        <Sidebar activeTab={activeTab} onTabChange={handleTabChange} />
+        {sidebar}
         <main className="flex flex-1 overflow-hidden">
           <div className="w-90 shrink-0 overflow-y-auto px-8 py-8">
             {sectionContent}
@@ -124,8 +176,9 @@ export default function App() {
           <div className="flex-1 min-w-0">
             <EditorPane
               key={editorKey}
-              name={creatingType !== null ? null : selectedName}
+              name={editorName}
               type={editorType}
+              projectPath={selectedProjectPath}
               onClose={() => { setSelectedName(null); setCreatingType(null); }}
               onCreated={handleCreated}
               onDeleted={handleDeleted}
@@ -138,7 +191,7 @@ export default function App() {
 
   return (
     <div className="flex h-screen bg-[#0a0a0c] text-white overflow-hidden">
-      <Sidebar activeTab={activeTab} onTabChange={handleTabChange} />
+      {sidebar}
       <main className="flex-1 overflow-y-auto">
         <div className="max-w-2xl mx-auto px-8 py-8">
           {sectionContent}

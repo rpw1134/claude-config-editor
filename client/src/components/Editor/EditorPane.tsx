@@ -19,6 +19,7 @@ import { Editor } from "./Editor";
 interface EditorPaneProps {
   name: string | null;
   type: "agent" | "skill" | "mcp-server" | "project";
+  projectPath: string | null;
   onClose: () => void;
   onCreated?: (name: string) => void;
   onDeleted?: () => void;
@@ -220,7 +221,7 @@ const EditHeader = ({
 // EditorPane — composes the two header modes
 // ------------------------------------------------------------
 
-export const EditorPane = ({ name, type, onClose, onCreated, onDeleted }: EditorPaneProps) => {
+export const EditorPane = ({ name, type, projectPath, onClose, onCreated, onDeleted }: EditorPaneProps) => {
   // Edit mode state
   const [content, setContent] = useState("");
   const [savedContent, setSavedContent] = useState("");
@@ -237,7 +238,7 @@ export const EditorPane = ({ name, type, onClose, onCreated, onDeleted }: Editor
   const isCreateMode = name === null;
 
   // Edit mode derived values
-  const currentKey = `${type}:${name}`;
+  const currentKey = `${type}:${projectPath}:${name}`;
   const loading = !isCreateMode && loadedKey !== currentKey;
   const dirty = !loading && !isCreateMode && content !== savedContent;
   const saving = saveStatus === "saving";
@@ -245,28 +246,33 @@ export const EditorPane = ({ name, type, onClose, onCreated, onDeleted }: Editor
   // Fetch content in edit mode
   useEffect(() => {
     if (isCreateMode) return;
-    const fetchFn =
-      type === "agent"
-        ? fetchAgentContent
-        : type === "skill"
-        ? fetchSkillContent
-        : type === "project"
-        ? fetchProjectContent
-        : fetchMcpServerContent;
-    fetchFn(name)
-      .then((text) => {
+    const fetchContent = async () => {
+      try {
+        let text: string;
+        if (type === "project") {
+          text = await fetchProjectContent(name);
+        } else if (type === "agent" && projectPath) {
+          text = await fetchAgentContent(projectPath, name);
+        } else if (type === "skill" && projectPath) {
+          text = await fetchSkillContent(projectPath, name);
+        } else if (type === "mcp-server" && projectPath) {
+          text = await fetchMcpServerContent(projectPath, name);
+        } else {
+          text = "";
+        }
         setContent(text);
         setSavedContent(text);
         setLoadedKey(currentKey);
         setSaveStatus("idle");
-      })
-      .catch(() => {
+      } catch {
         setContent("");
         setSavedContent("");
         setLoadedKey(currentKey);
         setSaveStatus("idle");
-      });
-  }, [name, type, currentKey, isCreateMode]);
+      }
+    };
+    fetchContent();
+  }, [name, type, projectPath, currentKey, isCreateMode]);
 
   // Clear any pending timers on unmount
   useEffect(() => {
@@ -279,17 +285,17 @@ export const EditorPane = ({ name, type, onClose, onCreated, onDeleted }: Editor
   }, []);
 
   const handleSave = async () => {
-    if (loading || !dirty || saving || isCreateMode) return;
+    if (loading || !dirty || saving || isCreateMode || !name) return;
     setSaveStatus("saving");
     try {
-      if (type === "agent") {
-        await updateAgentContent(name, content);
-      } else if (type === "skill") {
-        await updateSkillContent(name, content);
+      if (type === "agent" && projectPath) {
+        await updateAgentContent(projectPath, name, content);
+      } else if (type === "skill" && projectPath) {
+        await updateSkillContent(projectPath, name, content);
       } else if (type === "project") {
         await updateProjectContent(name, content);
-      } else {
-        await updateMcpServerContent(name, content);
+      } else if (type === "mcp-server" && projectPath) {
+        await updateMcpServerContent(projectPath, name, content);
       }
       setSavedContent(content);
       setSaveStatus("saved");
@@ -310,8 +316,8 @@ export const EditorPane = ({ name, type, onClose, onCreated, onDeleted }: Editor
     if (deleteTimer.current !== null) clearTimeout(deleteTimer.current);
     setDeleteStatus("deleting");
     try {
-      if (type === "agent") await deleteAgent(name);
-      else if (type === "skill") await deleteSkill(name);
+      if (type === "agent" && projectPath) await deleteAgent(projectPath, name);
+      else if (type === "skill" && projectPath) await deleteSkill(projectPath, name);
       onDeleted?.();
     } catch {
       setDeleteStatus("error");
@@ -336,16 +342,16 @@ export const EditorPane = ({ name, type, onClose, onCreated, onDeleted }: Editor
 
   const handleCreate = async () => {
     const trimmed = draftName.trim();
-    if (trimmed === "" || createStatus === "creating") return;
+    if (trimmed === "" || createStatus === "creating" || !projectPath) return;
     setCreateStatus("creating");
     try {
-      const createFn =
-        type === "agent"
-          ? createAgent
-          : type === "skill"
-          ? createSkill
-          : createMcpServer;
-      await createFn(trimmed, content);
+      if (type === "agent") {
+        await createAgent(projectPath, trimmed, content);
+      } else if (type === "skill") {
+        await createSkill(projectPath, trimmed, content);
+      } else if (type === "mcp-server") {
+        await createMcpServer(projectPath, trimmed, content);
+      }
       onCreated?.(trimmed);
     } catch {
       setCreateStatus("error");

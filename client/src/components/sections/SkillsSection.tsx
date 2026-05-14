@@ -37,30 +37,36 @@ const SkillCard = ({ name, isSelected, onSelect }: SkillCardProps) => (
 );
 
 interface SkillsSectionProps {
+  projectPath: string;
   selectedName: string | null;
   onSelect: (name: string | null) => void;
   onNew: () => void;
   refreshKey: number;
 }
 
-export const SkillsSection = ({ selectedName, onSelect, onNew, refreshKey }: SkillsSectionProps) => {
+export const SkillsSection = ({ projectPath, selectedName, onSelect, onNew, refreshKey }: SkillsSectionProps) => {
   const [skills, setSkills] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
 
   useEffect(() => {
-    fetchSkills()
+    let cancelled = false;
+    fetchSkills(projectPath)
       .then((data) => {
+        if (cancelled) return;
         setSkills(data);
         setPage(1);
+        setError(null);
         setLoading(false);
       })
       .catch((err: unknown) => {
+        if (cancelled) return;
         setError(err instanceof Error ? err.message : 'Failed to load skills');
         setLoading(false);
       });
-  }, [refreshKey]);
+    return () => { cancelled = true; };
+  }, [projectPath, refreshKey]);
 
   const totalPages = Math.ceil(skills.length / PAGE_SIZE);
   const pageItems = skills.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);

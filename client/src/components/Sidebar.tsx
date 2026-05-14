@@ -1,3 +1,5 @@
+import { ProjectPicker } from './ProjectPicker';
+
 interface NavItem {
   id: string;
   label: string;
@@ -7,11 +9,15 @@ interface NavItem {
 interface SidebarProps {
   activeTab: string;
   onTabChange: (tab: string) => void;
+  selectedProjectPath: string | null;
+  onProjectSelect: (path: string) => void;
 }
 
-const FolderIcon = () => (
+const DocumentIcon = () => (
   <svg width="16" height="16" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M1 3.5C1 2.67 1.67 2 2.5 2H5.79C6.18 2 6.55 2.16 6.81 2.44L7.5 3.2L8.19 2.44C8.45 2.16 8.82 2 9.21 2H12.5C13.33 2 14 2.67 14 3.5V11.5C14 12.33 13.33 13 12.5 13H2.5C1.67 13 1 12.33 1 11.5V3.5Z" stroke="currentColor" strokeWidth="1.2" fill="none"/>
+    <path d="M3 2.5C3 1.67 3.67 1 4.5 1H9L12 4V12.5C12 13.33 11.33 14 10.5 14H4.5C3.67 14 3 13.33 3 12.5V2.5Z" stroke="currentColor" strokeWidth="1.2" fill="none"/>
+    <path d="M9 1V4H12" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+    <path d="M5.5 7H9.5M5.5 9.5H9.5" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round"/>
   </svg>
 );
 
@@ -43,13 +49,15 @@ const SettingsIcon = () => (
 );
 
 const NAV_ITEMS: NavItem[] = [
-  { id: 'projects', label: 'Projects', icon: <FolderIcon /> },
+  { id: 'claude-md', label: 'CLAUDE.md', icon: <DocumentIcon /> },
   { id: 'agents', label: 'Agents', icon: <AgentIcon /> },
   { id: 'skills', label: 'Skills', icon: <SkillIcon /> },
   { id: 'mcp-servers', label: 'MCP Servers', icon: <McpIcon /> },
 ];
 
-export const Sidebar = ({ activeTab, onTabChange }: SidebarProps) => {
+export const Sidebar = ({ activeTab, onTabChange, selectedProjectPath, onProjectSelect }: SidebarProps) => {
+  const hasProject = selectedProjectPath !== null;
+
   return (
     <aside className="w-[220px] shrink-0 flex flex-col bg-[#0d0d0f] border-r border-white/6 h-full">
       {/* App title */}
@@ -65,20 +73,27 @@ export const Sidebar = ({ activeTab, onTabChange }: SidebarProps) => {
         </div>
       </div>
 
+      {/* Project picker */}
+      <ProjectPicker selectedPath={selectedProjectPath} onSelect={onProjectSelect} />
+
       {/* Nav items */}
       <nav className="flex-1 px-3 pt-4 pb-2">
         <p className="px-2 mb-2 text-[10px] font-semibold uppercase tracking-[0.1em] text-white/20">Navigation</p>
         <ul className="space-y-0.5">
           {NAV_ITEMS.map((item) => {
             const isActive = activeTab === item.id;
+            const disabled = !hasProject;
             return (
               <li key={item.id}>
                 <button
-                  onClick={() => onTabChange(item.id)}
+                  onClick={() => !disabled && onTabChange(item.id)}
+                  disabled={disabled}
                   className={[
                     'w-full flex items-center gap-3 px-3 py-2 rounded-md text-left transition-all duration-150',
                     'text-[13px] font-medium',
-                    isActive
+                    disabled
+                      ? 'text-white/18 cursor-not-allowed'
+                      : isActive
                       ? 'bg-orange-500/15 text-orange-300'
                       : 'text-white/45 hover:text-white/75 hover:bg-white/5',
                   ].join(' ')}
@@ -86,12 +101,16 @@ export const Sidebar = ({ activeTab, onTabChange }: SidebarProps) => {
                 >
                   <span className={[
                     'shrink-0 transition-colors',
-                    isActive ? 'text-orange-400' : 'text-white/30',
+                    disabled
+                      ? 'text-white/15'
+                      : isActive
+                      ? 'text-orange-400'
+                      : 'text-white/30',
                   ].join(' ')}>
                     {item.icon}
                   </span>
                   <span>{item.label}</span>
-                  {isActive && (
+                  {isActive && !disabled && (
                     <span className="ml-auto w-1.5 h-1.5 rounded-full bg-orange-500 shrink-0" />
                   )}
                 </button>

@@ -8,6 +8,16 @@ export interface ProjectInfo {
   name: string;
 }
 
+/**
+ * Returns the config directory for a given projectPath.
+ *  - If projectPath is ~/.claude itself, return it as-is (global config lives there).
+ *  - Otherwise return projectPath/.claude (per-project config).
+ */
+export function getConfigDir(projectPath: string): string {
+  const globalDir = resolveHome("~/.claude");
+  return projectPath === globalDir ? projectPath : `${projectPath}/.claude`;
+}
+
 /** Returns all projects from ~/.claude.json that have a CLAUDE.md file. */
 export async function listProjects(): Promise<ProjectInfo[]> {
   let raw: string;
@@ -79,24 +89,26 @@ export async function setProjectContent(projectPath: string, content: string): P
   await writeFileContent(`${projectPath}/CLAUDE.md`, content);
 }
 
-/** Returns skill directory names under ~/.claude/skills/ that contain a SKILL.md file. */
-export async function listSkills(): Promise<string[]> {
-  const listing = await listDir(resolveHome("~/.claude/skills"));
+/** Returns skill directory names under {configDir}/skills/ that contain a SKILL.md file. */
+export async function listSkills(projectPath: string): Promise<string[]> {
+  const configDir = getConfigDir(projectPath);
+  const listing = await listDir(`${configDir}/skills`);
   const dirs = listing?.dirs ?? [];
   const checks = await Promise.all(
-    dirs.map((d) => fileExists(resolveHome(`~/.claude/skills/${d}/SKILL.md`)))
+    dirs.map((d) => fileExists(`${configDir}/skills/${d}/SKILL.md`))
   );
   return dirs.filter((_, i) => checks[i]);
 }
 
-/** Returns agent file names under ~/.claude/agents/. */
-export async function listAgents(): Promise<string[]> {
-  const listing = await listDir(resolveHome("~/.claude/agents"));
+/** Returns agent file names (without .md) under {configDir}/agents/. */
+export async function listAgents(projectPath: string): Promise<string[]> {
+  const configDir = getConfigDir(projectPath);
+  const listing = await listDir(`${configDir}/agents`);
   return listing?.files.filter((f) => f.endsWith(".md")).map((f) => f.slice(0, -3)) ?? [];
 }
 
-/** Returns the keys of global mcpServers from ~/.claude.json. */
-export async function listMcpServers(): Promise<string[]> {
+/** Returns the keys of mcpServers for the given projectPath from ~/.claude.json. */
+export async function listMcpServers(projectPath: string): Promise<string[]> {
   let raw: string;
   try {
     raw = await readFileContent(resolveHome("~/.claude.json"));
@@ -107,12 +119,12 @@ export async function listMcpServers(): Promise<string[]> {
   }
 
   const config = JSON.parse(raw) as ClaudeConfig;
-  const globalProject = config.projects?.[resolveHome("~/.claude")];
-  return Object.keys(globalProject?.mcpServers ?? {});
+  const project = config.projects?.[projectPath];
+  return Object.keys(project?.mcpServers ?? {});
 }
 
-/** Returns the config object for one MCP server, or null if the key doesn't exist. */
-export async function getMcpServer(key: string): Promise<unknown | null> {
+/** Returns the config object for one MCP server under the given projectPath, or null if not found. */
+export async function getMcpServer(projectPath: string, key: string): Promise<unknown | null> {
   let raw: string;
   try {
     raw = await readFileContent(resolveHome("~/.claude.json"));
@@ -123,12 +135,12 @@ export async function getMcpServer(key: string): Promise<unknown | null> {
   }
 
   const config = JSON.parse(raw) as ClaudeConfig;
-  const servers = config.projects?.[resolveHome("~/.claude")]?.mcpServers ?? {};
+  const servers = config.projects?.[projectPath]?.mcpServers ?? {};
   return key in servers ? servers[key] : null;
 }
 
-/** Replaces (or creates) one MCP server key. Reads the file, updates the key, writes back. */
-export async function setMcpServer(key: string, value: unknown): Promise<void> {
+/** Replaces (or creates) one MCP server key under the given projectPath. */
+export async function setMcpServer(projectPath: string, key: string, value: unknown): Promise<void> {
   let config: ClaudeConfig = {};
   try {
     const raw = await readFileContent(resolveHome("~/.claude.json"));
@@ -138,17 +150,16 @@ export async function setMcpServer(key: string, value: unknown): Promise<void> {
     if (error.code !== "ENOENT") throw error;
   }
 
-  const projectKey = resolveHome("~/.claude");
   config.projects ??= {};
-  config.projects[projectKey] ??= {};
-  config.projects[projectKey].mcpServers ??= {};
-  config.projects[projectKey].mcpServers![key] = value;
+  config.projects[projectPath] ??= {};
+  config.projects[projectPath].mcpServers ??= {};
+  config.projects[projectPath].mcpServers![key] = value;
 
   await writeFileContent(resolveHome("~/.claude.json"), JSON.stringify(config, null, 2));
 }
 
-/** Adds a new MCP server key. Throws with a message if the key already exists. */
-export async function createMcpServer(key: string, value: unknown): Promise<void> {
+/** Adds a new MCP server key under the given projectPath. Throws if the key already exists. */
+export async function createMcpServer(projectPath: string, key: string, value: unknown): Promise<void> {
   let config: ClaudeConfig = {};
   try {
     const raw = await readFileContent(resolveHome("~/.claude.json"));
@@ -158,16 +169,35 @@ export async function createMcpServer(key: string, value: unknown): Promise<void
     if (error.code !== "ENOENT") throw error;
   }
 
-  const projectKey = resolveHome("~/.claude");
-  const servers = config.projects?.[projectKey]?.mcpServers ?? {};
+  const servers = config.projects?.[projectPath]?.mcpServers ?? {};
   if (key in servers) {
     throw new Error(`MCP server "${key}" already exists`);
   }
 
   config.projects ??= {};
-  config.projects[projectKey] ??= {};
-  config.projects[projectKey].mcpServers ??= {};
-  config.projects[projectKey].mcpServers![key] = value;
+  config.projects[projectPath] ??= {};
+  config.projects[projectPath].mcpServers ??= {};
+  config.projects[projectPath].mcpServers![key] = value;
 
+  await writeFileContent(resolveHome("~/.claude.json"), JSON.stringify(config, null, 2));
+}
+
+/** Removes an MCP server key under the given projectPath. Throws if the key does not exist. */
+export async function deleteMcpServer(projectPath: string, key: string): Promise<void> {
+  let config: ClaudeConfig = {};
+  try {
+    const raw = await readFileContent(resolveHome("~/.claude.json"));
+    config = JSON.parse(raw) as ClaudeConfig;
+  } catch (e) {
+    const error = e as NodeJS.ErrnoException;
+    if (error.code !== "ENOENT") throw error;
+  }
+
+  const servers = config.projects?.[projectPath]?.mcpServers;
+  if (!servers || !(key in servers)) {
+    throw new Error(`MCP server "${key}" not found`);
+  }
+
+  delete servers[key];
   await writeFileContent(resolveHome("~/.claude.json"), JSON.stringify(config, null, 2));
 }

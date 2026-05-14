@@ -37,66 +37,78 @@ async function put(path: string, body: Record<string, unknown>): Promise<void> {
   }
 }
 
-export async function fetchSkills(): Promise<string[]> {
-  const data = await get<{ skills: string[] }>('/api/claude-config/skills');
+export async function fetchSkills(projectPath: string): Promise<string[]> {
+  const data = await get<{ skills: string[] }>(
+    `/api/claude-config/skills?projectPath=${encodeURIComponent(projectPath)}`
+  );
   return data.skills;
 }
 
-export async function fetchAgents(): Promise<string[]> {
-  const data = await get<{ agents: string[] }>('/api/claude-config/agents');
+export async function fetchAgents(projectPath: string): Promise<string[]> {
+  const data = await get<{ agents: string[] }>(
+    `/api/claude-config/agents?projectPath=${encodeURIComponent(projectPath)}`
+  );
   return data.agents;
 }
 
-export async function fetchMcpServers(): Promise<string[]> {
-  const data = await get<{ mcpServers: string[] }>('/api/claude-config/mcp-servers');
+export async function fetchMcpServers(projectPath: string): Promise<string[]> {
+  const data = await get<{ mcpServers: string[] }>(
+    `/api/claude-config/mcp-servers?projectPath=${encodeURIComponent(projectPath)}`
+  );
   return data.mcpServers;
 }
 
-export async function fetchAgentContent(name: string): Promise<string> {
-  const data = await get<{ content: string }>(`/api/agents/${encodeURIComponent(name)}`);
+export async function fetchAgentContent(projectPath: string, name: string): Promise<string> {
+  const data = await get<{ content: string }>(
+    `/api/agents/${encodeURIComponent(name)}?projectPath=${encodeURIComponent(projectPath)}`
+  );
   return data.content;
 }
 
-export async function fetchSkillContent(name: string): Promise<string> {
-  const data = await get<{ content: string }>(`/api/skills/${encodeURIComponent(name)}`);
+export async function fetchSkillContent(projectPath: string, name: string): Promise<string> {
+  const data = await get<{ content: string }>(
+    `/api/skills/${encodeURIComponent(name)}?projectPath=${encodeURIComponent(projectPath)}`
+  );
   return data.content;
 }
 
-export async function updateAgentContent(name: string, content: string): Promise<void> {
-  await put(`/api/agents/${encodeURIComponent(name)}`, { content });
+export async function updateAgentContent(projectPath: string, name: string, content: string): Promise<void> {
+  await put(`/api/agents/${encodeURIComponent(name)}`, { projectPath, content });
 }
 
-export async function updateSkillContent(name: string, content: string): Promise<void> {
-  await put(`/api/skills/${encodeURIComponent(name)}`, { content });
+export async function updateSkillContent(projectPath: string, name: string, content: string): Promise<void> {
+  await put(`/api/skills/${encodeURIComponent(name)}`, { projectPath, content });
 }
 
-export async function createAgent(name: string, content: string): Promise<void> {
-  await post("/api/agents", { name, content });
+export async function createAgent(projectPath: string, name: string, content: string): Promise<void> {
+  await post("/api/agents", { projectPath, name, content });
 }
 
-export async function deleteAgent(name: string): Promise<void> {
-  await del(`/api/agents/${encodeURIComponent(name)}`);
+export async function deleteAgent(projectPath: string, name: string): Promise<void> {
+  await del(`/api/agents/${encodeURIComponent(name)}?projectPath=${encodeURIComponent(projectPath)}`);
 }
 
-export async function createSkill(name: string, content: string): Promise<void> {
-  await post("/api/skills", { name, content });
+export async function createSkill(projectPath: string, name: string, content: string): Promise<void> {
+  await post("/api/skills", { projectPath, name, content });
 }
 
-export async function deleteSkill(name: string): Promise<void> {
-  await del(`/api/skills/${encodeURIComponent(name)}`);
+export async function deleteSkill(projectPath: string, name: string): Promise<void> {
+  await del(`/api/skills/${encodeURIComponent(name)}?projectPath=${encodeURIComponent(projectPath)}`);
 }
 
-export async function fetchMcpServerContent(name: string): Promise<string> {
-  const data = await get<{ content: string }>(`/api/mcp-servers/${encodeURIComponent(name)}`);
+export async function fetchMcpServerContent(projectPath: string, name: string): Promise<string> {
+  const data = await get<{ content: string }>(
+    `/api/mcp-servers/${encodeURIComponent(name)}?projectPath=${encodeURIComponent(projectPath)}`
+  );
   return data.content;
 }
 
-export async function updateMcpServerContent(name: string, content: string): Promise<void> {
-  await put(`/api/mcp-servers/${encodeURIComponent(name)}`, { content });
+export async function updateMcpServerContent(projectPath: string, name: string, content: string): Promise<void> {
+  await put(`/api/mcp-servers/${encodeURIComponent(name)}`, { projectPath, content });
 }
 
-export async function createMcpServer(name: string, content: string): Promise<void> {
-  await post("/api/mcp-servers", { name, content });
+export async function createMcpServer(projectPath: string, name: string, content: string): Promise<void> {
+  await post("/api/mcp-servers", { projectPath, name, content });
 }
 
 export interface ProjectInfo {

@@ -1,7 +1,8 @@
 import express from "express";
 import type { NextFunction, Request, Response, Router } from "express";
 import { fileExists, readFileContent, writeFileContent, writeFileEnsureDir, deleteDir } from "../utils/fileIO.js";
-import { resolveHome } from "../utils/parsing.js";
+import { validateProjectPath } from "../utils/parsing.js";
+import { getConfigDir } from "../services/claudeConfig.js";
 
 const router: Router = express.Router();
 
@@ -9,7 +10,13 @@ router.get(
   "/:name",
   async (req: Request, res: Response, next: NextFunction) => {
     const { name } = req.params;
-    const filePath = resolveHome(`~/.claude/skills/${name}/SKILL.md`);
+    let projectPath: string;
+    try {
+      projectPath = validateProjectPath(req.query.projectPath);
+    } catch (e) {
+      return res.status(400).json({ message: (e as Error).message });
+    }
+    const filePath = `${getConfigDir(projectPath)}/skills/${name}/SKILL.md`;
     try {
       const content = await readFileContent(filePath);
       res.json({ content });
@@ -27,11 +34,17 @@ router.put(
   "/:name",
   async (req: Request, res: Response, next: NextFunction) => {
     const { name } = req.params;
-    const { content } = req.body as { content?: unknown };
+    const { projectPath: rawPath, content } = req.body as { projectPath?: unknown; content?: unknown };
+    let projectPath: string;
+    try {
+      projectPath = validateProjectPath(rawPath);
+    } catch (e) {
+      return res.status(400).json({ message: (e as Error).message });
+    }
     if (typeof content !== "string") {
       return res.status(400).json({ message: "content must be a string" });
     }
-    const filePath = resolveHome(`~/.claude/skills/${name}/SKILL.md`);
+    const filePath = `${getConfigDir(projectPath)}/skills/${name}/SKILL.md`;
     try {
       await writeFileContent(filePath, content);
       res.status(200).json({ message: "Skill saved" });
@@ -44,14 +57,25 @@ router.put(
 router.post(
   "/",
   async (req: Request, res: Response, next: NextFunction) => {
-    const { name, content } = req.body as { name?: unknown; content?: unknown };
+    const { projectPath: rawPath, name, content } = req.body as {
+      projectPath?: unknown;
+      name?: unknown;
+      content?: unknown;
+    };
+    let projectPath: string;
+    try {
+      projectPath = validateProjectPath(rawPath);
+    } catch (e) {
+      return res.status(400).json({ message: (e as Error).message });
+    }
     if (typeof name !== "string" || typeof content !== "string") {
       return res.status(400).json({ message: "name and content must be strings" });
     }
     if (!name || name.includes("/") || name.includes("\\") || name.includes("..")) {
       return res.status(400).json({ message: "name must not be empty or contain path separators" });
     }
-    const dirPath = resolveHome(`~/.claude/skills/${name}`);
+    const configDir = getConfigDir(projectPath);
+    const dirPath = `${configDir}/skills/${name}`;
     const filePath = `${dirPath}/SKILL.md`;
     try {
       if (await fileExists(filePath)) {
@@ -69,7 +93,13 @@ router.delete(
   "/:name",
   async (req: Request, res: Response, next: NextFunction) => {
     const { name } = req.params;
-    const dirPath = resolveHome(`~/.claude/skills/${name}`);
+    let projectPath: string;
+    try {
+      projectPath = validateProjectPath(req.query.projectPath);
+    } catch (e) {
+      return res.status(400).json({ message: (e as Error).message });
+    }
+    const dirPath = `${getConfigDir(projectPath)}/skills/${name}`;
     try {
       if (!(await fileExists(dirPath))) {
         return res.status(404).json({ message: "Skill not found" });

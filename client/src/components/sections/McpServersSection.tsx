@@ -6,6 +6,7 @@ import { Pagination } from '../Pagination';
 const PAGE_SIZE = 10;
 
 interface McpServersSection {
+  projectPath: string;
   selectedName: string | null;
   onSelect: (name: string) => void;
   onNew: () => void;
@@ -43,24 +44,29 @@ const McpServerRow = ({ name, selected, onClick }: McpServerRowProps) => (
   </button>
 );
 
-export const McpServersSection = ({ selectedName, onSelect, onNew, refreshKey }: McpServersSection) => {
+export const McpServersSection = ({ projectPath, selectedName, onSelect, onNew, refreshKey }: McpServersSection) => {
   const [servers, setServers] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
 
   useEffect(() => {
-    fetchMcpServers()
+    let cancelled = false;
+    fetchMcpServers(projectPath)
       .then((data) => {
+        if (cancelled) return;
         setServers(data);
         setPage(1);
+        setError(null);
         setLoading(false);
       })
       .catch((err: unknown) => {
+        if (cancelled) return;
         setError(err instanceof Error ? err.message : 'Failed to load MCP servers');
         setLoading(false);
       });
-  }, [refreshKey]);
+    return () => { cancelled = true; };
+  }, [projectPath, refreshKey]);
 
   const totalPages = Math.ceil(servers.length / PAGE_SIZE);
   const pageItems = servers.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
