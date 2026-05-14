@@ -47,49 +47,25 @@ interface ViewModeToggleProps {
 }
 
 const ViewModeToggle = ({ viewMode, onToggle }: ViewModeToggleProps) => (
-  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+  <div className="flex items-center gap-2">
     <button
       type="button"
       onClick={() => onToggle("form")}
-      style={{
-        fontFamily: 'Fira Code, monospace',
-        fontSize: '13px',
-        background: 'transparent',
-        border: 'none',
-        cursor: 'pointer',
-        color: viewMode === "form" ? 'var(--text-primary)' : 'var(--text-muted)',
-        transition: 'color 150ms ease',
-        padding: 0,
-      }}
-      onMouseEnter={(e) => {
-        if (viewMode !== "form") (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-secondary)';
-      }}
-      onMouseLeave={(e) => {
-        if (viewMode !== "form") (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-muted)';
-      }}
+      className={[
+        'font-["Fira_Code",monospace] text-[13px] bg-transparent border-none cursor-pointer p-0 transition-colors duration-150',
+        viewMode === "form" ? "text-(--text-primary)" : "text-(--text-muted) hover:text-(--text-secondary)",
+      ].join(' ')}
     >
       Form
     </button>
-    <span style={{ color: 'var(--text-muted)', fontSize: '13px', opacity: 0.5 }}>/</span>
+    <span className="text-(--text-muted) text-[13px] opacity-50">/</span>
     <button
       type="button"
       onClick={() => onToggle("raw")}
-      style={{
-        fontFamily: 'Fira Code, monospace',
-        fontSize: '13px',
-        background: 'transparent',
-        border: 'none',
-        cursor: 'pointer',
-        color: viewMode === "raw" ? 'var(--text-primary)' : 'var(--text-muted)',
-        transition: 'color 150ms ease',
-        padding: 0,
-      }}
-      onMouseEnter={(e) => {
-        if (viewMode !== "raw") (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-secondary)';
-      }}
-      onMouseLeave={(e) => {
-        if (viewMode !== "raw") (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-muted)';
-      }}
+      className={[
+        'font-["Fira_Code",monospace] text-[13px] bg-transparent border-none cursor-pointer p-0 transition-colors duration-150',
+        viewMode === "raw" ? "text-(--text-primary)" : "text-(--text-muted) hover:text-(--text-secondary)",
+      ].join(' ')}
     >
       Raw
     </button>
@@ -126,22 +102,9 @@ const CreateHeader = ({
   const label = creating ? "Creating…" : isError ? "Error" : "Create";
 
   return (
-    <div style={{
-      padding: '0 20px',
-      borderBottom: '1px solid var(--border-faint)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      flexShrink: 0,
-      minHeight: '48px',
-      background: 'var(--bg-sidebar)',
-    }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-        <span style={{
-          fontFamily: 'Fira Code, monospace',
-          fontSize: '12px',
-          color: 'var(--text-muted)',
-        }}>
+    <div className="px-5 border-b border-(--border-faint) flex items-center justify-between shrink-0 min-h-12 bg-(--bg-sidebar)">
+      <div className="flex items-center gap-1.5">
+        <span className='font-["Fira_Code",monospace] text-[12px] text-(--text-muted)'>
           {type === "agent"
             ? "~/.claude/agents/"
             : type === "skill"
@@ -154,24 +117,12 @@ const CreateHeader = ({
           onChange={(e) => onDraftNameChange(e.target.value)}
           onKeyDown={(e) => { if (e.key === "Enter" && !disabled) onCreate(); }}
           placeholder="name"
-          style={{
-            background: 'transparent',
-            fontFamily: 'Fira Code, monospace',
-            fontSize: '12px',
-            color: 'var(--text-secondary)',
-            outline: 'none',
-            border: 'none',
-            borderBottom: '1px solid var(--border-subtle)',
-            width: '192px',
-            transition: 'border-color 150ms ease',
-          }}
-          onFocus={(e) => { (e.target as HTMLInputElement).style.borderBottomColor = 'var(--border-strong)'; }}
-          onBlur={(e) => { (e.target as HTMLInputElement).style.borderBottomColor = 'var(--border-subtle)'; }}
+          className='bg-transparent font-["Fira_Code",monospace] text-[12px] text-(--text-secondary) outline-none border-none border-b border-(--border-subtle) w-48 transition-colors duration-150 focus:border-b-(--border-strong)'
           autoFocus
           spellCheck={false}
         />
       </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+      <div className="flex items-center gap-3">
         {type === "agent" && (
           <ViewModeToggle viewMode={viewMode} onToggle={onViewModeToggle} />
         )}
@@ -179,43 +130,21 @@ const CreateHeader = ({
           onClick={onCreate}
           disabled={disabled}
           aria-label="Create file"
-          style={{
-            fontFamily: 'Fira Code, monospace',
-            fontSize: '13px',
-            padding: '4px 12px',
-            borderRadius: '6px',
-            background: !disabled ? 'var(--accent)' : 'transparent',
-            border: 'none',
-            cursor: disabled ? 'not-allowed' : 'pointer',
-            color: isError ? 'var(--error)' : !disabled ? 'white' : 'var(--text-muted)',
-            opacity: disabled && !isError ? 0.4 : 1,
-            transition: 'background 150ms ease, color 150ms ease',
-          }}
-          onMouseEnter={(e) => {
-            if (!disabled) (e.currentTarget as HTMLButtonElement).style.background = 'var(--accent-hover)';
-          }}
-          onMouseLeave={(e) => {
-            if (!disabled) (e.currentTarget as HTMLButtonElement).style.background = 'var(--accent)';
-          }}
+          className={[
+            'font-["Fira_Code",monospace] text-[13px] px-3 py-1 rounded-md border-none transition-colors duration-150',
+            isError
+              ? "text-(--error) bg-transparent cursor-pointer"
+              : !disabled
+              ? "bg-(--accent) text-white cursor-pointer hover:bg-(--accent-hover)"
+              : "bg-transparent text-(--text-muted) cursor-not-allowed opacity-40",
+          ].join(' ')}
         >
           {label}
         </button>
         <button
           onClick={onClose}
           aria-label="Close editor"
-          style={{
-            color: 'var(--text-muted)',
-            background: 'transparent',
-            border: 'none',
-            cursor: 'pointer',
-            fontSize: '18px',
-            lineHeight: 1,
-            transition: 'color 150ms ease',
-            display: 'flex',
-            alignItems: 'center',
-          }}
-          onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-secondary)'; }}
-          onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-muted)'; }}
+          className="text-(--text-muted) bg-transparent border-none cursor-pointer text-[18px] leading-none transition-colors duration-150 flex items-center hover:text-(--text-secondary)"
         >
           ×
         </button>
@@ -260,19 +189,16 @@ const EditHeader = ({
       ? "Error"
       : "Save";
 
-  // Save button: when dirty (idle + not disabled) → accent filled button
-  // When saved → plain success text, no button bg
-  // When error → error text
-  // When disabled (clean) → muted, no bg
   const showSaveButton = saveStatus === "idle" && !saveDisabled;
+
   const saveColor =
     saveStatus === "saved"
-      ? 'var(--success)'
+      ? "text-(--success)"
       : saveStatus === "error"
-      ? 'var(--error)'
+      ? "text-(--error)"
       : saveDisabled
-      ? 'var(--text-muted)'
-      : 'var(--text-secondary)';
+      ? "text-(--text-muted)"
+      : "text-(--text-secondary)";
 
   const deleteLabel =
     deleteStatus === "confirm"
@@ -284,35 +210,18 @@ const EditHeader = ({
       : "Delete";
 
   const deleteColor =
-    deleteStatus === "deleting"
-      ? 'var(--text-muted)'
-      : deleteStatus === "confirm"
-      ? 'var(--error)'
-      : deleteStatus === "error"
-      ? 'var(--error)'
-      : 'var(--text-muted)';
+    deleteStatus === "deleting" || deleteStatus === "idle"
+      ? "text-(--text-muted)"
+      : "text-(--error)";
 
   const canDelete = type === "agent" || type === "skill";
 
   return (
-    <div style={{
-      padding: '0 20px',
-      borderBottom: '1px solid var(--border-faint)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      flexShrink: 0,
-      minHeight: '48px',
-      background: 'var(--bg-sidebar)',
-    }}>
-      <span style={{
-        fontFamily: 'Fira Code, monospace',
-        fontSize: '12px',
-        color: 'var(--text-muted)',
-      }}>
+    <div className="px-5 border-b border-(--border-faint) flex items-center justify-between shrink-0 min-h-12 bg-(--bg-sidebar)">
+      <span className='font-["Fira_Code",monospace] text-[12px] text-(--text-muted)'>
         {filePath(name, type)}
       </span>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+      <div className="flex items-center gap-3">
         {type === "agent" && (
           <ViewModeToggle viewMode={viewMode} onToggle={onViewModeToggle} />
         )}
@@ -321,24 +230,13 @@ const EditHeader = ({
             onClick={onDelete}
             disabled={deleteStatus === "deleting"}
             aria-label="Delete file"
-            style={{
-              fontFamily: 'Fira Code, monospace',
-              fontSize: '13px',
-              padding: '4px 10px',
-              borderRadius: '6px',
-              background: 'transparent',
-              border: deleteStatus === "confirm" ? `1px solid rgba(248,113,113,0.3)` : 'none',
-              cursor: deleteStatus === "deleting" ? 'not-allowed' : 'pointer',
-              color: deleteColor,
-              opacity: deleteStatus === "deleting" ? 0.4 : 1,
-              transition: 'color 150ms ease, border-color 150ms ease',
-            }}
-            onMouseEnter={(e) => {
-              if (deleteStatus === "idle") (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-secondary)';
-            }}
-            onMouseLeave={(e) => {
-              if (deleteStatus === "idle") (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-muted)';
-            }}
+            className={[
+              'font-["Fira_Code",monospace] text-[13px] px-2.5 py-1 rounded-md bg-transparent transition-colors duration-150',
+              deleteStatus === "deleting" ? "opacity-40 cursor-not-allowed" : "cursor-pointer",
+              deleteStatus === "confirm" ? "border border-[rgba(248,113,113,0.3)]" : "border-none",
+              deleteColor,
+              deleteStatus === "idle" ? "hover:text-(--text-secondary)" : "",
+            ].join(' ')}
           >
             {deleteLabel}
           </button>
@@ -348,52 +246,23 @@ const EditHeader = ({
           <button
             onClick={onSave}
             aria-label="Save file"
-            style={{
-              fontFamily: 'Fira Code, monospace',
-              fontSize: '13px',
-              padding: '4px 12px',
-              borderRadius: '6px',
-              background: 'var(--accent)',
-              border: 'none',
-              cursor: 'pointer',
-              color: 'white',
-              transition: 'background 150ms ease',
-            }}
-            onMouseEnter={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.background = 'var(--accent-hover)';
-            }}
-            onMouseLeave={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.background = 'var(--accent)';
-            }}
+            className='font-["Fira_Code",monospace] text-[13px] px-3 py-1 rounded-md bg-(--accent) border-none cursor-pointer text-white transition-colors duration-150 hover:bg-(--accent-hover)'
           >
             {saveLabel}
           </button>
         ) : (
-          <span style={{
-            fontFamily: 'Fira Code, monospace',
-            fontSize: '13px',
-            color: saveColor,
-            opacity: saveDisabled && saveStatus === "idle" ? 0.35 : 1,
-          }}>
+          <span className={[
+            'font-["Fira_Code",monospace] text-[13px]',
+            saveColor,
+            saveDisabled && saveStatus === "idle" ? "opacity-35" : "",
+          ].join(' ')}>
             {saveLabel}
           </span>
         )}
         <button
           onClick={onClose}
           aria-label="Close editor"
-          style={{
-            color: 'var(--text-muted)',
-            background: 'transparent',
-            border: 'none',
-            cursor: 'pointer',
-            fontSize: '18px',
-            lineHeight: 1,
-            transition: 'color 150ms ease',
-            display: 'flex',
-            alignItems: 'center',
-          }}
-          onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-secondary)'; }}
-          onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-muted)'; }}
+          className="text-(--text-muted) bg-transparent border-none cursor-pointer text-[18px] leading-none transition-colors duration-150 flex items-center hover:text-(--text-secondary)"
         >
           ×
         </button>
@@ -550,15 +419,7 @@ export const EditorPane = ({ name, type, projectPath, onClose, onCreated, onDele
   const showFormView = type === "agent" && viewMode === "form";
 
   return (
-    <div style={{
-      display: 'flex',
-      flex: 1,
-      flexDirection: 'column',
-      height: '100%',
-      width: '100%',
-      background: 'var(--bg-base)',
-      borderLeft: '1px solid var(--border-faint)',
-    }}>
+    <div className="flex flex-1 flex-col h-full w-full bg-(--bg-base) border-l border-(--border-faint)">
       {isCreateMode ? (
         <CreateHeader
           type={type}
@@ -584,9 +445,9 @@ export const EditorPane = ({ name, type, projectPath, onClose, onCreated, onDele
           onViewModeToggle={setViewMode}
         />
       )}
-      <div style={{ flex: 1, minHeight: 0 }}>
+      <div className="flex-1 min-h-0">
         {loading ? (
-          <div style={{ width: '100%', height: '100%', background: 'var(--bg-base)' }} />
+          <div className="w-full h-full bg-(--bg-base)" />
         ) : showFormView ? (
           <AgentFormEditor
             content={content}

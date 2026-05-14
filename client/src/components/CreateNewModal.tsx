@@ -61,59 +61,26 @@ export const CreateNewModal = ({ type, projectPath, onSuccess, onClose }: Create
   return (
     // Backdrop
     <div
-      style={{
-        position: 'fixed',
-        inset: 0,
-        zIndex: 50,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        background: 'rgba(0, 0, 0, 0.6)',
-      }}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div style={{
-        width: '100%',
-        maxWidth: '380px',
-        margin: '0 16px',
-        background: 'var(--bg-elevated)',
-        border: '1px solid var(--border-default)',
-        borderRadius: '10px',
-        boxShadow: '0 8px 40px rgba(0,0,0,0.5)',
-        overflow: 'hidden',
-      }}>
+      <div
+        className="w-full max-w-[380px] mx-4 bg-(--bg-elevated) border border-(--border-default) rounded-[10px] overflow-hidden"
+        style={{ boxShadow: '0 8px 40px rgba(0,0,0,0.5)' }}
+      >
         {/* Header */}
-        <div style={{
-          padding: '24px 24px 16px',
-          borderBottom: '1px solid var(--border-faint)',
-        }}>
-          <h2 style={{
-            fontSize: '16px',
-            fontWeight: 600,
-            color: 'var(--text-primary)',
-            margin: 0,
-          }}>
+        <div className="px-6 pt-6 pb-4 border-b border-(--border-faint)">
+          <h2 className="text-[16px] font-semibold text-(--text-primary) m-0">
             New {label}
           </h2>
-          <p style={{
-            marginTop: '6px',
-            fontSize: '13px',
-            color: 'var(--text-secondary)',
-            lineHeight: 1.5,
-          }}>
+          <p className="mt-1.5 text-[13px] text-(--text-secondary) leading-normal">
             Give your {label.toLowerCase()} a name — you can rename it later.
           </p>
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} style={{ padding: '20px 24px 24px' }}>
-          <label style={{
-            display: 'block',
-            fontSize: '13px',
-            fontWeight: 500,
-            color: 'var(--text-secondary)',
-            marginBottom: '8px',
-          }}>
+        <form onSubmit={handleSubmit} className="px-6 pt-5 pb-6">
+          <label className="block text-[13px] font-medium text-(--text-secondary) mb-2">
             Name
           </label>
           <input
@@ -123,95 +90,39 @@ export const CreateNewModal = ({ type, projectPath, onSuccess, onClose }: Create
             onChange={(e) => setName(e.target.value)}
             placeholder={`e.g. ${type === 'agent' ? 'coworker' : type === 'skill' ? 'ship-pr' : 'filesystem'}`}
             disabled={submitting}
-            style={{
-              width: '100%',
-              padding: '10px 12px',
-              borderRadius: '8px',
-              fontSize: '14px',
-              fontFamily: 'Fira Code, monospace',
-              background: 'var(--bg-surface)',
-              border: `1px solid ${error ? 'rgba(248,113,113,0.5)' : 'var(--border-subtle)'}`,
-              color: 'var(--text-primary)',
-              outline: 'none',
-              transition: 'border-color 150ms ease',
-              boxSizing: 'border-box',
-            }}
-            onFocus={(e) => {
-              if (!error) {
-                (e.target as HTMLInputElement).style.borderColor = 'var(--border-default)';
-              }
-            }}
-            onBlur={(e) => {
-              (e.target as HTMLInputElement).style.borderColor = error ? 'rgba(248,113,113,0.5)' : 'var(--border-subtle)';
-            }}
+            className={[
+              'w-full px-3 py-2.5 rounded-lg text-[14px] font-["Fira_Code",monospace]',
+              'bg-(--bg-surface) text-(--text-primary) outline-none transition-colors duration-150 box-border',
+              'focus:border-(--border-default)',
+              error
+                ? 'border border-[rgba(248,113,113,0.5)]'
+                : 'border border-(--border-subtle)',
+            ].join(' ')}
           />
 
           {error && (
-            <p style={{
-              marginTop: '8px',
-              fontSize: '12px',
-              color: 'var(--error)',
-              fontFamily: 'Fira Code, monospace',
-            }}>{error}</p>
+            <p className="mt-2 text-[12px] text-(--error) font-['Fira_Code',monospace]">{error}</p>
           )}
 
           {/* Actions */}
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            marginTop: '20px',
-          }}>
+          <div className="flex items-center gap-2 mt-5">
             <button
               type="button"
               onClick={onClose}
               disabled={submitting}
-              style={{
-                flex: 1,
-                padding: '8px 16px',
-                borderRadius: '8px',
-                fontSize: '14px',
-                fontWeight: 400,
-                color: 'var(--text-muted)',
-                background: 'transparent',
-                border: 'none',
-                cursor: 'pointer',
-                transition: 'color 150ms ease',
-              }}
-              onMouseEnter={(e) => {
-                (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-secondary)';
-              }}
-              onMouseLeave={(e) => {
-                (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-muted)';
-              }}
+              className="flex-1 px-4 py-2 rounded-lg text-[14px] font-normal text-(--text-muted) bg-transparent border-none cursor-pointer transition-colors duration-150 hover:text-(--text-secondary)"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={!canSubmit}
-              style={{
-                flex: 1,
-                padding: '8px 16px',
-                borderRadius: '8px',
-                fontSize: '14px',
-                fontWeight: 500,
-                color: 'white',
-                background: canSubmit ? 'var(--accent)' : 'var(--bg-surface)',
-                border: canSubmit ? 'none' : '1px solid var(--border-subtle)',
-                cursor: canSubmit ? 'pointer' : 'not-allowed',
-                transition: 'background 150ms ease',
-              }}
-              onMouseEnter={(e) => {
-                if (canSubmit) {
-                  (e.currentTarget as HTMLButtonElement).style.background = 'var(--accent-hover)';
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (canSubmit) {
-                  (e.currentTarget as HTMLButtonElement).style.background = 'var(--accent)';
-                }
-              }}
+              className={[
+                'flex-1 px-4 py-2 rounded-lg text-[14px] font-medium text-white transition-colors duration-150',
+                canSubmit
+                  ? 'bg-(--accent) border-none cursor-pointer hover:bg-(--accent-hover)'
+                  : 'bg-(--bg-surface) border border-(--border-subtle) cursor-not-allowed',
+              ].join(' ')}
             >
               {submitting ? 'Creating…' : `Create ${label}`}
             </button>

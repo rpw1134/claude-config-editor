@@ -11,60 +11,20 @@ interface QuickCardProps {
 const QuickCard = ({ icon, title, description, isPrimary = false, onClick }: QuickCardProps) => (
   <button
     onClick={onClick}
-    style={{
-      textAlign: 'left',
-      width: '100%',
-      padding: '16px',
-      borderRadius: '10px',
-      border: '1px solid var(--border-subtle)',
-      background: 'var(--bg-surface)',
-      cursor: 'pointer',
-      transition: 'background 150ms ease, border-color 150ms ease',
-      display: 'block',
-    }}
-    onMouseEnter={(e) => {
-      const el = e.currentTarget as HTMLButtonElement;
-      el.style.borderColor = 'var(--border-default)';
-      el.style.background = 'var(--bg-elevated)';
-    }}
-    onMouseLeave={(e) => {
-      const el = e.currentTarget as HTMLButtonElement;
-      el.style.borderColor = 'var(--border-subtle)';
-      el.style.background = 'var(--bg-surface)';
-    }}
+    className="text-left w-full p-4 rounded-[10px] border border-(--border-subtle) bg-(--bg-surface) cursor-pointer transition-colors duration-150 block hover:border-(--border-default) hover:bg-(--bg-elevated)"
   >
-    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '14px' }}>
-      <div
-        style={{
-          background: isPrimary ? 'var(--accent-dim)' : 'var(--bg-elevated)',
-          color: isPrimary ? 'var(--accent)' : 'var(--text-secondary)',
-          width: '32px',
-          height: '32px',
-          borderRadius: '8px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          flexShrink: 0,
-          marginTop: '2px',
-        }}
-      >
+    <div className="flex items-start gap-3.5">
+      <div className={[
+        'w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5',
+        isPrimary ? 'bg-(--accent-dim) text-(--accent)' : 'bg-(--bg-elevated) text-(--text-secondary)',
+      ].join(' ')}>
         {icon}
       </div>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <p style={{
-          fontSize: '14px',
-          fontWeight: 500,
-          color: 'var(--text-primary)',
-          lineHeight: 1.3,
-        }}>
+      <div className="flex-1 min-w-0">
+        <p className="text-[14px] font-medium text-(--text-primary) leading-[1.3]">
           {title}
         </p>
-        <p style={{
-          marginTop: '4px',
-          fontSize: '13px',
-          color: 'var(--text-secondary)',
-          lineHeight: 1.5,
-        }}>
+        <p className="mt-1 text-[13px] text-(--text-secondary) leading-[1.5]">
           {description}
         </p>
       </div>
@@ -119,62 +79,27 @@ export const WelcomePane = ({
   onOpenSkills,
   onOpenMcp,
 }: WelcomePaneProps) => (
-  <div style={{
-    flex: 1,
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: '64px 40px',
-    minHeight: 0,
-    overflowY: 'auto',
-    background: 'var(--bg-base)',
-  }}>
-    <div style={{ width: '100%', maxWidth: '440px' }}>
+  <div className="flex-1 flex flex-col items-center justify-center px-10 py-16 min-h-0 overflow-y-auto bg-(--bg-base)">
+    <div className="w-full max-w-[440px]">
       {/* Heading */}
-      <div style={{ marginBottom: '32px' }}>
+      <div className="mb-8">
         {/* Project badge */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
-          <div style={{
-            width: '7px',
-            height: '7px',
-            borderRadius: '50%',
-            background: 'var(--accent)',
-            flexShrink: 0,
-          }} />
-          <span style={{
-            fontSize: '12px',
-            color: 'var(--text-secondary)',
-            background: 'var(--bg-surface)',
-            border: '1px solid var(--border-subtle)',
-            padding: '2px 8px',
-            borderRadius: '100px',
-          }}>
+        <div className="flex items-center gap-2 mb-3.5">
+          <div className="w-[7px] h-[7px] rounded-full bg-(--accent) shrink-0" />
+          <span className="text-[12px] text-(--text-secondary) bg-(--bg-surface) border border-(--border-subtle) px-2 py-0.5 rounded-full">
             {projectName}
           </span>
         </div>
-        <h1 style={{
-          fontSize: '22px',
-          fontWeight: 600,
-          color: 'var(--text-primary)',
-          lineHeight: 1.25,
-          letterSpacing: '-0.01em',
-          margin: 0,
-        }}>
+        <h1 className="text-[22px] font-semibold text-(--text-primary) leading-[1.25] tracking-[-0.01em] m-0">
           What are you working on?
         </h1>
-        <p style={{
-          marginTop: '8px',
-          fontSize: '14px',
-          color: 'var(--text-secondary)',
-          lineHeight: 1.6,
-        }}>
+        <p className="mt-2 text-[14px] text-(--text-secondary) leading-[1.6]">
           Open a file from the sidebar, or jump in below.
         </p>
       </div>
 
       {/* Quick-access cards */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+      <div className="flex flex-col gap-2.5">
         <QuickCard
           icon={<DocumentIcon />}
           title="CLAUDE.md"
@@ -208,37 +133,15 @@ export const WelcomePane = ({
 // ── NoProjectPane ─────────────────────────────────────────────────────────────
 
 export const NoProjectPane = () => (
-  <div style={{
-    flex: 1,
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: '64px 40px',
-    background: 'var(--bg-base)',
-  }}>
-    <div style={{ textAlign: 'center' }}>
-      <div style={{
-        width: '40px',
-        height: '40px',
-        borderRadius: '12px',
-        background: 'var(--bg-surface)',
-        border: '1px solid var(--border-subtle)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        margin: '0 auto 16px',
-        color: 'var(--text-muted)',
-      }}>
+  <div className="flex-1 flex flex-col items-center justify-center px-10 py-16 bg-(--bg-base)">
+    <div className="text-center">
+      <div className="w-10 h-10 rounded-xl bg-(--bg-surface) border border-(--border-subtle) flex items-center justify-center mx-auto mb-4 text-(--text-muted)">
         <DocumentIcon />
       </div>
-      <p style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-secondary)' }}>No project selected</p>
-      <p style={{
-        marginTop: '6px',
-        fontSize: '13px',
-        color: 'var(--text-muted)',
-        fontFamily: 'Fira Code, monospace',
-      }}>Pick a project from the sidebar to get started.</p>
+      <p className="text-[14px] font-medium text-(--text-secondary)">No project selected</p>
+      <p className="mt-1.5 text-[13px] text-(--text-muted) font-['Fira_Code',monospace]">
+        Pick a project from the sidebar to get started.
+      </p>
     </div>
   </div>
 );

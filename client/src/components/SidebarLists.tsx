@@ -32,39 +32,15 @@ export const SidebarListSection = ({
   onSelect,
   onNew,
 }: SidebarListSectionProps) => (
-  <div style={{ marginBottom: '4px' }}>
+  <div className="mb-1">
     {/* Section header */}
-    <div style={{
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      padding: '0 16px',
-      minHeight: '28px',
-    }}>
-      <span style={{
-        fontSize: '11px',
-        fontWeight: 600,
-        textTransform: 'uppercase',
-        letterSpacing: '0.12em',
-        color: 'var(--text-muted)',
-      }}>
+    <div className="flex items-center justify-between px-4 min-h-7">
+      <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-(--text-muted)">
         {label}
       </span>
       <button
         onClick={onNew}
-        style={{
-          color: 'var(--text-muted)',
-          background: 'transparent',
-          border: 'none',
-          cursor: 'pointer',
-          borderRadius: '4px',
-          padding: '2px',
-          display: 'flex',
-          alignItems: 'center',
-          transition: 'color 150ms ease',
-        }}
-        onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-secondary)'; }}
-        onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-muted)'; }}
+        className="text-(--text-muted) bg-transparent border-none cursor-pointer rounded p-0.5 flex items-center transition-colors duration-150 hover:text-(--text-secondary)"
         aria-label={`New ${label}`}
       >
         <PlusIcon />
@@ -73,39 +49,25 @@ export const SidebarListSection = ({
 
     {/* Item list */}
     {loading && (
-      <div style={{ padding: '4px 16px' }}>
-        <span style={{
-          fontSize: '13px',
-          color: 'var(--text-muted)',
-          fontFamily: 'Fira Code, monospace',
-        }}>Loading…</span>
+      <div className="px-4 py-1">
+        <span className='text-[13px] text-(--text-muted) font-["Fira_Code",monospace]'>Loading…</span>
       </div>
     )}
 
     {error && !loading && (
-      <div style={{ padding: '4px 16px' }}>
-        <span style={{
-          fontSize: '13px',
-          color: 'var(--error)',
-          fontFamily: 'Fira Code, monospace',
-          opacity: 0.7,
-        }}>Error</span>
+      <div className="px-4 py-1">
+        <span className='text-[13px] text-(--error) font-["Fira_Code",monospace] opacity-70'>Error</span>
       </div>
     )}
 
     {!loading && !error && items.length === 0 && (
-      <div style={{ padding: '4px 16px' }}>
-        <span style={{
-          fontSize: '13px',
-          color: 'var(--text-muted)',
-          fontFamily: 'Fira Code, monospace',
-          fontStyle: 'italic',
-        }}>{emptyText}</span>
+      <div className="px-4 py-1">
+        <span className='text-[13px] text-(--text-muted) font-["Fira_Code",monospace] italic'>{emptyText}</span>
       </div>
     )}
 
     {!loading && !error && items.length > 0 && (
-      <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+      <ul className="list-none m-0 p-0">
         {items.map((name) => {
           const isSelected = selectedName === name;
           return (
@@ -113,50 +75,19 @@ export const SidebarListSection = ({
               <button
                 onClick={() => onSelect(name)}
                 title={name}
-                style={{
-                  width: '100%',
-                  textAlign: 'left',
-                  padding: '0 16px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '10px',
-                  minHeight: '28px',
-                  background: isSelected ? 'var(--accent-dim)' : 'transparent',
-                  border: 'none',
-                  cursor: 'pointer',
-                  color: isSelected ? 'var(--text-accent)' : 'var(--text-secondary)',
-                  fontSize: '13px',
-                  fontFamily: 'Fira Code, monospace',
-                  overflow: 'hidden',
-                  transition: 'background 100ms ease, color 100ms ease',
-                }}
-                onMouseEnter={(e) => {
-                  if (!isSelected) {
-                    (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-hover)';
-                    (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-primary)';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (!isSelected) {
-                    (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
-                    (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-secondary)';
-                  }
-                }}
+                className={[
+                  'w-full text-left px-4 flex items-center gap-2.5 min-h-7 border-none cursor-pointer',
+                  'text-[13px] font-["Fira_Code",monospace] overflow-hidden transition-colors duration-100',
+                  isSelected
+                    ? 'bg-(--accent-dim) text-(--text-accent)'
+                    : 'bg-transparent text-(--text-secondary) hover:bg-(--bg-hover) hover:text-(--text-primary)',
+                ].join(' ')}
               >
-                <span style={{
-                  flexShrink: 0,
-                  width: '5px',
-                  height: '5px',
-                  borderRadius: '50%',
-                  background: isSelected ? 'var(--accent)' : 'var(--text-muted)',
-                  opacity: isSelected ? 1 : 0.5,
-                  transition: 'background 100ms ease',
-                }} />
-                <span style={{
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
-                }}>{name}</span>
+                <span className={[
+                  'shrink-0 w-1.25 h-1.25 rounded-full transition-colors duration-100',
+                  isSelected ? 'bg-(--accent) opacity-100' : 'bg-(--text-muted) opacity-50',
+                ].join(' ')} />
+                <span className="overflow-hidden text-ellipsis whitespace-nowrap">{name}</span>
               </button>
             </li>
           );

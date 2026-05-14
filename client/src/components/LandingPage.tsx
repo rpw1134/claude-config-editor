@@ -63,40 +63,14 @@ interface ItemRowProps {
 const ItemRow = ({ name, isLast, onClick }: ItemRowProps) => (
   <button
     onClick={onClick}
-    style={{
-      width: '100%',
-      display: 'flex',
-      alignItems: 'center',
-      padding: '0 4px 0 16px',
-      minHeight: '64px',
-      borderRadius: 0,
-      border: 'none',
-      borderBottom: isLast ? 'none' : '1px solid var(--border-faint)',
-      textAlign: 'left',
-      cursor: 'pointer',
-      background: 'transparent',
-      color: 'var(--text-secondary)',
-      transition: 'background 120ms ease, color 120ms ease',
-    }}
-    onMouseEnter={(e) => {
-      const el = e.currentTarget as HTMLButtonElement;
-      el.style.background = 'var(--bg-hover)';
-      el.style.color = 'var(--text-primary)';
-    }}
-    onMouseLeave={(e) => {
-      const el = e.currentTarget as HTMLButtonElement;
-      el.style.background = 'transparent';
-      el.style.color = 'var(--text-secondary)';
-    }}
+    className={[
+      'w-full flex items-center pl-4 pr-1 min-h-[64px] text-left cursor-pointer',
+      'bg-transparent text-[var(--text-secondary)] transition-colors duration-[120ms]',
+      'border-none hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]',
+      !isLast ? 'border-b border-[var(--border-faint)]' : '',
+    ].join(' ')}
   >
-    <span style={{
-      fontFamily: "'Instrument Sans', sans-serif",
-      fontSize: '17px',
-      fontWeight: 500,
-      overflow: 'hidden',
-      textOverflow: 'ellipsis',
-      whiteSpace: 'nowrap',
-    }}>
+    <span className="font-['Instrument_Sans',sans-serif] text-[17px] font-medium overflow-hidden text-ellipsis whitespace-nowrap">
       {name}
     </span>
   </button>
@@ -145,61 +119,18 @@ export const TypeLandingPage = (props: TypeLandingPageProps) => {
   const singularType = title === 'MCP Servers' ? 'MCP Server' : title.replace(/s$/, '');
 
   return (
-    <div style={{
-      flex: 1,
-      display: 'flex',
-      flexDirection: 'column',
-      minHeight: 0,
-      overflowY: 'auto',
-      background: 'var(--bg-base)',
-    }}>
-      <div style={{
-        width: '100%',
-        padding: '48px 56px',
-      }}>
+    <div className="flex-1 flex flex-col min-h-0 overflow-y-auto bg-[var(--bg-base)]">
+      <div className="w-full px-14 py-12">
 
         {/* Heading row */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          marginBottom: '32px',
-        }}>
-          <h1 style={{
-            fontFamily: "'Bricolage Grotesque', sans-serif",
-            fontSize: '40px',
-            fontWeight: 700,
-            color: 'var(--text-primary)',
-            letterSpacing: '-0.03em',
-            lineHeight: 1.05,
-            margin: 0,
-          }}>
+        <div className="flex items-center justify-between mb-8">
+          <h1 className="font-['Bricolage_Grotesque',sans-serif] text-[40px] font-bold text-[var(--text-primary)] tracking-[-0.03em] leading-[1.05] m-0">
             {title}
           </h1>
 
           <button
             onClick={onNew}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '7px',
-              padding: '8px 16px',
-              borderRadius: '8px',
-              background: 'var(--accent)',
-              color: 'white',
-              fontSize: '14px',
-              fontWeight: 500,
-              border: 'none',
-              cursor: 'pointer',
-              flexShrink: 0,
-              transition: 'background 150ms ease',
-            }}
-            onMouseEnter={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.background = 'var(--accent-hover)';
-            }}
-            onMouseLeave={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.background = 'var(--accent)';
-            }}
+            className="flex items-center gap-[7px] px-4 py-2 rounded-lg bg-[var(--accent)] text-white text-[14px] font-medium border-none cursor-pointer shrink-0 transition-colors duration-150 hover:bg-[var(--accent-hover)]"
           >
             <PlusIcon />
             New {singularType}
@@ -207,17 +138,11 @@ export const TypeLandingPage = (props: TypeLandingPageProps) => {
         </div>
 
         {/* Search bar */}
-        <div style={{ position: 'relative', marginBottom: '24px' }}>
-          <span style={{
-            position: 'absolute',
-            left: '14px',
-            top: '50%',
-            transform: 'translateY(-50%)',
-            color: 'var(--text-muted)',
-            display: 'flex',
-            alignItems: 'center',
-            pointerEvents: 'none',
-          }}>
+        <div className="relative mb-6">
+          <span
+            className="absolute left-[14px] top-1/2 text-[var(--text-muted)] flex items-center pointer-events-none"
+            style={{ transform: 'translateY(-50%)' }}
+          >
             <SearchIcon />
           </span>
           <input
@@ -225,40 +150,19 @@ export const TypeLandingPage = (props: TypeLandingPageProps) => {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder={`Search ${title.toLowerCase()}...`}
-            style={{
-              width: '100%',
-              height: '44px',
-              paddingLeft: '40px',
-              paddingRight: '14px',
-              background: 'var(--bg-surface)',
-              border: '1px solid var(--border-subtle)',
-              borderRadius: '10px',
-              fontSize: '15px',
-              color: 'var(--text-primary)',
-              outline: 'none',
-              boxSizing: 'border-box',
-              transition: 'border-color 120ms ease',
-            }}
-            onFocus={(e) => {
-              e.currentTarget.style.borderColor = 'var(--border-default)';
-            }}
-            onBlur={(e) => {
-              e.currentTarget.style.borderColor = 'var(--border-subtle)';
-            }}
+            className="w-full h-11 pl-10 pr-[14px] bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-[10px] text-[15px] text-[var(--text-primary)] outline-none box-border transition-colors duration-[120ms] focus:border-[var(--border-default)]"
           />
         </div>
 
         {/* Loading */}
         {loading && (
-          <div style={{ display: 'flex', flexDirection: 'column' }}>
+          <div className="flex flex-col">
             {[1, 2, 3].map((i) => (
               <div
                 key={i}
-                className="shimmer"
+                className="shimmer h-16 bg-[var(--bg-surface)]"
                 style={{
-                  height: '64px',
                   borderBottom: i < 3 ? '1px solid var(--border-faint)' : 'none',
-                  background: 'var(--bg-surface)',
                   animationDelay: `${(i - 1) * 0.15}s`,
                 }}
               />
@@ -268,29 +172,15 @@ export const TypeLandingPage = (props: TypeLandingPageProps) => {
 
         {/* Error */}
         {error && !loading && (
-          <div style={{
-            padding: '12px 16px',
-            borderRadius: '8px',
-            background: 'rgba(248, 113, 113, 0.08)',
-            border: '1px solid rgba(248, 113, 113, 0.2)',
-            color: 'var(--error)',
-            fontSize: '13px',
-          }}>
+          <div className="px-4 py-3 rounded-lg bg-[rgba(248,113,113,0.08)] border border-[rgba(248,113,113,0.2)] text-[var(--error)] text-[13px]">
             {error}
           </div>
         )}
 
         {/* Empty state — no items at all */}
         {!loading && !error && items.length === 0 && (
-          <div style={{
-            paddingTop: '64px',
-            textAlign: 'center',
-          }}>
-            <p style={{
-              fontSize: '15px',
-              color: 'var(--text-muted)',
-              margin: 0,
-            }}>
+          <div className="pt-16 text-center">
+            <p className="text-[15px] text-[var(--text-muted)] m-0">
               No {title.toLowerCase()} yet
             </p>
           </div>
@@ -298,15 +188,8 @@ export const TypeLandingPage = (props: TypeLandingPageProps) => {
 
         {/* Empty state — search has no results */}
         {!loading && !error && items.length > 0 && filtered.length === 0 && (
-          <div style={{
-            paddingTop: '64px',
-            textAlign: 'center',
-          }}>
-            <p style={{
-              fontSize: '15px',
-              color: 'var(--text-muted)',
-              margin: 0,
-            }}>
+          <div className="pt-16 text-center">
+            <p className="text-[15px] text-[var(--text-muted)] m-0">
               No results for "{query.trim()}"
             </p>
           </div>
