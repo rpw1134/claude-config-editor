@@ -183,17 +183,16 @@ const InlineError = ({ message }: { message: string }) => (
 
 interface AccordionSectionProps {
   title: string;
+  open: boolean;
+  onToggle: () => void;
   children: React.ReactNode;
 }
 
-const AccordionSection = ({ title, children }: AccordionSectionProps) => {
-  const [open, setOpen] = useState(false);
-  const bodyRef = useRef<HTMLDivElement>(null);
-
+const AccordionSection = ({ title, open, onToggle, children }: AccordionSectionProps) => {
   return (
-    <div className="border border-[var(--border-subtle)] rounded-[14px] overflow-hidden">
+    <div className="border border-[var(--border-subtle)] rounded-[14px] overflow-hidden" style={{ flexShrink: 0 }}>
       <button
-        onClick={() => setOpen((v) => !v)}
+        onClick={onToggle}
         className="w-full flex items-center justify-between px-5 py-4 text-left bg-transparent border-none cursor-pointer text-[var(--text-primary)] transition-colors duration-150 hover:bg-[var(--bg-hover)]"
       >
         <span className="text-[15px] font-semibold">{title}</span>
@@ -205,7 +204,6 @@ const AccordionSection = ({ title, children }: AccordionSectionProps) => {
         </span>
       </button>
       <div
-        ref={bodyRef}
         style={{
           maxHeight: open ? 400 : 0,
           overflow: "hidden",
@@ -334,36 +332,47 @@ const StepDescription = ({
   onChange,
   onContinue,
   onBack,
-}: StepDescriptionProps) => (
-  <div>
-    <StepHeading
-      heading="What does this agent do?"
-      subtext="A short summary of this agent's role. Shown in listings and helps Claude route tasks to it."
-    />
-    <textarea
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      placeholder="e.g. A senior engineer focused on code review, refactoring, and architecture decisions."
-      rows={4}
-      className="w-full px-4 py-4 rounded-[14px] text-[15px] text-[var(--text-primary)] bg-[var(--bg-surface)] border border-[var(--border-subtle)] outline-none box-border transition-colors duration-150 resize-y leading-relaxed placeholder:text-[var(--text-muted)] focus:border-[var(--border-default)]"
-    />
-    <div className="mt-6 flex items-center gap-4">
-      <button
-        onClick={onContinue}
-        className="flex items-center gap-2 px-5 py-[11px] rounded-[10px] bg-[var(--accent)] text-white text-[15px] font-medium border-none cursor-pointer transition-colors duration-150 hover:bg-[var(--accent-hover)]"
-      >
-        Continue
-        <ArrowRightIcon />
-      </button>
-      <button
-        onClick={onBack}
-        className="text-[14px] text-[var(--text-muted)] bg-transparent border-none cursor-pointer transition-colors duration-150 hover:text-[var(--text-secondary)]"
-      >
-        ← Back
-      </button>
+}: StepDescriptionProps) => {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      onContinue();
+    }
+  };
+
+  return (
+    <div>
+      <StepHeading
+        heading="What does this agent do?"
+        subtext="A short summary of this agent's role. Shown in listings and helps Claude route tasks to it."
+      />
+      <textarea
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        onKeyDown={handleKeyDown}
+        placeholder="e.g. A senior engineer focused on code review, refactoring, and architecture decisions."
+        rows={4}
+        className="w-full px-4 py-4 rounded-[14px] text-[15px] text-[var(--text-primary)] bg-[var(--bg-surface)] border border-[var(--border-subtle)] outline-none box-border transition-colors duration-150 leading-relaxed placeholder:text-[var(--text-muted)] focus:border-[var(--border-default)]"
+        style={{ resize: "none", overflowY: "auto" }}
+      />
+      <div className="mt-6 flex items-center gap-4">
+        <button
+          onClick={onContinue}
+          className="flex items-center gap-2 px-5 py-[11px] rounded-[10px] bg-[var(--accent)] text-white text-[15px] font-medium border-none cursor-pointer transition-colors duration-150 hover:bg-[var(--accent-hover)]"
+        >
+          Continue
+          <ArrowRightIcon />
+        </button>
+        <button
+          onClick={onBack}
+          className="text-[14px] text-[var(--text-muted)] bg-transparent border-none cursor-pointer transition-colors duration-150 hover:text-[var(--text-secondary)]"
+        >
+          ← Back
+        </button>
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 interface StepOptionsProps {
   model: ModelOption;
@@ -432,7 +441,7 @@ const Toggle = ({ on, onToggle }: { on: boolean; onToggle: () => void }) => (
   </button>
 );
 
-const StepOptions = ({
+function StepOptions({
   model, onModelChange,
   color, onColorChange,
   permissionMode, onPermissionModeChange,
@@ -446,142 +455,242 @@ const StepOptions = ({
   skills, onSkillsChange,
   initialPrompt, onInitialPromptChange,
   onContinue, onBack,
-}: StepOptionsProps) => (
-  <div>
-    <StepHeading
-      heading="Fine-tune the behavior"
-      subtext="All optional. You can change these at any time in the editor."
+}: StepOptionsProps) {
+  const [openSection, setOpenSection] = useState<string | null>(null);
+
+  const toggle = (title: string) =>
+    setOpenSection((prev) => (prev === title ? null : title));
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
+      {/* Fixed top */}
+      <StepHeading
+        heading="Fine-tune the behavior"
+        subtext="All optional. You can change these at any time in the editor."
+      />
+
+      {/* Scrollable middle */}
+      <div style={{ flex: 1, overflowY: "auto", minHeight: 0 }} className="flex flex-col gap-2 mb-6">
+
+        <AccordionSection title="Model" open={openSection === "Model"} onToggle={() => toggle("Model")}>
+          <div className="flex flex-col gap-1.5 pt-1">
+            {MODELS.map((m) => (
+              <button key={m.value} onClick={() => onModelChange(m.value)} className={radioRow(model === m.value)}>
+                <span className="text-[14px] font-medium">{m.label}</span>
+                <span className="text-[12px] text-[var(--text-muted)]">{m.note}</span>
+              </button>
+            ))}
+          </div>
+        </AccordionSection>
+
+        <AccordionSection title="Color" open={openSection === "Color"} onToggle={() => toggle("Color")}>
+          <div className="flex gap-3 flex-wrap pt-1">
+            {COLORS.map((c) => (
+              <button
+                key={c.name}
+                onClick={() => onColorChange(color === c.name ? null : c.name)}
+                aria-label={c.name} title={c.name}
+                style={{
+                  width: 32, height: 32, borderRadius: '50%', background: c.bg,
+                  border: 'none', cursor: 'pointer', display: 'flex',
+                  alignItems: 'center', justifyContent: 'center',
+                  outline: color === c.name ? `3px solid ${c.ring}` : '3px solid transparent',
+                  outlineOffset: 2, transition: 'outline 150ms',
+                }}
+              >
+                {color === c.name && <span className="text-white"><CheckIcon /></span>}
+              </button>
+            ))}
+          </div>
+        </AccordionSection>
+
+        <AccordionSection title="Permission Mode" open={openSection === "Permission Mode"} onToggle={() => toggle("Permission Mode")}>
+          <div className="flex flex-col gap-1.5 pt-1">
+            {PERMISSION_MODES.map((p) => (
+              <button key={p.value} onClick={() => onPermissionModeChange(permissionMode === p.value ? null : p.value)} className={radioRow(permissionMode === p.value)}>
+                <span className="text-[14px] font-medium">{p.value}</span>
+                <span className="text-[12px] text-[var(--text-muted)]">{p.note}</span>
+              </button>
+            ))}
+          </div>
+        </AccordionSection>
+
+        <AccordionSection title="Effort" open={openSection === "Effort"} onToggle={() => toggle("Effort")}>
+          <div className="flex flex-col gap-1.5 pt-1">
+            {EFFORT_LEVELS.map((e) => (
+              <button key={e.value} onClick={() => onEffortChange(effort === e.value ? null : e.value)} className={radioRow(effort === e.value)}>
+                <span className="text-[14px] font-medium">{e.value}</span>
+                {e.note && <span className="text-[12px] text-[var(--text-muted)]">{e.note}</span>}
+              </button>
+            ))}
+          </div>
+        </AccordionSection>
+
+        <AccordionSection title="Memory" open={openSection === "Memory"} onToggle={() => toggle("Memory")}>
+          <div className="flex flex-col gap-1.5 pt-1">
+            {MEMORY_SCOPES.map((m) => (
+              <button key={m.value} onClick={() => onMemoryChange(memory === m.value ? null : m.value)} className={radioRow(memory === m.value)}>
+                <span className="text-[14px] font-medium">{m.value}</span>
+                <span className="text-[12px] text-[var(--text-muted)]">{m.note}</span>
+              </button>
+            ))}
+          </div>
+        </AccordionSection>
+
+        <AccordionSection title="Tools" open={openSection === "Tools"} onToggle={() => toggle("Tools")}>
+          <div className="flex flex-col gap-3 pt-1">
+            <div>
+              <p className="text-[12px] text-[var(--text-muted)] mb-1.5">Allowed tools — comma-separated. Leave empty to inherit all.</p>
+              <input type="text" value={tools} onChange={(e) => onToolsChange(e.target.value)} placeholder="e.g. Read, Write, Bash" className={fieldInput} />
+            </div>
+            <div>
+              <p className="text-[12px] text-[var(--text-muted)] mb-1.5">Disallowed tools — removed from inherited or specified list.</p>
+              <input type="text" value={disallowedTools} onChange={(e) => onDisallowedToolsChange(e.target.value)} placeholder="e.g. WebSearch, WebFetch" className={fieldInput} />
+            </div>
+          </div>
+        </AccordionSection>
+
+        <AccordionSection title="Skills" open={openSection === "Skills"} onToggle={() => toggle("Skills")}>
+          <div className="pt-1">
+            <p className="text-[12px] text-[var(--text-muted)] mb-1.5">Comma-separated skill names to preload into context at startup.</p>
+            <input type="text" value={skills} onChange={(e) => onSkillsChange(e.target.value)} placeholder="e.g. ship-pr, review" className={fieldInput} />
+          </div>
+        </AccordionSection>
+
+        <AccordionSection title="Max Turns" open={openSection === "Max Turns"} onToggle={() => toggle("Max Turns")}>
+          <div className="pt-1">
+            <p className="text-[12px] text-[var(--text-muted)] mb-1.5">Maximum agentic turns before the subagent stops.</p>
+            <input type="number" min={1} value={maxTurns} onChange={(e) => onMaxTurnsChange(e.target.value)} placeholder="e.g. 10" className={fieldInput} />
+          </div>
+        </AccordionSection>
+
+        <AccordionSection title="Initial Prompt" open={openSection === "Initial Prompt"} onToggle={() => toggle("Initial Prompt")}>
+          <div className="pt-1">
+            <p className="text-[12px] text-[var(--text-muted)] mb-1.5">Auto-submitted as the first user turn when run as the main session agent.</p>
+            <textarea
+              value={initialPrompt}
+              onChange={(e) => onInitialPromptChange(e.target.value)}
+              placeholder="e.g. Start by reading CLAUDE.md then summarize the repo."
+              rows={3}
+              className={fieldInput + ' leading-relaxed'}
+              style={{ resize: "none", overflowY: "auto" }}
+            />
+          </div>
+        </AccordionSection>
+
+        <AccordionSection title="Behavior" open={openSection === "Behavior"} onToggle={() => toggle("Behavior")}>
+          <div className="flex flex-col gap-4 pt-1">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-[14px] font-medium text-[var(--text-primary)] m-0">Background</p>
+                <p className="text-[12px] text-[var(--text-muted)] m-0 mt-0.5">Always run as a background task.</p>
+              </div>
+              <Toggle on={background} onToggle={() => onBackgroundChange(!background)} />
+            </div>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-[14px] font-medium text-[var(--text-primary)] m-0">Isolation</p>
+                <p className="text-[12px] text-[var(--text-muted)] m-0 mt-0.5">Run in a temporary git worktree.</p>
+              </div>
+              <Toggle on={isolation} onToggle={() => onIsolationChange(!isolation)} />
+            </div>
+          </div>
+        </AccordionSection>
+
+      </div>
+
+      {/* Fixed bottom */}
+      <div className="flex items-center gap-4 pt-2 pb-1">
+        <button onClick={onContinue} className="flex items-center gap-2 px-5 py-[11px] rounded-[10px] bg-[var(--accent)] text-white text-[15px] font-medium border-none cursor-pointer transition-colors duration-150 hover:bg-[var(--accent-hover)]">
+          Continue <ArrowRightIcon />
+        </button>
+        <button onClick={onBack} className="text-[14px] text-[var(--text-muted)] bg-transparent border-none cursor-pointer transition-colors duration-150 hover:text-[var(--text-secondary)]">
+          ← Back
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// Lightweight markdown-to-HTML converter. Handles the common subset needed for
+// system prompts: fenced code blocks, headings, bold, italic, inline code,
+// unordered lists, and paragraphs. Does NOT sanitize — used only for local
+// content typed by the user in this session.
+function renderMarkdown(md: string): string {
+  let html = md;
+
+  // Fenced code blocks (``` ... ```)
+  html = html.replace(/```[\w]*\n?([\s\S]*?)```/g, (_, code) => {
+    const escaped = code.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    return `<pre style="background:var(--bg-hover);border:1px solid var(--border-subtle);border-radius:8px;padding:12px 14px;overflow-x:auto;font-family:'Fira Code',monospace;font-size:13px;line-height:1.5;margin:12px 0"><code>${escaped}</code></pre>`;
+  });
+
+  // Split into lines for block-level processing
+  const lines = html.split("\n");
+  const out: string[] = [];
+  let inList = false;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+
+    // Already-processed HTML blocks (pre) — pass through
+    if (line.startsWith("<pre")) { out.push(line); inList = false; continue; }
+
+    // Headings
+    const h3 = line.match(/^### (.+)/);
+    const h2 = line.match(/^## (.+)/);
+    const h1 = line.match(/^# (.+)/);
+    if (h3) { if (inList) { out.push("</ul>"); inList = false; } out.push(`<h3 style="font-size:15px;font-weight:600;margin:16px 0 6px">${h3[1]}</h3>`); continue; }
+    if (h2) { if (inList) { out.push("</ul>"); inList = false; } out.push(`<h2 style="font-size:18px;font-weight:700;margin:20px 0 8px">${h2[1]}</h2>`); continue; }
+    if (h1) { if (inList) { out.push("</ul>"); inList = false; } out.push(`<h1 style="font-size:22px;font-weight:700;margin:20px 0 8px">${h1[1]}</h1>`); continue; }
+
+    // Unordered list items
+    const li = line.match(/^[-*] (.+)/);
+    if (li) {
+      if (!inList) { out.push("<ul style=\"margin:8px 0 8px 20px;padding:0\">"); inList = true; }
+      out.push(`<li style="margin:3px 0">${inlineMarkdown(li[1])}</li>`);
+      continue;
+    }
+
+    // Close list on non-list line
+    if (inList) { out.push("</ul>"); inList = false; }
+
+    // Blank line → paragraph break
+    if (line.trim() === "") { out.push("<br>"); continue; }
+
+    // Regular paragraph line
+    out.push(`<p style="margin:0 0 6px">${inlineMarkdown(line)}</p>`);
+  }
+
+  if (inList) out.push("</ul>");
+
+  return out.join("\n");
+}
+
+function inlineMarkdown(text: string): string {
+  // Inline code
+  text = text.replace(/`([^`]+)`/g, `<code style="font-family:'Fira Code',monospace;font-size:0.9em;background:var(--bg-hover);border:1px solid var(--border-subtle);border-radius:4px;padding:1px 5px">$1</code>`);
+  // Bold
+  text = text.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+  // Italic
+  text = text.replace(/\*([^*]+)\*/g, "<em>$1</em>");
+  return text;
+}
+
+const EyeIcon = ({ crossed }: { crossed: boolean }) => (
+  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+    <path
+      d="M1 8C1 8 3.5 3 8 3C12.5 3 15 8 15 8C15 8 12.5 13 8 13C3.5 13 1 8 1 8Z"
+      stroke="currentColor"
+      strokeWidth="1.4"
+      strokeLinecap="round"
+      strokeLinejoin="round"
     />
-    <div className="flex flex-col gap-2 mb-6">
-
-      <AccordionSection title="Model">
-        <div className="flex flex-col gap-1.5 pt-1">
-          {MODELS.map((m) => (
-            <button key={m.value} onClick={() => onModelChange(m.value)} className={radioRow(model === m.value)}>
-              <span className="text-[14px] font-medium">{m.label}</span>
-              <span className="text-[12px] text-[var(--text-muted)]">{m.note}</span>
-            </button>
-          ))}
-        </div>
-      </AccordionSection>
-
-      <AccordionSection title="Color">
-        <div className="flex gap-3 flex-wrap pt-1">
-          {COLORS.map((c) => (
-            <button
-              key={c.name}
-              onClick={() => onColorChange(color === c.name ? null : c.name)}
-              aria-label={c.name} title={c.name}
-              style={{
-                width: 32, height: 32, borderRadius: '50%', background: c.bg,
-                border: 'none', cursor: 'pointer', display: 'flex',
-                alignItems: 'center', justifyContent: 'center',
-                outline: color === c.name ? `3px solid ${c.ring}` : '3px solid transparent',
-                outlineOffset: 2, transition: 'outline 150ms',
-              }}
-            >
-              {color === c.name && <span className="text-white"><CheckIcon /></span>}
-            </button>
-          ))}
-        </div>
-      </AccordionSection>
-
-      <AccordionSection title="Permission Mode">
-        <div className="flex flex-col gap-1.5 pt-1">
-          {PERMISSION_MODES.map((p) => (
-            <button key={p.value} onClick={() => onPermissionModeChange(permissionMode === p.value ? null : p.value)} className={radioRow(permissionMode === p.value)}>
-              <span className="text-[14px] font-medium">{p.value}</span>
-              <span className="text-[12px] text-[var(--text-muted)]">{p.note}</span>
-            </button>
-          ))}
-        </div>
-      </AccordionSection>
-
-      <AccordionSection title="Effort">
-        <div className="flex flex-col gap-1.5 pt-1">
-          {EFFORT_LEVELS.map((e) => (
-            <button key={e.value} onClick={() => onEffortChange(effort === e.value ? null : e.value)} className={radioRow(effort === e.value)}>
-              <span className="text-[14px] font-medium">{e.value}</span>
-              {e.note && <span className="text-[12px] text-[var(--text-muted)]">{e.note}</span>}
-            </button>
-          ))}
-        </div>
-      </AccordionSection>
-
-      <AccordionSection title="Memory">
-        <div className="flex flex-col gap-1.5 pt-1">
-          {MEMORY_SCOPES.map((m) => (
-            <button key={m.value} onClick={() => onMemoryChange(memory === m.value ? null : m.value)} className={radioRow(memory === m.value)}>
-              <span className="text-[14px] font-medium">{m.value}</span>
-              <span className="text-[12px] text-[var(--text-muted)]">{m.note}</span>
-            </button>
-          ))}
-        </div>
-      </AccordionSection>
-
-      <AccordionSection title="Tools">
-        <div className="flex flex-col gap-3 pt-1">
-          <div>
-            <p className="text-[12px] text-[var(--text-muted)] mb-1.5">Allowed tools — comma-separated. Leave empty to inherit all.</p>
-            <input type="text" value={tools} onChange={(e) => onToolsChange(e.target.value)} placeholder="e.g. Read, Write, Bash" className={fieldInput} />
-          </div>
-          <div>
-            <p className="text-[12px] text-[var(--text-muted)] mb-1.5">Disallowed tools — removed from inherited or specified list.</p>
-            <input type="text" value={disallowedTools} onChange={(e) => onDisallowedToolsChange(e.target.value)} placeholder="e.g. WebSearch, WebFetch" className={fieldInput} />
-          </div>
-        </div>
-      </AccordionSection>
-
-      <AccordionSection title="Skills">
-        <div className="pt-1">
-          <p className="text-[12px] text-[var(--text-muted)] mb-1.5">Comma-separated skill names to preload into context at startup.</p>
-          <input type="text" value={skills} onChange={(e) => onSkillsChange(e.target.value)} placeholder="e.g. ship-pr, review" className={fieldInput} />
-        </div>
-      </AccordionSection>
-
-      <AccordionSection title="Max Turns">
-        <div className="pt-1">
-          <p className="text-[12px] text-[var(--text-muted)] mb-1.5">Maximum agentic turns before the subagent stops.</p>
-          <input type="number" min={1} value={maxTurns} onChange={(e) => onMaxTurnsChange(e.target.value)} placeholder="e.g. 10" className={fieldInput} />
-        </div>
-      </AccordionSection>
-
-      <AccordionSection title="Initial Prompt">
-        <div className="pt-1">
-          <p className="text-[12px] text-[var(--text-muted)] mb-1.5">Auto-submitted as the first user turn when run as the main session agent.</p>
-          <textarea value={initialPrompt} onChange={(e) => onInitialPromptChange(e.target.value)} placeholder="e.g. Start by reading CLAUDE.md then summarize the repo." rows={3} className={fieldInput + ' resize-y leading-relaxed'} />
-        </div>
-      </AccordionSection>
-
-      <AccordionSection title="Behavior">
-        <div className="flex flex-col gap-4 pt-1">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-[14px] font-medium text-[var(--text-primary)] m-0">Background</p>
-              <p className="text-[12px] text-[var(--text-muted)] m-0 mt-0.5">Always run as a background task.</p>
-            </div>
-            <Toggle on={background} onToggle={() => onBackgroundChange(!background)} />
-          </div>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-[14px] font-medium text-[var(--text-primary)] m-0">Isolation</p>
-              <p className="text-[12px] text-[var(--text-muted)] m-0 mt-0.5">Run in a temporary git worktree.</p>
-            </div>
-            <Toggle on={isolation} onToggle={() => onIsolationChange(!isolation)} />
-          </div>
-        </div>
-      </AccordionSection>
-
-    </div>
-    <div className="flex items-center gap-4">
-      <button onClick={onContinue} className="flex items-center gap-2 px-5 py-[11px] rounded-[10px] bg-[var(--accent)] text-white text-[15px] font-medium border-none cursor-pointer transition-colors duration-150 hover:bg-[var(--accent-hover)]">
-        Continue <ArrowRightIcon />
-      </button>
-      <button onClick={onBack} className="text-[14px] text-[var(--text-muted)] bg-transparent border-none cursor-pointer transition-colors duration-150 hover:text-[var(--text-secondary)]">
-        ← Back
-      </button>
-    </div>
-  </div>
+    <circle cx="8" cy="8" r="2" stroke="currentColor" strokeWidth="1.4" />
+    {crossed && (
+      <line x1="2" y1="2" x2="14" y2="14" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+    )}
+  </svg>
 );
 
 interface StepSystemPromptProps {
@@ -591,6 +700,8 @@ interface StepSystemPromptProps {
   error: string | null;
   onSubmit: () => void;
   onBack: () => void;
+  showPreview: boolean;
+  onPreviewToggle: () => void;
 }
 
 const StepSystemPrompt = ({
@@ -600,24 +711,37 @@ const StepSystemPrompt = ({
   error,
   onSubmit,
   onBack,
+  showPreview,
+  onPreviewToggle,
 }: StepSystemPromptProps) => {
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-
   return (
     <div>
       <StepHeading
         heading="Write the system prompt"
         subtext="Detailed instructions for how this agent should behave, what it knows, and how it responds."
       />
+
+      {/* Toolbar row */}
+      <div className="flex justify-end mb-2">
+        <button
+          onClick={onPreviewToggle}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-[8px] text-[13px] border border-[var(--border-subtle)] bg-transparent cursor-pointer transition-colors duration-150 hover:bg-[var(--bg-hover)]"
+          style={{ color: showPreview ? "var(--accent)" : "var(--text-muted)" }}
+        >
+          <EyeIcon crossed={!showPreview} />
+          {showPreview ? "Hide preview" : "Preview"}
+        </button>
+      </div>
+
       <textarea
-        ref={textareaRef}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder="You are a senior software engineer with expertise in..."
-        className="w-full px-4 py-4 rounded-[14px] text-[14px] text-[var(--text-primary)] bg-[var(--bg-surface)] border border-[var(--border-subtle)] outline-none box-border transition-colors duration-150 resize-y leading-relaxed placeholder:text-[var(--text-muted)] focus:border-[var(--border-default)] font-['Fira_Code',monospace]"
-        style={{ minHeight: 200 }}
+        className="w-full px-4 py-4 rounded-[14px] text-[14px] text-[var(--text-primary)] bg-[var(--bg-surface)] border border-[var(--border-subtle)] outline-none box-border transition-colors duration-150 leading-relaxed placeholder:text-[var(--text-muted)] focus:border-[var(--border-default)] font-['Fira_Code',monospace]"
+        style={{ minHeight: 200, resize: "none", overflowY: "auto" }}
         disabled={submitting}
       />
+
       {error && <InlineError message={error} />}
       <div className="mt-6 flex items-center gap-4">
         <button
@@ -678,6 +802,7 @@ export const AgentCreateFlow = ({
   const [systemPrompt, setSystemPrompt]         = useState('');
   const [submitting, setSubmitting]             = useState(false);
   const [submitError, setSubmitError]           = useState<string | null>(null);
+  const [showPreview, setShowPreview]           = useState(false);
 
   const TOTAL_STEPS = 4;
 
@@ -794,6 +919,8 @@ export const AgentCreateFlow = ({
       error={submitError}
       onSubmit={handleSubmit}
       onBack={handleBack}
+      showPreview={showPreview}
+      onPreviewToggle={() => setShowPreview((v) => !v)}
     />,
   ];
 
@@ -840,25 +967,71 @@ export const AgentCreateFlow = ({
           transition: "transform 350ms cubic-bezier(0.4, 0, 0.2, 1)",
         }}
       >
-        {steps.map((stepEl, i) => (
-          <div
-            key={i}
-            style={{
-              width: `${100 / TOTAL_STEPS}%`,
-              flexShrink: 0,
-              overflowY: "auto",
-              display: "flex",
-              flexDirection: "column",
-              justifyContent: "center",
-              paddingTop: 80,
-              paddingLeft: 56,
-              paddingRight: 56,
-              marginBottom: 100,
-            }}
-          >
-            <div style={{ maxWidth: 560, margin: "0 auto" }}>{stepEl}</div>
-          </div>
-        ))}
+        {steps.map((stepEl, i) => {
+          // Step 2 (StepOptions) needs flex-start + full height so its internal
+          // sticky header/footer + scrollable middle work correctly.
+          const isScrollStep = i === 2;
+          const isPromptStep = i === 3;
+          const promptPreviewOpen = isPromptStep && showPreview;
+          return (
+            <div
+              key={i}
+              style={{
+                width: `${100 / TOTAL_STEPS}%`,
+                flexShrink: 0,
+                overflowY: promptPreviewOpen ? "hidden" : "auto",
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: isScrollStep ? "flex-start" : "center",
+                paddingTop: 80,
+                paddingLeft: promptPreviewOpen ? 0 : 56,
+                paddingRight: promptPreviewOpen ? 0 : 56,
+                paddingBottom: isScrollStep ? 32 : 0,
+                marginBottom: isScrollStep ? 0 : 100,
+                boxSizing: "border-box",
+                transition: "padding 300ms ease",
+              }}
+            >
+              {promptPreviewOpen ? (
+                <div style={{ display: "flex", height: "100%", width: "100%" }}>
+                  {/* Form side — fixed width, padded */}
+                  <div style={{ width: 520, flexShrink: 0, paddingLeft: 56, paddingRight: 32, overflowY: "auto" }}>
+                    {stepEl}
+                  </div>
+                  {/* Preview side — fills remaining space */}
+                  <div style={{ flex: 1, minWidth: 0, borderLeft: "1px solid var(--border-subtle)", paddingLeft: 32, paddingRight: 56, overflowY: "auto" }}>
+                    <div style={{ paddingTop: 8 }}>
+                      <p style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 16, fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.08em" }}>Preview</p>
+                      <div
+                        className="text-[14px] text-[var(--text-primary)] leading-relaxed"
+                        style={{ fontFamily: "inherit" }}
+                        dangerouslySetInnerHTML={{
+                          __html: systemPrompt.trim()
+                            ? renderMarkdown(systemPrompt)
+                            : '<span style="color:var(--text-muted);font-style:italic">Nothing to preview yet.</span>',
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div
+                  style={{
+                    maxWidth: 560,
+                    margin: "0 auto",
+                    width: "100%",
+                    flex: isScrollStep ? "1 1 0" : undefined,
+                    minHeight: isScrollStep ? 0 : undefined,
+                    display: isScrollStep ? "flex" : undefined,
+                    flexDirection: isScrollStep ? "column" : undefined,
+                  }}
+                >
+                  {stepEl}
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
     </div>
   );
