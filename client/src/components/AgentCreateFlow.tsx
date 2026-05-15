@@ -637,7 +637,10 @@ export const AgentCreateFlow = ({
   ];
 
   return (
-    <div className="flex-1 overflow-hidden relative" style={{ background: 'var(--bg-base)' }}>
+    <div
+      className="flex-1 overflow-hidden relative"
+      style={{ background: "var(--bg-base)" }}
+    >
       {showDiscardModal && (
         <DiscardModal
           onConfirm={onCancel}
@@ -654,8 +657,11 @@ export const AgentCreateFlow = ({
       </button>
 
       {/* Dots pinned to top */}
-      <div className="absolute top-8 left-0 right-0 flex justify-center z-10" style={{ pointerEvents: 'none' }}>
-        <div style={{ pointerEvents: 'auto' }}>
+      <div
+        className="absolute top-8 left-0 right-0 flex justify-center z-10"
+        style={{ pointerEvents: "none" }}
+      >
+        <div style={{ pointerEvents: "auto" }}>
           <StepDots total={TOTAL_STEPS} current={step} onGoTo={goTo} />
         </div>
       </div>
@@ -663,14 +669,14 @@ export const AgentCreateFlow = ({
       {/* Track */}
       <div
         style={{
-          position: 'absolute',
+          position: "absolute",
           top: 0,
           bottom: 0,
           left: 0,
-          display: 'flex',
+          display: "flex",
           width: `${TOTAL_STEPS * 100}%`,
           transform: `translateX(-${step * (100 / TOTAL_STEPS)}%)`,
-          transition: 'transform 350ms cubic-bezier(0.4, 0, 0.2, 1)',
+          transition: "transform 350ms cubic-bezier(0.4, 0, 0.2, 1)",
         }}
       >
         {steps.map((stepEl, i) => (
@@ -679,14 +685,17 @@ export const AgentCreateFlow = ({
             style={{
               width: `${100 / TOTAL_STEPS}%`,
               flexShrink: 0,
-              overflowY: 'auto',
+              overflowY: "auto",
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "center",
               paddingTop: 80,
               paddingLeft: 56,
               paddingRight: 56,
-              paddingBottom: 56,
+              marginBottom: 100,
             }}
           >
-            {stepEl}
+            <div style={{ maxWidth: 560, margin: "0 auto" }}>{stepEl}</div>
           </div>
         ))}
       </div>
