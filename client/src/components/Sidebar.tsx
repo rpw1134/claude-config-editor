@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { ProjectPicker } from './ProjectPicker';
 import type { RecentItem } from '../hooks/useRecents';
 
@@ -148,8 +149,6 @@ const NavButton = ({ icon, label, active, disabled = false, onClick }: NavButton
 // ── Sidebar ────────────────────────────────────────────────────────────────────
 
 interface SidebarProps {
-  activeTab: string;
-  onTabChange: (tab: string) => void;
   selectedProjectPath: string | null;
   onProjectSelect: (path: string) => void;
   collapsed: boolean;
@@ -160,8 +159,6 @@ interface SidebarProps {
 }
 
 export const Sidebar = ({
-  activeTab,
-  onTabChange,
   selectedProjectPath,
   onProjectSelect,
   collapsed,
@@ -170,8 +167,35 @@ export const Sidebar = ({
   onRecentClick,
   onCreateNew,
 }: SidebarProps) => {
+  const location = useLocation();
+  const navigate = useNavigate();
   const [createDropdownOpen, setCreateDropdownOpen] = useState(false);
   const hasProject = selectedProjectPath !== null;
+
+  const encodedProject = selectedProjectPath ? encodeURIComponent(selectedProjectPath) : '';
+  const pathname = location.pathname;
+
+  // Derive active tab from current URL
+  const activeTab = (() => {
+    if (!encodedProject) return 'welcome';
+    const base = `/${encodedProject}`;
+    if (pathname === base || pathname === base + '/') return 'welcome';
+    if (pathname.startsWith(`${base}/agents`)) return 'agents';
+    if (pathname.startsWith(`${base}/skills`)) return 'skills';
+    if (pathname.startsWith(`${base}/mcp`)) return 'mcp-servers';
+    if (pathname.startsWith(`${base}/claude-md`)) return 'claude-md';
+    return 'welcome';
+  })();
+
+  const navigateTo = (tab: string) => {
+    if (!selectedProjectPath) return;
+    const base = `/${encodeURIComponent(selectedProjectPath)}`;
+    if (tab === 'claude-md') navigate(`${base}/claude-md`);
+    else if (tab === 'agents') navigate(`${base}/agents`);
+    else if (tab === 'skills') navigate(`${base}/skills`);
+    else if (tab === 'mcp-servers') navigate(`${base}/mcp`);
+    else navigate(base);
+  };
 
   // ── Collapsed strip ────────────────────────────────────────────────────────
 
@@ -208,16 +232,16 @@ export const Sidebar = ({
 
         {/* Icon nav items */}
         {[
-          { tab: 'claude-md', matchTabs: ['claude-md'], icon: <DocumentIcon />, title: 'CLAUDE.md' },
-          { tab: 'landing-agents', matchTabs: ['landing-agents', 'agents'], icon: <AgentIcon />, title: 'Agents' },
-          { tab: 'landing-skills', matchTabs: ['landing-skills', 'skills'], icon: <SkillIcon />, title: 'Skills' },
-          { tab: 'landing-mcp', matchTabs: ['landing-mcp', 'mcp-servers'], icon: <McpIcon />, title: 'MCP Servers' },
-        ].map(({ tab, matchTabs, icon, title }) => {
-          const isActive = matchTabs.includes(activeTab);
+          { tab: 'claude-md',  icon: <DocumentIcon />, title: 'CLAUDE.md' },
+          { tab: 'agents',     icon: <AgentIcon />,    title: 'Agents' },
+          { tab: 'skills',     icon: <SkillIcon />,    title: 'Skills' },
+          { tab: 'mcp-servers',icon: <McpIcon />,      title: 'MCP Servers' },
+        ].map(({ tab, icon, title }) => {
+          const isActive = activeTab === tab;
           return (
             <div key={tab} className="py-0.5 px-2 w-full shrink-0">
               <button
-                onClick={() => hasProject && onTabChange(tab)}
+                onClick={() => hasProject && navigateTo(tab)}
                 disabled={!hasProject}
                 title={title}
                 className={[
@@ -310,34 +334,34 @@ export const Sidebar = ({
           label="CLAUDE.md"
           active={activeTab === 'claude-md'}
           disabled={!hasProject}
-          onClick={() => { onTabChange('claude-md'); }}
+          onClick={() => navigateTo('claude-md')}
         />
 
         {/* Agents */}
         <NavButton
           icon={<AgentIcon />}
           label="Agents"
-          active={activeTab === 'landing-agents' || activeTab === 'agents'}
+          active={activeTab === 'agents'}
           disabled={!hasProject}
-          onClick={() => { onTabChange('landing-agents'); }}
+          onClick={() => navigateTo('agents')}
         />
 
         {/* Skills */}
         <NavButton
           icon={<SkillIcon />}
           label="Skills"
-          active={activeTab === 'landing-skills' || activeTab === 'skills'}
+          active={activeTab === 'skills'}
           disabled={!hasProject}
-          onClick={() => { onTabChange('landing-skills'); }}
+          onClick={() => navigateTo('skills')}
         />
 
         {/* MCP Servers */}
         <NavButton
           icon={<McpIcon />}
           label="MCP Servers"
-          active={activeTab === 'landing-mcp' || activeTab === 'mcp-servers'}
+          active={activeTab === 'mcp-servers'}
           disabled={!hasProject}
-          onClick={() => { onTabChange('landing-mcp'); }}
+          onClick={() => navigateTo('mcp-servers')}
         />
       </div>
 
@@ -363,7 +387,7 @@ export const Sidebar = ({
                     <span className="text-[12px] font-medium text-(--text-muted) shrink-0">
                       {recentTypeLabel(item.type)}
                     </span>
-                    <span className="text-[13px] font-['Instrument_Sans',sans-serif] overflow-hidden text-ellipsis whitespace-nowrap">
+                    <span className="text-[13px] overflow-hidden text-ellipsis whitespace-nowrap">
                       {item.name}
                     </span>
                   </button>

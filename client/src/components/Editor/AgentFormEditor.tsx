@@ -2,11 +2,18 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { parseFrontmatter, serializeFrontmatter, type AgentFrontmatter } from '../../lib/frontmatter';
 import { Editor } from './Editor';
 
-const labelClass = 'text-[11px] font-semibold uppercase tracking-wide text-white/30 mb-1 block';
-const inputClass =
-  'bg-white/4 border border-white/8 rounded-md text-[13px] text-white/80 px-3 py-1.5 focus:outline-none focus:border-white/20 w-full';
+// ── Shared style tokens ───────────────────────────────────────────────────────
+
+const fieldLabel = 'text-[13px] text-(--text-secondary) mb-2 block';
+const fieldInput =
+  'bg-(--bg-surface) border border-(--border-subtle) rounded-xl text-[14px] text-(--text-primary) px-4 py-2.5 focus:outline-none focus:border-(--border-default) w-full transition-colors duration-150 placeholder:text-(--text-muted)';
+const clusterLabel =
+  'text-[11px] uppercase tracking-wide text-(--text-muted) font-semibold mb-3';
+// font-mono is intentional for tag pills — tags are often code identifiers / tool names
 const tagPillClass =
-  'bg-white/8 text-white/60 text-[11px] font-mono px-2 py-0.5 rounded-md flex items-center gap-1.5';
+  'bg-white/8 text-(--text-secondary) text-[12px] font-mono px-2.5 py-1 rounded-lg flex items-center gap-1.5';
+
+// ── TagInput ──────────────────────────────────────────────────────────────────
 
 interface TagInputProps {
   value: string[];
@@ -43,7 +50,7 @@ const TagInput = ({ value, onChange, placeholder = 'Add…', disabled }: TagInpu
 
   return (
     <div
-      className="bg-white/4 border border-white/8 rounded-md px-2 py-1.5 flex flex-wrap gap-1.5 cursor-text min-h-8.5"
+      className="bg-(--bg-surface) border border-(--border-subtle) rounded-xl px-3 py-2 flex flex-wrap gap-2 cursor-text min-h-11 transition-colors duration-150"
       onClick={() => inputRef.current?.focus()}
     >
       {value.map((tag, i) => (
@@ -53,7 +60,7 @@ const TagInput = ({ value, onChange, placeholder = 'Add…', disabled }: TagInpu
             <button
               type="button"
               onClick={(e) => { e.stopPropagation(); removeTag(i); }}
-              className="text-white/30 hover:text-white/70 leading-none transition-colors"
+              className="text-(--text-muted) hover:text-(--text-secondary) leading-none transition-colors"
               aria-label={`Remove ${tag}`}
             >
               ×
@@ -69,23 +76,37 @@ const TagInput = ({ value, onChange, placeholder = 'Add…', disabled }: TagInpu
           onKeyDown={handleKeyDown}
           onBlur={commit}
           placeholder={value.length === 0 ? placeholder : ''}
-          className="bg-transparent text-[13px] text-white/80 outline-none placeholder:text-white/20 min-w-20 flex-1"
+          className="bg-transparent text-[13px] text-(--text-primary) outline-none placeholder:text-(--text-muted) min-w-20 flex-1"
         />
       )}
     </div>
   );
 };
 
-const COLOR_OPTIONS = [
-  { name: 'red',    dot: 'bg-red-400' },
-  { name: 'blue',   dot: 'bg-blue-400' },
-  { name: 'green',  dot: 'bg-green-400' },
-  { name: 'yellow', dot: 'bg-yellow-400' },
-  { name: 'purple', dot: 'bg-purple-400' },
-  { name: 'orange', dot: 'bg-orange-400' },
-  { name: 'pink',   dot: 'bg-pink-400' },
-  { name: 'cyan',   dot: 'bg-cyan-400' },
-] as const;
+// ── ColorPicker ───────────────────────────────────────────────────────────────
+
+interface ColorSwatch {
+  name: string;
+  bg: string;
+  ring: string;
+}
+
+const COLORS: ColorSwatch[] = [
+  { name: 'red',    bg: '#ef4444', ring: 'rgba(239,68,68,0.35)' },
+  { name: 'orange', bg: '#f97316', ring: 'rgba(249,115,22,0.35)' },
+  { name: 'yellow', bg: '#eab308', ring: 'rgba(234,179,8,0.35)' },
+  { name: 'green',  bg: '#22c55e', ring: 'rgba(34,197,94,0.35)' },
+  { name: 'teal',   bg: '#14b8a6', ring: 'rgba(20,184,166,0.35)' },
+  { name: 'blue',   bg: '#3b82f6', ring: 'rgba(59,130,246,0.35)' },
+  { name: 'purple', bg: '#a855f7', ring: 'rgba(168,85,247,0.35)' },
+  { name: 'pink',   bg: '#ec4899', ring: 'rgba(236,72,153,0.35)' },
+];
+
+const CheckIcon = () => (
+  <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+    <path d="M2 6L5 9L10 3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
 
 interface ColorPickerProps {
   value: string | undefined;
@@ -94,29 +115,33 @@ interface ColorPickerProps {
 }
 
 const ColorPicker = ({ value, onChange, disabled }: ColorPickerProps) => (
-  <div className="flex gap-2">
-    {COLOR_OPTIONS.map(({ name, dot }) => {
-      const selected = value === name;
+  <div className="flex gap-3 flex-wrap">
+    {COLORS.map((c) => {
+      const selected = value === c.name;
       return (
         <button
-          key={name}
+          key={c.name}
           type="button"
           disabled={disabled}
-          onClick={() => onChange(selected ? undefined : name)}
-          className={[
-            'w-5 h-5 rounded-full transition-all',
-            dot,
-            selected
-              ? 'ring-2 ring-white/40 ring-offset-1 ring-offset-[#0d0d10]'
-              : 'opacity-40 hover:opacity-70',
-          ].join(' ')}
-          aria-label={name}
+          onClick={() => onChange(selected ? undefined : c.name)}
+          aria-label={c.name}
           aria-pressed={selected}
-        />
+          style={{
+            background: c.bg,
+            outline: selected ? `3px solid ${c.ring}` : '3px solid transparent',
+            outlineOffset: 2,
+            transition: 'outline 150ms',
+          }}
+          className="w-7 h-7 rounded-full border-none cursor-pointer flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline-2 focus-visible:outline-offset-4"
+        >
+          {selected && <span className="text-white"><CheckIcon /></span>}
+        </button>
       );
     })}
   </div>
 );
+
+// ── Toggle ────────────────────────────────────────────────────────────────────
 
 interface ToggleProps {
   checked: boolean;
@@ -132,19 +157,19 @@ const Toggle = ({ checked, onChange, disabled }: ToggleProps) => (
     disabled={disabled}
     onClick={() => onChange(!checked)}
     className={[
-      'relative inline-flex h-4 w-7 shrink-0 rounded-full border border-white/10 transition-colors',
-      checked ? 'bg-white/25' : 'bg-white/6',
+      'relative inline-flex h-5 w-9 shrink-0 rounded-full border-none transition-colors duration-150',
       disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer',
     ].join(' ')}
+    style={{ background: checked ? 'var(--accent)' : 'var(--border-default)', transition: 'background 150ms' }}
   >
     <span
-      className={[
-        'absolute top-px left-px h-2.5 w-2.5 rounded-full bg-white/70 transition-transform',
-        checked ? 'translate-x-3' : 'translate-x-0',
-      ].join(' ')}
+      className="absolute top-0.75 w-3.5 h-3.5 rounded-full bg-white"
+      style={{ left: checked ? 19 : 3, transition: 'left 150ms' }}
     />
   </button>
 );
+
+// ── ModelSelect ───────────────────────────────────────────────────────────────
 
 const KNOWN_MODELS = ['sonnet', 'opus', 'haiku'];
 
@@ -160,22 +185,18 @@ const ModelSelect = ({ value, onChange, disabled }: ModelSelectProps) => {
 
   const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const v = e.target.value;
-    if (v === '') {
-      onChange(undefined);
-    } else if (v === '__custom__') {
-      onChange('');
-    } else {
-      onChange(v);
-    }
+    if (v === '') onChange(undefined);
+    else if (v === '__custom__') onChange('');
+    else onChange(v);
   };
 
   return (
-    <div className="flex flex-col gap-1.5">
+    <div className="flex flex-col gap-2">
       <select
         value={selectValue}
         onChange={handleSelectChange}
         disabled={disabled}
-        className={inputClass}
+        className={fieldInput}
       >
         <option value="">Inherit — default</option>
         <option value="sonnet">sonnet</option>
@@ -190,209 +211,313 @@ const ModelSelect = ({ value, onChange, disabled }: ModelSelectProps) => {
           onChange={(e) => onChange(e.target.value || undefined)}
           placeholder="e.g. claude-opus-4-5"
           disabled={disabled}
-          className={inputClass}
+          className={fieldInput}
         />
       )}
     </div>
   );
 };
 
-interface AdvancedSectionProps {
+// ── Tab types ─────────────────────────────────────────────────────────────────
+
+type Tab = 'identity' | 'prompt' | 'settings';
+
+// ── IdentityTab ───────────────────────────────────────────────────────────────
+
+interface IdentityTabProps {
   fm: AgentFrontmatter;
   onFieldChange: <K extends keyof AgentFrontmatter>(key: K, value: AgentFrontmatter[K]) => void;
   disabled?: boolean;
 }
 
-const ChevronIcon = ({ open }: { open: boolean }) => (
-  <svg
-    width="10"
-    height="10"
-    viewBox="0 0 10 10"
-    fill="currentColor"
-    className={['transition-transform duration-150', open ? 'rotate-90' : 'rotate-0'].join(' ')}
-  >
-    <path d="M3 2l4 3-4 3V2z" />
-  </svg>
+const IdentityTab = ({ fm, onFieldChange, disabled }: IdentityTabProps) => (
+  <div className="px-7 py-8 flex flex-col gap-6 overflow-y-auto h-full">
+    <div>
+      <h2 className="m-0 mb-1 text-2xl font-['Bricolage_Grotesque',sans-serif] font-bold tracking-[-0.015em] text-(--text-primary)">
+        Identity
+      </h2>
+      <p className="m-0 text-[13px] text-(--text-muted)">
+        Name, description, and color for this agent.
+      </p>
+    </div>
+
+    <div className="flex flex-col gap-5">
+      {/* Name */}
+      <div>
+        <label className={fieldLabel}>Name</label>
+        <input
+          type="text"
+          value={fm.name ?? ''}
+          onChange={(e) => onFieldChange('name', e.target.value || undefined)}
+          disabled={disabled}
+          placeholder="my-agent"
+          className={fieldInput}
+        />
+      </div>
+
+      {/* Description */}
+      <div>
+        <label className={fieldLabel}>Description</label>
+        <textarea
+          rows={4}
+          value={fm.description ?? ''}
+          onChange={(e) => onFieldChange('description', e.target.value || undefined)}
+          disabled={disabled}
+          placeholder="When Claude should delegate to this agent…"
+          className={fieldInput + ' resize-none leading-relaxed'}
+        />
+      </div>
+
+      {/* Color */}
+      <div>
+        <label className={fieldLabel}>Color</label>
+        <ColorPicker
+          value={fm.color}
+          onChange={(v) => onFieldChange('color', v)}
+          disabled={disabled}
+        />
+      </div>
+    </div>
+  </div>
 );
 
-const AdvancedSection = ({ fm, onFieldChange, disabled }: AdvancedSectionProps) => {
-  const [open, setOpen] = useState(false);
+// ── PromptTab ─────────────────────────────────────────────────────────────────
 
-  return (
-    <div className="border-t border-white/6 pt-4 mt-4">
-      <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        className="text-white/30 hover:text-white/50 text-[11px] flex items-center gap-1.5 transition-colors mb-3"
-      >
-        <ChevronIcon open={open} />
-        Advanced
-      </button>
+interface PromptTabProps {
+  body: string;
+  onBodyChange: (val: string) => void;
+  disabled?: boolean;
+}
 
-      {open && (
-        <div className="flex flex-col gap-4">
-          <div>
-            <label className={labelClass}>Model</label>
-            <ModelSelect
-              value={fm.model}
-              onChange={(v) => onFieldChange('model', v)}
-              disabled={disabled}
-            />
-          </div>
+const PromptTab = ({ body, onBodyChange, disabled }: PromptTabProps) => (
+  <div className="flex flex-col h-full min-h-0">
+    <div className="px-7 pt-5 pb-3 shrink-0">
+      <p className="m-0 text-[13px] text-(--text-muted)">
+        System prompt — markdown supported
+      </p>
+    </div>
+    <div className="flex-1 min-h-0">
+      <Editor
+        value={body}
+        onChange={onBodyChange}
+        language="markdown"
+        readOnly={disabled}
+      />
+    </div>
+  </div>
+);
 
-          <div>
-            <label className={labelClass}>Tools</label>
-            <TagInput
-              value={fm.tools ?? []}
-              onChange={(v) => onFieldChange('tools', v.length > 0 ? v : undefined)}
-              placeholder="Add tool…"
-              disabled={disabled}
-            />
-          </div>
+// ── SettingsTab ───────────────────────────────────────────────────────────────
 
-          <div>
-            <label className={labelClass}>Disallowed Tools</label>
-            <TagInput
-              value={fm.disallowedTools ?? []}
-              onChange={(v) => onFieldChange('disallowedTools', v.length > 0 ? v : undefined)}
-              placeholder="Add tool…"
-              disabled={disabled}
-            />
-          </div>
+interface SettingsTabProps {
+  fm: AgentFrontmatter;
+  onFieldChange: <K extends keyof AgentFrontmatter>(key: K, value: AgentFrontmatter[K]) => void;
+  onDelete: () => void;
+  disabled?: boolean;
+}
 
-          <div>
-            <label className={labelClass}>Permission Mode</label>
-            <select
-              value={fm.permissionMode ?? ''}
-              onChange={(e) => onFieldChange('permissionMode', e.target.value || undefined)}
-              disabled={disabled}
-              className={inputClass}
-            >
-              <option value=""></option>
-              <option value="default">default</option>
-              <option value="acceptEdits">acceptEdits</option>
-              <option value="auto">auto</option>
-              <option value="dontAsk">dontAsk</option>
-              <option value="bypassPermissions">bypassPermissions</option>
-              <option value="plan">plan</option>
-            </select>
-          </div>
+const SettingsTab = ({ fm, onFieldChange, onDelete, disabled }: SettingsTabProps) => (
+  <div className="px-7 py-8 flex flex-col gap-8 overflow-y-auto h-full">
 
-          <div>
-            <label className={labelClass}>Max Turns</label>
-            <input
-              type="number"
-              min={1}
-              value={fm.maxTurns ?? ''}
-              onChange={(e) => {
-                const v = e.target.value;
-                onFieldChange('maxTurns', v === '' ? undefined : Math.max(1, parseInt(v, 10)));
-              }}
-              disabled={disabled}
-              placeholder="Unlimited"
-              className={inputClass}
-            />
-          </div>
+    {/* Cluster: Behavior */}
+    <div>
+      <p className={clusterLabel}>Behavior</p>
+      <div className="flex flex-col gap-4">
 
-          <div>
-            <label className={labelClass}>Memory</label>
-            <select
-              value={fm.memory ?? ''}
-              onChange={(e) => onFieldChange('memory', e.target.value || undefined)}
-              disabled={disabled}
-              className={inputClass}
-            >
-              <option value=""></option>
-              <option value="user">user</option>
-              <option value="project">project</option>
-              <option value="local">local</option>
-            </select>
-          </div>
+        <div>
+          <label className={fieldLabel}>Model</label>
+          <ModelSelect
+            value={fm.model}
+            onChange={(v) => onFieldChange('model', v)}
+            disabled={disabled}
+          />
+        </div>
 
-          <div className="flex items-center gap-3">
+        <div>
+          <label className={fieldLabel}>Max Turns</label>
+          <input
+            type="number"
+            min={1}
+            value={fm.maxTurns ?? ''}
+            onChange={(e) => {
+              const v = e.target.value;
+              onFieldChange('maxTurns', v === '' ? undefined : Math.max(1, parseInt(v, 10)));
+            }}
+            disabled={disabled}
+            placeholder="Unlimited"
+            className={fieldInput}
+          />
+        </div>
+
+        <div>
+          <label className={fieldLabel}>Effort</label>
+          <select
+            value={fm.effort ?? ''}
+            onChange={(e) => onFieldChange('effort', e.target.value || undefined)}
+            disabled={disabled}
+            className={fieldInput}
+          >
+            <option value=""></option>
+            <option value="low">low</option>
+            <option value="medium">medium</option>
+            <option value="high">high</option>
+            <option value="xhigh">xhigh</option>
+            <option value="max">max</option>
+          </select>
+        </div>
+
+        <div>
+          <label className={fieldLabel}>Background</label>
+          <div className="flex items-center gap-3 mt-1">
             <Toggle
               checked={fm.background ?? false}
               onChange={(v) => onFieldChange('background', v || undefined)}
               disabled={disabled}
             />
-            <label className={labelClass + ' mb-0'}>Background</label>
-          </div>
-
-          <div>
-            <label className={labelClass}>Effort</label>
-            <select
-              value={fm.effort ?? ''}
-              onChange={(e) => onFieldChange('effort', e.target.value || undefined)}
-              disabled={disabled}
-              className={inputClass}
-            >
-              <option value=""></option>
-              <option value="low">low</option>
-              <option value="medium">medium</option>
-              <option value="high">high</option>
-              <option value="xhigh">xhigh</option>
-              <option value="max">max</option>
-            </select>
-          </div>
-
-          <div>
-            <label className={labelClass}>Isolation</label>
-            <select
-              value={fm.isolation ?? ''}
-              onChange={(e) => onFieldChange('isolation', e.target.value || undefined)}
-              disabled={disabled}
-              className={inputClass}
-            >
-              <option value=""></option>
-              <option value="worktree">worktree</option>
-            </select>
-          </div>
-
-          <div>
-            <label className={labelClass}>Color</label>
-            <ColorPicker
-              value={fm.color}
-              onChange={(v) => onFieldChange('color', v)}
-              disabled={disabled}
-            />
-          </div>
-
-          <div>
-            <label className={labelClass}>Initial Prompt</label>
-            <textarea
-              rows={3}
-              value={fm.initialPrompt ?? ''}
-              onChange={(e) => onFieldChange('initialPrompt', e.target.value || undefined)}
-              disabled={disabled}
-              placeholder="Prompt sent at the start of each run…"
-              className={inputClass + ' resize-none'}
-            />
-          </div>
-
-          <div>
-            <label className={labelClass}>MCP Servers</label>
-            <TagInput
-              value={fm.mcpServers ?? []}
-              onChange={(v) => onFieldChange('mcpServers', v.length > 0 ? v : undefined)}
-              placeholder="Add server…"
-              disabled={disabled}
-            />
+            <span className="text-[13px] text-(--text-muted)">Run as a background task</span>
           </div>
         </div>
-      )}
+      </div>
     </div>
-  );
-};
+
+    {/* Cluster: Permissions */}
+    <div>
+      <p className={clusterLabel}>Permissions</p>
+      <div className="flex flex-col gap-4">
+
+        <div>
+          <label className={fieldLabel}>Permission Mode</label>
+          <select
+            value={fm.permissionMode ?? ''}
+            onChange={(e) => onFieldChange('permissionMode', e.target.value || undefined)}
+            disabled={disabled}
+            className={fieldInput}
+          >
+            <option value=""></option>
+            <option value="default">default</option>
+            <option value="acceptEdits">acceptEdits</option>
+            <option value="auto">auto</option>
+            <option value="dontAsk">dontAsk</option>
+            <option value="bypassPermissions">bypassPermissions</option>
+            <option value="plan">plan</option>
+          </select>
+        </div>
+
+        <div>
+          <label className={fieldLabel}>Isolation</label>
+          <select
+            value={fm.isolation ?? ''}
+            onChange={(e) => onFieldChange('isolation', e.target.value || undefined)}
+            disabled={disabled}
+            className={fieldInput}
+          >
+            <option value=""></option>
+            <option value="worktree">worktree</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    {/* Cluster: Content */}
+    <div>
+      <p className={clusterLabel}>Content</p>
+      <div className="flex flex-col gap-4">
+
+        <div>
+          <label className={fieldLabel}>Tools</label>
+          <TagInput
+            value={fm.tools ?? []}
+            onChange={(v) => onFieldChange('tools', v.length > 0 ? v : undefined)}
+            placeholder="Add tool…"
+            disabled={disabled}
+          />
+        </div>
+
+        <div>
+          <label className={fieldLabel}>Disallowed Tools</label>
+          <TagInput
+            value={fm.disallowedTools ?? []}
+            onChange={(v) => onFieldChange('disallowedTools', v.length > 0 ? v : undefined)}
+            placeholder="Add tool…"
+            disabled={disabled}
+          />
+        </div>
+
+        <div>
+          <label className={fieldLabel}>Initial Prompt</label>
+          <textarea
+            rows={3}
+            value={fm.initialPrompt ?? ''}
+            onChange={(e) => onFieldChange('initialPrompt', e.target.value || undefined)}
+            disabled={disabled}
+            placeholder="Prompt sent at the start of each run…"
+            className={fieldInput + ' resize-none leading-relaxed'}
+          />
+        </div>
+
+        <div>
+          <label className={fieldLabel}>MCP Servers</label>
+          <TagInput
+            value={fm.mcpServers ?? []}
+            onChange={(v) => onFieldChange('mcpServers', v.length > 0 ? v : undefined)}
+            placeholder="Add server…"
+            disabled={disabled}
+          />
+        </div>
+
+        <div>
+          <label className={fieldLabel}>Memory</label>
+          <select
+            value={fm.memory ?? ''}
+            onChange={(e) => onFieldChange('memory', e.target.value || undefined)}
+            disabled={disabled}
+            className={fieldInput}
+          >
+            <option value=""></option>
+            <option value="user">user</option>
+            <option value="project">project</option>
+            <option value="local">local</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    {/* Danger zone */}
+    <div className="pt-4 border-t border-(--border-faint)">
+      <button
+        type="button"
+        onClick={onDelete}
+        className="text-[13px] text-(--text-muted) hover:text-(--error) bg-transparent border-none cursor-pointer transition-colors duration-150 p-0"
+      >
+        Delete agent
+      </button>
+    </div>
+  </div>
+);
+
+// ── AgentFormEditor ───────────────────────────────────────────────────────────
 
 export interface AgentFormEditorProps {
   content: string;
   onChange: (content: string) => void;
+  onDelete?: () => void;
   disabled?: boolean;
+  onSave?: () => void;
+  saveStatus?: 'idle' | 'saving' | 'saved' | 'error';
+  saveDisabled?: boolean;
+  onClose?: () => void;
 }
 
-export const AgentFormEditor = ({ content, onChange, disabled }: AgentFormEditorProps) => {
-  // Parse once on mount. External content changes (e.g. file load) are detected
-  // via lastExternalContent and re-parsed in the effect below.
+export const AgentFormEditor = ({
+  content,
+  onChange,
+  onDelete,
+  disabled,
+  onSave,
+  saveStatus,
+  saveDisabled,
+  onClose,
+}: AgentFormEditorProps) => {
   const { frontmatter: initialFm, body: initialBody } = useMemo(
     () => parseFrontmatter(content),
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -401,6 +526,7 @@ export const AgentFormEditor = ({ content, onChange, disabled }: AgentFormEditor
 
   const [fm, setFm] = useState<AgentFrontmatter>(initialFm);
   const [body, setBody] = useState(initialBody);
+  const [activeTab, setActiveTab] = useState<Tab>('identity');
   const lastExternalContent = useRef(content);
 
   useEffect(() => {
@@ -414,7 +540,6 @@ export const AgentFormEditor = ({ content, onChange, disabled }: AgentFormEditor
 
   const emit = (nextFm: AgentFrontmatter, nextBody: string) => {
     const serialized = serializeFrontmatter(nextFm, nextBody);
-    // Update the ref so the effect above doesn't re-parse our own emission.
     lastExternalContent.current = serialized;
     onChange(serialized);
   };
@@ -433,48 +558,78 @@ export const AgentFormEditor = ({ content, onChange, disabled }: AgentFormEditor
     emit(fm, val);
   };
 
+  const tabs: { id: Tab; label: string }[] = [
+    { id: 'identity', label: 'Identity' },
+    { id: 'prompt',   label: 'Prompt' },
+    { id: 'settings', label: 'Settings' },
+  ];
+
   return (
-    <div className="h-full flex flex-col bg-[#0d0d10]">
-      <div className="shrink-0 overflow-y-auto px-5 py-4 max-h-80">
-        <div className="mb-4">
-          <label className={labelClass}>Name</label>
-          <input
-            type="text"
-            value={fm.name ?? ''}
-            onChange={(e) => handleFieldChange('name', e.target.value || undefined)}
-            disabled={disabled}
-            placeholder="my-agent"
-            className={inputClass}
-          />
+    <div className="h-full flex flex-col bg-(--bg-base)">
+      {/* Combined tab bar + actions header */}
+      <div className="shrink-0 flex items-end justify-between border-b border-(--border-faint) px-7">
+        {/* Tabs — underline style */}
+        <div className="flex items-center gap-6">
+          {tabs.map(({ id, label }) => (
+            <button
+              key={id}
+              type="button"
+              onClick={() => setActiveTab(id)}
+              className={[
+                'pb-3 pt-4 text-[14px] font-medium bg-transparent border-none cursor-pointer transition-colors duration-150 relative',
+                activeTab === id
+                  ? 'text-(--text-primary) after:absolute after:bottom-0 after:left-0 after:right-0 after:h-px after:bg-(--accent)'
+                  : 'text-(--text-muted) hover:text-(--text-secondary)',
+              ].join(' ')}
+            >
+              {label}
+            </button>
+          ))}
         </div>
 
-        <div className="mb-4">
-          <label className={labelClass}>Description</label>
-          <textarea
-            rows={3}
-            value={fm.description ?? ''}
-            onChange={(e) => handleFieldChange('description', e.target.value || undefined)}
-            disabled={disabled}
-            placeholder="When Claude should delegate to this agent…"
-            className={inputClass + ' resize-none'}
-          />
+        {/* Save + Close actions */}
+        <div className="flex items-center gap-3 pb-3">
+          {onSave && !saveDisabled && (
+            <button
+              onClick={onSave}
+              className="text-[13px] font-medium px-3 py-1 rounded-lg bg-(--accent) text-white border-none cursor-pointer hover:bg-(--accent-hover) transition-colors duration-150"
+            >
+              {saveStatus === 'saving' ? 'Saving…' : 'Save'}
+            </button>
+          )}
+          {(saveStatus === 'saved' || saveStatus === 'error') && saveDisabled && (
+            <span className={`text-[13px] ${saveStatus === 'saved' ? 'text-(--success)' : 'text-(--error)'}`}>
+              {saveStatus === 'saved' ? 'Saved' : 'Error'}
+            </span>
+          )}
+          {onClose && (
+            <button
+              onClick={onClose}
+              aria-label="Close editor"
+              className="text-(--text-muted) hover:text-(--text-primary) bg-transparent border-none cursor-pointer text-[18px] leading-none transition-colors flex items-center"
+            >
+              ×
+            </button>
+          )}
         </div>
-
-        <AdvancedSection fm={fm} onFieldChange={handleFieldChange} disabled={disabled} />
       </div>
 
-      <div className="flex-1 min-h-0 flex flex-col border-t border-white/6">
-        <div className="px-5 py-2 shrink-0">
-          <span className={labelClass + ' mb-0'}>System Prompt</span>
-        </div>
-        <div className="flex-1 min-h-0">
-          <Editor
-            value={body}
-            onChange={handleBodyChange}
-            language="markdown"
-            readOnly={disabled}
+      {/* Tab content */}
+      <div className="flex-1 min-h-0">
+        {activeTab === 'identity' && (
+          <IdentityTab fm={fm} onFieldChange={handleFieldChange} disabled={disabled} />
+        )}
+        {activeTab === 'prompt' && (
+          <PromptTab body={body} onBodyChange={handleBodyChange} disabled={disabled} />
+        )}
+        {activeTab === 'settings' && (
+          <SettingsTab
+            fm={fm}
+            onFieldChange={handleFieldChange}
+            onDelete={onDelete ?? (() => {})}
+            disabled={disabled}
           />
-        </div>
+        )}
       </div>
     </div>
   );

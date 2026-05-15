@@ -15,7 +15,7 @@ const AgentCard = ({ name, isSelected, onSelect }: AgentCardProps) => (
   <button
     onClick={() => onSelect(isSelected ? null : name)}
     className={[
-      'group w-full text-left px-5 py-4 rounded-lg border transition-all duration-150 block',
+      'group w-full text-left px-4 py-2 rounded-lg border transition-all duration-150 block',
       isSelected
         ? 'bg-white/6 border-white/14'
         : 'bg-white/2.5 border-white/7 hover:bg-white/4.5 hover:border-white/12',

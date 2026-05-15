@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   fetchAgentContent,
   fetchSkillContent,
@@ -23,7 +24,6 @@ interface EditorPaneProps {
   name: string | null;
   type: "agent" | "skill" | "mcp-server" | "project";
   projectPath: string | null;
-  onClose: () => void;
   onCreated?: (name: string) => void;
   onDeleted?: () => void;
 }
@@ -47,23 +47,22 @@ interface ViewModeToggleProps {
 }
 
 const ViewModeToggle = ({ viewMode, onToggle }: ViewModeToggleProps) => (
-  <div className="flex items-center gap-2">
+  <div className="flex items-center gap-3">
     <button
       type="button"
       onClick={() => onToggle("form")}
       className={[
-        'font-["Fira_Code",monospace] text-[13px] bg-transparent border-none cursor-pointer p-0 transition-colors duration-150',
+        'text-[13px] bg-transparent border-none cursor-pointer p-0 transition-colors duration-150',
         viewMode === "form" ? "text-(--text-primary)" : "text-(--text-muted) hover:text-(--text-secondary)",
       ].join(' ')}
     >
       Form
     </button>
-    <span className="text-(--text-muted) text-[13px] opacity-50">/</span>
     <button
       type="button"
       onClick={() => onToggle("raw")}
       className={[
-        'font-["Fira_Code",monospace] text-[13px] bg-transparent border-none cursor-pointer p-0 transition-colors duration-150',
+        'text-[13px] bg-transparent border-none cursor-pointer p-0 transition-colors duration-150',
         viewMode === "raw" ? "text-(--text-primary)" : "text-(--text-muted) hover:text-(--text-secondary)",
       ].join(' ')}
     >
@@ -79,10 +78,10 @@ interface CreateHeaderProps {
   draftName: string;
   onDraftNameChange: (val: string) => void;
   createStatus: CreateStatus;
-  onClose: () => void;
   onCreate: () => void;
   viewMode: ViewMode;
   onViewModeToggle: (mode: ViewMode) => void;
+  contentEmpty?: boolean;
 }
 
 const CreateHeader = ({
@@ -90,14 +89,15 @@ const CreateHeader = ({
   draftName,
   onDraftNameChange,
   createStatus,
-  onClose,
   onCreate,
   viewMode,
   onViewModeToggle,
+  contentEmpty = false,
 }: CreateHeaderProps) => {
   const creating = createStatus === "creating";
   const isError = createStatus === "error";
-  const disabled = draftName.trim() === "" || creating;
+  const needsBody = type === "mcp-server" && contentEmpty;
+  const disabled = draftName.trim() === "" || creating || needsBody;
 
   const label = creating ? "Creating…" : isError ? "Error" : "Create";
 
@@ -126,12 +126,17 @@ const CreateHeader = ({
         {type === "agent" && (
           <ViewModeToggle viewMode={viewMode} onToggle={onViewModeToggle} />
         )}
+        {needsBody && (
+          <span className='font-["Fira_Code",monospace] text-[11px] text-(--text-muted) opacity-60'>
+            add JSON body below first
+          </span>
+        )}
         <button
           onClick={onCreate}
           disabled={disabled}
           aria-label="Create file"
           className={[
-            'font-["Fira_Code",monospace] text-[13px] px-3 py-1 rounded-md border-none transition-colors duration-150',
+            'text-[13px] px-3 py-1 rounded-md border-none transition-colors duration-150',
             isError
               ? "text-(--error) bg-transparent cursor-pointer"
               : !disabled
@@ -140,13 +145,6 @@ const CreateHeader = ({
           ].join(' ')}
         >
           {label}
-        </button>
-        <button
-          onClick={onClose}
-          aria-label="Close editor"
-          className="text-(--text-muted) bg-transparent border-none cursor-pointer text-[18px] leading-none transition-colors duration-150 flex items-center hover:text-(--text-secondary)"
-        >
-          ×
         </button>
       </div>
     </div>
@@ -161,11 +159,9 @@ interface EditHeaderProps {
   saveStatus: SaveStatus;
   saveDisabled: boolean;
   onSave: () => void;
-  onClose: () => void;
-  deleteStatus: DeleteStatus;
-  onDelete: () => void;
   viewMode: ViewMode;
   onViewModeToggle: (mode: ViewMode) => void;
+  showViewToggle?: boolean;
 }
 
 const EditHeader = ({
@@ -174,11 +170,9 @@ const EditHeader = ({
   saveStatus,
   saveDisabled,
   onSave,
-  onClose,
-  deleteStatus,
-  onDelete,
   viewMode,
   onViewModeToggle,
+  showViewToggle = true,
 }: EditHeaderProps) => {
   const saveLabel =
     saveStatus === "saving"
@@ -189,32 +183,15 @@ const EditHeader = ({
       ? "Error"
       : "Save";
 
-  const showSaveButton = saveStatus === "idle" && !saveDisabled;
+  // Show the filled Save button only when there are unsaved changes
+  const showSaveButton = !saveDisabled;
 
   const saveColor =
     saveStatus === "saved"
       ? "text-(--success)"
       : saveStatus === "error"
       ? "text-(--error)"
-      : saveDisabled
-      ? "text-(--text-muted)"
-      : "text-(--text-secondary)";
-
-  const deleteLabel =
-    deleteStatus === "confirm"
-      ? "Confirm?"
-      : deleteStatus === "deleting"
-      ? "Deleting…"
-      : deleteStatus === "error"
-      ? "Error"
-      : "Delete";
-
-  const deleteColor =
-    deleteStatus === "deleting" || deleteStatus === "idle"
-      ? "text-(--text-muted)"
-      : "text-(--error)";
-
-  const canDelete = type === "agent" || type === "skill";
+      : "text-(--text-muted)";
 
   return (
     <div className="px-5 border-b border-(--border-faint) flex items-center justify-between shrink-0 min-h-12 bg-(--bg-sidebar)">
@@ -222,58 +199,40 @@ const EditHeader = ({
         {filePath(name, type)}
       </span>
       <div className="flex items-center gap-3">
-        {type === "agent" && (
+        {type === "agent" && showViewToggle && (
           <ViewModeToggle viewMode={viewMode} onToggle={onViewModeToggle} />
         )}
-        {canDelete && (
-          <button
-            onClick={onDelete}
-            disabled={deleteStatus === "deleting"}
-            aria-label="Delete file"
-            className={[
-              'font-["Fira_Code",monospace] text-[13px] px-2.5 py-1 rounded-md bg-transparent transition-colors duration-150',
-              deleteStatus === "deleting" ? "opacity-40 cursor-not-allowed" : "cursor-pointer",
-              deleteStatus === "confirm" ? "border border-[rgba(248,113,113,0.3)]" : "border-none",
-              deleteColor,
-              deleteStatus === "idle" ? "hover:text-(--text-secondary)" : "",
-            ].join(' ')}
-          >
-            {deleteLabel}
-          </button>
-        )}
-        {/* Save — accent filled button only when there are unsaved changes */}
+        {/* Save — accent filled button only when dirty; transient status text otherwise */}
         {showSaveButton ? (
           <button
             onClick={onSave}
             aria-label="Save file"
-            className='font-["Fira_Code",monospace] text-[13px] px-3 py-1 rounded-md bg-(--accent) border-none cursor-pointer text-white transition-colors duration-150 hover:bg-(--accent-hover)'
+            className='text-[13px] px-3 py-1 rounded-md bg-(--accent) border-none cursor-pointer text-white transition-colors duration-150 hover:bg-(--accent-hover)'
           >
             {saveLabel}
           </button>
-        ) : (
-          <span className={[
-            'font-["Fira_Code",monospace] text-[13px]',
-            saveColor,
-            saveDisabled && saveStatus === "idle" ? "opacity-35" : "",
-          ].join(' ')}>
+        ) : (saveStatus === "saving" || saveStatus === "saved" || saveStatus === "error") ? (
+          <span className={['text-[13px]', saveColor].join(' ')}>
             {saveLabel}
           </span>
-        )}
-        <button
-          onClick={onClose}
-          aria-label="Close editor"
-          className="text-(--text-muted) bg-transparent border-none cursor-pointer text-[18px] leading-none transition-colors duration-150 flex items-center hover:text-(--text-secondary)"
-        >
-          ×
-        </button>
+        ) : null}
       </div>
     </div>
   );
 };
 
+// ── Back button ───────────────────────────────────────────────────────────────
+
+const BackArrowIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M8.5 2.5L4 7L8.5 11.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>
+);
+
 // ── EditorPane ────────────────────────────────────────────────────────────────
 
-export const EditorPane = ({ name, type, projectPath, onClose, onCreated, onDeleted }: EditorPaneProps) => {
+export const EditorPane = ({ name, type, projectPath, onCreated, onDeleted }: EditorPaneProps) => {
+  const navigate = useNavigate();
   const [content, setContent] = useState("");
   const [savedContent, setSavedContent] = useState("");
   const [loadedKey, setLoadedKey] = useState<string | null>(null);
@@ -389,7 +348,7 @@ export const EditorPane = ({ name, type, projectPath, onClose, onCreated, onDele
         handleSave();
       } else if (e.key === "Escape" && !dirty) {
         (document.activeElement as HTMLElement)?.blur();
-        onClose();
+        navigate(-1);
       }
     };
     document.addEventListener("keydown", handler);
@@ -419,32 +378,40 @@ export const EditorPane = ({ name, type, projectPath, onClose, onCreated, onDele
   const showFormView = type === "agent" && viewMode === "form";
 
   return (
-    <div className="flex flex-1 flex-col h-full w-full bg-(--bg-base) border-l border-(--border-faint)">
+    <div className="relative flex flex-1 flex-col h-full w-full bg-(--bg-base) border-l border-(--border-faint)">
+      {/* Back button */}
+      <div className="absolute top-3.5 left-4 z-10">
+        <button
+          onClick={() => navigate(-1)}
+          className="flex items-center gap-1.5 text-[13px] text-(--text-muted) hover:text-(--text-primary) bg-transparent border-none cursor-pointer transition-colors duration-150 p-0"
+        >
+          <BackArrowIcon /> Back
+        </button>
+      </div>
+
       {isCreateMode ? (
         <CreateHeader
           type={type}
           draftName={draftName}
           onDraftNameChange={setDraftName}
           createStatus={createStatus}
-          onClose={onClose}
           onCreate={handleCreate}
           viewMode={viewMode}
           onViewModeToggle={setViewMode}
+          contentEmpty={content.trim() === ""}
         />
-      ) : (
+      ) : !showFormView ? (
         <EditHeader
           name={name}
           type={type}
           saveStatus={saveStatus}
           saveDisabled={loading || !dirty || saving}
           onSave={handleSave}
-          onClose={onClose}
-          deleteStatus={deleteStatus}
-          onDelete={handleDelete}
           viewMode={viewMode}
           onViewModeToggle={setViewMode}
+          showViewToggle={true}
         />
-      )}
+      ) : null}
       <div className="flex-1 min-h-0">
         {loading ? (
           <div className="w-full h-full bg-(--bg-base)" />
@@ -452,6 +419,10 @@ export const EditorPane = ({ name, type, projectPath, onClose, onCreated, onDele
           <AgentFormEditor
             content={content}
             onChange={setContent}
+            onDelete={handleDelete}
+            onSave={handleSave}
+            saveStatus={saveStatus}
+            saveDisabled={loading || !dirty || saving}
             disabled={saving}
           />
         ) : (

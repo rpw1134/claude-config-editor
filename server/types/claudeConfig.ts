@@ -3,5 +3,6 @@ interface ClaudeProject {
 }
 
 export interface ClaudeConfig {
+  mcpServers?: Record<string, unknown>;
   projects?: Record<string, ClaudeProject>;
 }

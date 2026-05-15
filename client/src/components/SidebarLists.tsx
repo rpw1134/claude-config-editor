@@ -50,19 +50,19 @@ export const SidebarListSection = ({
     {/* Item list */}
     {loading && (
       <div className="px-4 py-1">
-        <span className='text-[13px] text-(--text-muted) font-["Fira_Code",monospace]'>Loading…</span>
+        <span className="text-[13px] text-(--text-muted)">Loading…</span>
       </div>
     )}
 
     {error && !loading && (
       <div className="px-4 py-1">
-        <span className='text-[13px] text-(--error) font-["Fira_Code",monospace] opacity-70'>Error</span>
+        <span className="text-[13px] text-(--error) opacity-70">Error</span>
       </div>
     )}
 
     {!loading && !error && items.length === 0 && (
       <div className="px-4 py-1">
-        <span className='text-[13px] text-(--text-muted) font-["Fira_Code",monospace] italic'>{emptyText}</span>
+        <span className="text-[13px] text-(--text-muted) italic">{emptyText}</span>
       </div>
     )}
 
@@ -77,7 +77,7 @@ export const SidebarListSection = ({
                 title={name}
                 className={[
                   'w-full text-left px-4 flex items-center gap-2.5 min-h-7 border-none cursor-pointer',
-                  'text-[13px] font-["Fira_Code",monospace] overflow-hidden transition-colors duration-100',
+                  'text-[13px] overflow-hidden transition-colors duration-100',
                   isSelected
                     ? 'bg-(--accent-dim) text-(--text-accent)'
                     : 'bg-transparent text-(--text-secondary) hover:bg-(--bg-hover) hover:text-(--text-primary)',

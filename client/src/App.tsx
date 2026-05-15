@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Routes, Route, useNavigate, useParams, Navigate } from 'react-router-dom';
 import { Sidebar } from './components/Sidebar';
 import { EditorPane } from './components/Editor/EditorPane';
 import { WelcomePane, NoProjectPane } from './components/WelcomePane';
@@ -11,34 +12,312 @@ import type { RecentItem } from './hooks/useRecents';
 
 const RECENT_PROJECT_KEY = 'ccs:recentProject';
 
-type ActiveTab =
-  | 'claude-md'
-  | 'agents'
-  | 'skills'
-  | 'mcp-servers'
-  | 'welcome'
-  | 'landing-agents'
-  | 'landing-skills'
-  | 'landing-mcp';
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+function encodeProject(path: string): string {
+  return encodeURIComponent(path);
+}
+
+function decodeProject(param: string): string {
+  return decodeURIComponent(param);
+}
+
+// ── Shell wraps the sidebar + main content area ────────────────────────────────
+
+interface ShellProps {
+  selectedProjectPath: string | null;
+  onProjectSelect: (path: string) => void;
+  recents: RecentItem[];
+  onRecentClick: (item: RecentItem) => void;
+  onCreateNew: (type: 'agent' | 'skill' | 'mcp-server') => void;
+  sidebarCollapsed: boolean;
+  onToggleCollapsed: () => void;
+  children: React.ReactNode;
+}
+
+const Shell = ({
+  selectedProjectPath,
+  onProjectSelect,
+  recents,
+  onRecentClick,
+  onCreateNew,
+  sidebarCollapsed,
+  onToggleCollapsed,
+  children,
+}: ShellProps) => (
+  <div className="flex h-screen bg-[#0a0a0c] text-white overflow-hidden">
+    <Sidebar
+      selectedProjectPath={selectedProjectPath}
+      onProjectSelect={onProjectSelect}
+      collapsed={sidebarCollapsed}
+      onToggleCollapsed={onToggleCollapsed}
+      recents={recents}
+      onRecentClick={onRecentClick}
+      onCreateNew={onCreateNew}
+    />
+    <main className="flex flex-1 overflow-hidden">
+      {children}
+    </main>
+  </div>
+);
+
+// ── Route components ──────────────────────────────────────────────────────────
+
+interface RouteSharedProps {
+  recents: RecentItem[];
+  onRecentClick: (item: RecentItem) => void;
+  onCreateNew: (type: 'agent' | 'skill' | 'mcp-server') => void;
+  sidebarCollapsed: boolean;
+  onToggleCollapsed: () => void;
+  selectedProjectPath: string | null;
+  onProjectSelect: (path: string) => void;
+}
+
+// /  (root — no project)
+const RootRoute = (props: RouteSharedProps) => (
+  <Shell {...props}>
+    <NoProjectPane />
+  </Shell>
+);
+
+// /:projectId  (welcome)
+const ProjectWelcomeRoute = (props: RouteSharedProps) => {
+  const { projectId } = useParams<{ projectId: string }>();
+  const navigate = useNavigate();
+  const projectPath = projectId ? decodeProject(projectId) : null;
+
+  if (!projectPath) return <Navigate to="/" replace />;
+
+  return (
+    <Shell {...props} selectedProjectPath={projectPath}>
+      <WelcomePane
+        projectName={projectPath.split('/').pop() ?? projectPath}
+        onOpenClaudeMd={() => navigate(`/${encodeProject(projectPath)}/claude-md`)}
+        onOpenAgents={() => navigate(`/${encodeProject(projectPath)}/agents`)}
+        onOpenSkills={() => navigate(`/${encodeProject(projectPath)}/skills`)}
+        onOpenMcp={() => navigate(`/${encodeProject(projectPath)}/mcp`)}
+      />
+    </Shell>
+  );
+};
+
+// /:projectId/claude-md
+const ClaudeMdRoute = (props: RouteSharedProps) => {
+  const { projectId } = useParams<{ projectId: string }>();
+  const navigate = useNavigate();
+  const projectPath = projectId ? decodeProject(projectId) : null;
+
+  if (!projectPath) return <Navigate to="/" replace />;
+
+  return (
+    <Shell {...props} selectedProjectPath={projectPath}>
+      <EditorPane
+        key={`claude-md:${projectPath}`}
+        name={projectPath}
+        type="project"
+        projectPath={projectPath}
+        onDeleted={() => navigate(`/${encodeProject(projectPath)}`)}
+      />
+    </Shell>
+  );
+};
+
+// /:projectId/agents
+const AgentsLandingRoute = (
+  props: RouteSharedProps & { refreshKey: number; onBumpRefresh: () => void }
+) => {
+  const { projectId } = useParams<{ projectId: string }>();
+  const navigate = useNavigate();
+  const projectPath = projectId ? decodeProject(projectId) : null;
+
+  if (!projectPath) return <Navigate to="/" replace />;
+
+  return (
+    <Shell {...props} selectedProjectPath={projectPath}>
+      <AgentsLandingPage
+        projectPath={projectPath}
+        selectedName={null}
+        refreshKey={props.refreshKey}
+        onSelect={(name) => {
+          props.onRecentClick({ type: 'agent', name, timestamp: Date.now() });
+          navigate(`/${encodeProject(projectPath)}/agents/${encodeURIComponent(name)}`);
+        }}
+        onNew={() => props.onCreateNew('agent')}
+      />
+    </Shell>
+  );
+};
+
+// /:projectId/agents/new
+const AgentCreateRoute = (
+  props: RouteSharedProps & { onBumpAgentsRefresh: () => void; addToRecents: (type: RecentItem['type'], name: string) => void }
+) => {
+  const { projectId } = useParams<{ projectId: string }>();
+  const navigate = useNavigate();
+  const projectPath = projectId ? decodeProject(projectId) : null;
+
+  if (!projectPath) return <Navigate to="/" replace />;
+
+  return (
+    <Shell {...props} selectedProjectPath={projectPath}>
+      <AgentCreateFlow
+        projectPath={projectPath}
+        onCreated={(name) => {
+          props.onBumpAgentsRefresh();
+          props.addToRecents('agent', name);
+          navigate(`/${encodeProject(projectPath)}/agents/${encodeURIComponent(name)}`);
+        }}
+        onCancel={() => navigate(`/${encodeProject(projectPath)}/agents`)}
+      />
+    </Shell>
+  );
+};
+
+// /:projectId/agents/:name
+const AgentEditorRoute = (props: RouteSharedProps & { onBumpAgentsRefresh: () => void }) => {
+  const { projectId, name } = useParams<{ projectId: string; name: string }>();
+  const navigate = useNavigate();
+  const projectPath = projectId ? decodeProject(projectId) : null;
+  const agentName = name ? decodeURIComponent(name) : null;
+
+  if (!projectPath || !agentName) return <Navigate to="/" replace />;
+
+  return (
+    <Shell {...props} selectedProjectPath={projectPath}>
+      <EditorPane
+        key={`agent:${projectPath}:${agentName}`}
+        name={agentName}
+        type="agent"
+        projectPath={projectPath}
+        onDeleted={() => {
+          props.onBumpAgentsRefresh();
+          navigate(`/${encodeProject(projectPath)}/agents`);
+        }}
+      />
+    </Shell>
+  );
+};
+
+// /:projectId/skills
+const SkillsLandingRoute = (
+  props: RouteSharedProps & { refreshKey: number }
+) => {
+  const { projectId } = useParams<{ projectId: string }>();
+  const navigate = useNavigate();
+  const projectPath = projectId ? decodeProject(projectId) : null;
+
+  if (!projectPath) return <Navigate to="/" replace />;
+
+  return (
+    <Shell {...props} selectedProjectPath={projectPath}>
+      <SkillsLandingPage
+        projectPath={projectPath}
+        selectedName={null}
+        refreshKey={props.refreshKey}
+        onSelect={(name) => {
+          props.onRecentClick({ type: 'skill', name, timestamp: Date.now() });
+          navigate(`/${encodeProject(projectPath)}/skills/${encodeURIComponent(name)}`);
+        }}
+        onNew={() => props.onCreateNew('skill')}
+      />
+    </Shell>
+  );
+};
+
+// /:projectId/skills/:name
+const SkillEditorRoute = (props: RouteSharedProps & { onBumpSkillsRefresh: () => void }) => {
+  const { projectId, name } = useParams<{ projectId: string; name: string }>();
+  const navigate = useNavigate();
+  const projectPath = projectId ? decodeProject(projectId) : null;
+  const skillName = name ? decodeURIComponent(name) : null;
+
+  if (!projectPath || !skillName) return <Navigate to="/" replace />;
+
+  return (
+    <Shell {...props} selectedProjectPath={projectPath}>
+      <EditorPane
+        key={`skill:${projectPath}:${skillName}`}
+        name={skillName}
+        type="skill"
+        projectPath={projectPath}
+        onDeleted={() => {
+          props.onBumpSkillsRefresh();
+          navigate(`/${encodeProject(projectPath)}/skills`);
+        }}
+      />
+    </Shell>
+  );
+};
+
+// /:projectId/mcp
+const McpLandingRoute = (
+  props: RouteSharedProps & { refreshKey: number }
+) => {
+  const { projectId } = useParams<{ projectId: string }>();
+  const navigate = useNavigate();
+  const projectPath = projectId ? decodeProject(projectId) : null;
+
+  if (!projectPath) return <Navigate to="/" replace />;
+
+  return (
+    <Shell {...props} selectedProjectPath={projectPath}>
+      <McpLandingPage
+        projectPath={projectPath}
+        selectedName={null}
+        refreshKey={props.refreshKey}
+        onSelect={(name) => {
+          props.onRecentClick({ type: 'mcp-server', name, timestamp: Date.now() });
+          navigate(`/${encodeProject(projectPath)}/mcp/${encodeURIComponent(name)}`);
+        }}
+        onNew={() => props.onCreateNew('mcp-server')}
+      />
+    </Shell>
+  );
+};
+
+// /:projectId/mcp/:name
+const McpEditorRoute = (props: RouteSharedProps & { onBumpMcpRefresh: () => void }) => {
+  const { projectId, name } = useParams<{ projectId: string; name: string }>();
+  const navigate = useNavigate();
+  const projectPath = projectId ? decodeProject(projectId) : null;
+  const mcpName = name ? decodeURIComponent(name) : null;
+
+  if (!projectPath || !mcpName) return <Navigate to="/" replace />;
+
+  return (
+    <Shell {...props} selectedProjectPath={projectPath}>
+      <EditorPane
+        key={`mcp:${projectPath}:${mcpName}`}
+        name={mcpName}
+        type="mcp-server"
+        projectPath={projectPath}
+        onDeleted={() => {
+          props.onBumpMcpRefresh();
+          navigate(`/${encodeProject(projectPath)}/mcp`);
+        }}
+      />
+    </Shell>
+  );
+};
+
+// ── App ───────────────────────────────────────────────────────────────────────
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<ActiveTab>('welcome');
-  const [selectedProjectPath, setSelectedProjectPath] = useState<string | null>(null);
-  const [selectedName, setSelectedName] = useState<string | null>(null);
-  const [creatingType, setCreatingType] = useState<'agent' | 'skill' | 'mcp-server' | null>(null);
-  const [agentCreateMode, setAgentCreateMode] = useState(false);
+  const navigate = useNavigate();
 
-  // Refresh keys for landing pages
+  const [selectedProjectPath, setSelectedProjectPath] = useState<string | null>(null);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [recents, setRecents] = useState<RecentItem[]>([]);
+
+  // Refresh keys for landing pages (bump after create/delete)
   const [agentsRefreshKey, setAgentsRefreshKey] = useState(0);
   const [skillsRefreshKey, setSkillsRefreshKey] = useState(0);
   const [mcpRefreshKey, setMcpRefreshKey] = useState(0);
 
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  // Modal for skill / mcp-server create
+  const [modalType, setModalType] = useState<'agent' | 'skill' | 'mcp-server' | null>(null);
 
-  // Recents — stored in localStorage, kept as state so sidebar re-renders on changes
-  const [recents, setRecents] = useState<RecentItem[]>([]);
-
-  // Auto-load the most recent project on mount
+  // Auto-load most recent project on mount
   useEffect(() => {
     fetchProjects()
       .then((projects) => {
@@ -50,13 +329,12 @@ export default function App() {
         if (target) {
           setSelectedProjectPath(target.path);
           setRecents(readRecents(target.path));
-          setActiveTab('welcome');
+          navigate(`/${encodeProject(target.path)}`, { replace: true });
         }
       })
-      .catch(() => {/* server not ready — stay on no-project screen */});
+      .catch(() => {/* server not ready — stay on root */});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  // ── Recents helper ─────────────────────────────────────────────────────────
 
   const addToRecents = (type: RecentItem['type'], name: string) => {
     if (!selectedProjectPath) return;
@@ -64,262 +342,154 @@ export default function App() {
     setRecents(updated);
   };
 
-  // ── Project selection ──────────────────────────────────────────────────────
-
   const handleProjectSelect = (path: string) => {
     localStorage.setItem(RECENT_PROJECT_KEY, path);
     setSelectedProjectPath(path);
     setRecents(readRecents(path));
-    setSelectedName(null);
-    setCreatingType(null);
-    setAgentCreateMode(false);
-    setActiveTab('welcome');
+    navigate(`/${encodeProject(path)}`);
   };
-
-  const handleTabChange = (tab: string) => {
-    setActiveTab(tab as ActiveTab);
-    setSelectedName(null);
-    setCreatingType(null);
-    setAgentCreateMode(false);
-  };
-
-  // ── Item selection (from landing pages or recents) ─────────────────────────
-
-  const handleSelectAgent = (name: string) => {
-    addToRecents('agent', name);
-    setActiveTab('agents');
-    setSelectedName(name);
-    setCreatingType(null);
-  };
-
-  const handleSelectSkill = (name: string) => {
-    addToRecents('skill', name);
-    setActiveTab('skills');
-    setSelectedName(name);
-    setCreatingType(null);
-  };
-
-  const handleSelectMcp = (name: string) => {
-    addToRecents('mcp-server', name);
-    setActiveTab('mcp-servers');
-    setSelectedName(name);
-    setCreatingType(null);
-  };
-
-  // ── Recents click ──────────────────────────────────────────────────────────
 
   const handleRecentClick = (item: RecentItem) => {
-    if (item.type === 'agent') handleSelectAgent(item.name);
-    else if (item.type === 'skill') handleSelectSkill(item.name);
-    else handleSelectMcp(item.name);
+    addToRecents(item.type, item.name);
+    if (!selectedProjectPath) return;
+    if (item.type === 'agent') {
+      navigate(`/${encodeProject(selectedProjectPath)}/agents/${encodeURIComponent(item.name)}`);
+    } else if (item.type === 'skill') {
+      navigate(`/${encodeProject(selectedProjectPath)}/skills/${encodeURIComponent(item.name)}`);
+    } else {
+      navigate(`/${encodeProject(selectedProjectPath)}/mcp/${encodeURIComponent(item.name)}`);
+    }
   };
 
-  // ── Create New modal ───────────────────────────────────────────────────────
-
-  // Modal state lives here so both the sidebar and landing pages can trigger it
-  const [modalType, setModalType] = useState<'agent' | 'skill' | 'mcp-server' | null>(null);
-
   const handleCreateNew = (type: 'agent' | 'skill' | 'mcp-server') => {
+    if (!selectedProjectPath) return;
     if (type === 'agent') {
-      setAgentCreateMode(true);
-      setActiveTab('landing-agents');
-      setSelectedName(null);
+      navigate(`/${encodeProject(selectedProjectPath)}/agents/new`);
     } else {
       setModalType(type);
     }
   };
 
-  const handleAgentFlowCreated = (name: string) => {
-    setAgentCreateMode(false);
-    setAgentsRefreshKey((k) => k + 1);
-    addToRecents('agent', name);
-    handleSelectAgent(name);
-  };
-
-  const handleAgentFlowCancel = () => {
-    setAgentCreateMode(false);
-  };
-
   const handleModalSuccess = (name: string) => {
     const type = modalType!;
     setModalType(null);
-
-    // Add to recents
     addToRecents(type, name);
-
-    // Bump refresh key for that type's landing page
-    if (type === 'agent') setAgentsRefreshKey((k) => k + 1);
-    else if (type === 'skill') setSkillsRefreshKey((k) => k + 1);
-    else setMcpRefreshKey((k) => k + 1);
-
-    // Navigate to editor for the new item
-    if (type === 'agent') {
-      setActiveTab('agents');
-    } else if (type === 'skill') {
-      setActiveTab('skills');
-    } else {
-      setActiveTab('mcp-servers');
+    if (!selectedProjectPath) return;
+    if (type === 'skill') {
+      setSkillsRefreshKey((k) => k + 1);
+      navigate(`/${encodeProject(selectedProjectPath)}/skills/${encodeURIComponent(name)}`);
+    } else if (type === 'mcp-server') {
+      setMcpRefreshKey((k) => k + 1);
+      navigate(`/${encodeProject(selectedProjectPath)}/mcp/${encodeURIComponent(name)}`);
     }
-    setSelectedName(name);
-    setCreatingType(null);
   };
 
-  const handleModalClose = () => {
-    setModalType(null);
+  const sharedProps: RouteSharedProps = {
+    recents,
+    onRecentClick: handleRecentClick,
+    onCreateNew: handleCreateNew,
+    sidebarCollapsed,
+    onToggleCollapsed: () => setSidebarCollapsed((v) => !v),
+    selectedProjectPath,
+    onProjectSelect: handleProjectSelect,
   };
-
-  // ── Editor events ──────────────────────────────────────────────────────────
-
-  const handleCreated = (name: string) => {
-    if (activeTab === 'agents') { setAgentsRefreshKey((k) => k + 1); addToRecents('agent', name); }
-    else if (activeTab === 'skills') { setSkillsRefreshKey((k) => k + 1); addToRecents('skill', name); }
-    else if (activeTab === 'mcp-servers') { setMcpRefreshKey((k) => k + 1); addToRecents('mcp-server', name); }
-    setCreatingType(null);
-    setSelectedName(name);
-  };
-
-  const handleDeleted = () => {
-    if (activeTab === 'agents') setAgentsRefreshKey((k) => k + 1);
-    else if (activeTab === 'skills') setSkillsRefreshKey((k) => k + 1);
-    else if (activeTab === 'mcp-servers') setMcpRefreshKey((k) => k + 1);
-    setSelectedName(null);
-    setActiveTab('welcome');
-  };
-
-  const handleEditorClose = () => {
-    setSelectedName(null);
-    setCreatingType(null);
-    setActiveTab('welcome');
-  };
-
-  // ── Welcome pane quick-access ──────────────────────────────────────────────
-
-  const handleWelcomeAgents = () => { setActiveTab('landing-agents'); setSelectedName(null); };
-  const handleWelcomeSkills = () => { setActiveTab('landing-skills'); setSelectedName(null); };
-  const handleWelcomeMcp    = () => { setActiveTab('landing-mcp');    setSelectedName(null); };
-
-  // ── Derived state ──────────────────────────────────────────────────────────
-
-  const editorType =
-    activeTab === 'claude-md'   ? 'project'    :
-    activeTab === 'agents'      ? 'agent'      :
-    activeTab === 'mcp-servers' ? 'mcp-server' :
-    'skill';
-
-  const showEditor =
-    selectedProjectPath !== null &&
-    (activeTab === 'claude-md' ||
-      ((activeTab === 'agents' || activeTab === 'skills' || activeTab === 'mcp-servers') &&
-        (selectedName !== null || creatingType !== null)));
-
-  const isLandingTab =
-    activeTab === 'landing-agents' ||
-    activeTab === 'landing-skills' ||
-    activeTab === 'landing-mcp';
-
-  const showWelcome = selectedProjectPath !== null && !showEditor && !isLandingTab;
-
-  const editorKey =
-    activeTab === 'claude-md'
-      ? `claude-md:${selectedProjectPath}`
-      : creatingType !== null
-      ? `create:${creatingType}:${selectedProjectPath}`
-      : `edit:${activeTab}:${selectedProjectPath}:${selectedName}`;
-
-  const editorName =
-    activeTab === 'claude-md'
-      ? selectedProjectPath
-      : creatingType !== null
-      ? null
-      : selectedName;
-
-  // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
-    <div className="flex h-screen bg-[#0a0a0c] text-white overflow-hidden">
-      <Sidebar
-        activeTab={activeTab}
-        onTabChange={handleTabChange}
-        selectedProjectPath={selectedProjectPath}
-        onProjectSelect={handleProjectSelect}
-        collapsed={sidebarCollapsed}
-        onToggleCollapsed={() => setSidebarCollapsed((v) => !v)}
-        recents={recents}
-        onRecentClick={handleRecentClick}
-        onCreateNew={handleCreateNew}
-      />
+    <>
+      <Routes>
+        <Route path="/" element={<RootRoute {...sharedProps} />} />
 
-      <main className="flex flex-1 overflow-hidden">
-        {!selectedProjectPath && <NoProjectPane />}
+        <Route
+          path="/:projectId"
+          element={<ProjectWelcomeRoute {...sharedProps} />}
+        />
 
-        {showWelcome && selectedProjectPath && (
-          <WelcomePane
-            projectName={selectedProjectPath.split('/').pop() ?? selectedProjectPath}
-            onOpenClaudeMd={() => handleTabChange('claude-md')}
-            onOpenAgents={handleWelcomeAgents}
-            onOpenSkills={handleWelcomeSkills}
-            onOpenMcp={handleWelcomeMcp}
-          />
-        )}
+        <Route
+          path="/:projectId/claude-md"
+          element={<ClaudeMdRoute {...sharedProps} />}
+        />
 
-        {/* Landing pages */}
-        {selectedProjectPath && activeTab === 'landing-agents' && !agentCreateMode && (
-          <AgentsLandingPage
-            projectPath={selectedProjectPath}
-            selectedName={selectedName}
-            refreshKey={agentsRefreshKey}
-            onSelect={handleSelectAgent}
-            onNew={() => handleCreateNew('agent')}
-          />
-        )}
-        {selectedProjectPath && activeTab === 'landing-agents' && agentCreateMode && (
-          <AgentCreateFlow
-            projectPath={selectedProjectPath}
-            onCreated={handleAgentFlowCreated}
-            onCancel={handleAgentFlowCancel}
-          />
-        )}
-        {selectedProjectPath && activeTab === 'landing-skills' && (
-          <SkillsLandingPage
-            projectPath={selectedProjectPath}
-            selectedName={selectedName}
-            refreshKey={skillsRefreshKey}
-            onSelect={handleSelectSkill}
-            onNew={() => handleCreateNew('skill')}
-          />
-        )}
-        {selectedProjectPath && activeTab === 'landing-mcp' && (
-          <McpLandingPage
-            projectPath={selectedProjectPath}
-            selectedName={selectedName}
-            refreshKey={mcpRefreshKey}
-            onSelect={handleSelectMcp}
-            onNew={() => handleCreateNew('mcp-server')}
-          />
-        )}
+        {/* Agents */}
+        <Route
+          path="/:projectId/agents"
+          element={
+            <AgentsLandingRoute
+              {...sharedProps}
+              refreshKey={agentsRefreshKey}
+              onBumpRefresh={() => setAgentsRefreshKey((k) => k + 1)}
+            />
+          }
+        />
+        <Route
+          path="/:projectId/agents/new"
+          element={
+            <AgentCreateRoute
+              {...sharedProps}
+              onBumpAgentsRefresh={() => setAgentsRefreshKey((k) => k + 1)}
+              addToRecents={addToRecents}
+            />
+          }
+        />
+        <Route
+          path="/:projectId/agents/:name"
+          element={
+            <AgentEditorRoute
+              {...sharedProps}
+              onBumpAgentsRefresh={() => setAgentsRefreshKey((k) => k + 1)}
+            />
+          }
+        />
 
-        {showEditor && (
-          <EditorPane
-            key={editorKey}
-            name={editorName}
-            type={editorType}
-            projectPath={selectedProjectPath}
-            onClose={handleEditorClose}
-            onCreated={handleCreated}
-            onDeleted={handleDeleted}
-          />
-        )}
-      </main>
+        {/* Skills */}
+        <Route
+          path="/:projectId/skills"
+          element={
+            <SkillsLandingRoute
+              {...sharedProps}
+              refreshKey={skillsRefreshKey}
+            />
+          }
+        />
+        <Route
+          path="/:projectId/skills/:name"
+          element={
+            <SkillEditorRoute
+              {...sharedProps}
+              onBumpSkillsRefresh={() => setSkillsRefreshKey((k) => k + 1)}
+            />
+          }
+        />
 
-      {/* Create New modal */}
+        {/* MCP */}
+        <Route
+          path="/:projectId/mcp"
+          element={
+            <McpLandingRoute
+              {...sharedProps}
+              refreshKey={mcpRefreshKey}
+            />
+          }
+        />
+        <Route
+          path="/:projectId/mcp/:name"
+          element={
+            <McpEditorRoute
+              {...sharedProps}
+              onBumpMcpRefresh={() => setMcpRefreshKey((k) => k + 1)}
+            />
+          }
+        />
+      </Routes>
+
+      {/* Create New modal for skill/mcp-server */}
       {modalType && selectedProjectPath && (
         <CreateNewModal
           type={modalType}
           projectPath={selectedProjectPath}
           onSuccess={handleModalSuccess}
-          onClose={handleModalClose}
+          onClose={() => setModalType(null)}
         />
       )}
-    </div>
+    </>
   );
 }

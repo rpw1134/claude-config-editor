@@ -98,6 +98,12 @@ export async function listAgents(projectPath: string): Promise<string[]> {
   return listing?.files.filter((f) => f.endsWith(".md")).map((f) => f.slice(0, -3)) ?? [];
 }
 
+const GLOBAL_PROJECT_PATH = resolveHome("~/.claude");
+
+function isGlobal(projectPath: string): boolean {
+  return projectPath === GLOBAL_PROJECT_PATH;
+}
+
 export async function listMcpServers(projectPath: string): Promise<string[]> {
   let raw: string;
   try {
@@ -109,8 +115,10 @@ export async function listMcpServers(projectPath: string): Promise<string[]> {
   }
 
   const config = JSON.parse(raw) as ClaudeConfig;
-  const project = config.projects?.[projectPath];
-  return Object.keys(project?.mcpServers ?? {});
+  if (isGlobal(projectPath)) {
+    return Object.keys(config.mcpServers ?? {});
+  }
+  return Object.keys(config.projects?.[projectPath]?.mcpServers ?? {});
 }
 
 export async function getMcpServer(projectPath: string, key: string): Promise<unknown | null> {
@@ -124,7 +132,9 @@ export async function getMcpServer(projectPath: string, key: string): Promise<un
   }
 
   const config = JSON.parse(raw) as ClaudeConfig;
-  const servers = config.projects?.[projectPath]?.mcpServers ?? {};
+  const servers = isGlobal(projectPath)
+    ? (config.mcpServers ?? {})
+    : (config.projects?.[projectPath]?.mcpServers ?? {});
   return key in servers ? servers[key] : null;
 }
 
@@ -138,10 +148,15 @@ export async function setMcpServer(projectPath: string, key: string, value: unkn
     if (error.code !== "ENOENT") throw error;
   }
 
-  config.projects ??= {};
-  config.projects[projectPath] ??= {};
-  config.projects[projectPath].mcpServers ??= {};
-  config.projects[projectPath].mcpServers![key] = value;
+  if (isGlobal(projectPath)) {
+    config.mcpServers ??= {};
+    config.mcpServers[key] = value;
+  } else {
+    config.projects ??= {};
+    config.projects[projectPath] ??= {};
+    config.projects[projectPath].mcpServers ??= {};
+    config.projects[projectPath].mcpServers![key] = value;
+  }
 
   await writeFileContent(resolveHome("~/.claude.json"), JSON.stringify(config, null, 2));
 }
@@ -156,15 +171,23 @@ export async function createMcpServer(projectPath: string, key: string, value: u
     if (error.code !== "ENOENT") throw error;
   }
 
-  const servers = config.projects?.[projectPath]?.mcpServers ?? {};
+  const servers = isGlobal(projectPath)
+    ? (config.mcpServers ?? {})
+    : (config.projects?.[projectPath]?.mcpServers ?? {});
+
   if (key in servers) {
     throw new Error(`MCP server "${key}" already exists`);
   }
 
-  config.projects ??= {};
-  config.projects[projectPath] ??= {};
-  config.projects[projectPath].mcpServers ??= {};
-  config.projects[projectPath].mcpServers![key] = value;
+  if (isGlobal(projectPath)) {
+    config.mcpServers ??= {};
+    config.mcpServers[key] = value;
+  } else {
+    config.projects ??= {};
+    config.projects[projectPath] ??= {};
+    config.projects[projectPath].mcpServers ??= {};
+    config.projects[projectPath].mcpServers![key] = value;
+  }
 
   await writeFileContent(resolveHome("~/.claude.json"), JSON.stringify(config, null, 2));
 }
@@ -179,11 +202,18 @@ export async function deleteMcpServer(projectPath: string, key: string): Promise
     if (error.code !== "ENOENT") throw error;
   }
 
-  const servers = config.projects?.[projectPath]?.mcpServers;
-  if (!servers || !(key in servers)) {
-    throw new Error(`MCP server "${key}" not found`);
+  if (isGlobal(projectPath)) {
+    if (!config.mcpServers || !(key in config.mcpServers)) {
+      throw new Error(`MCP server "${key}" not found`);
+    }
+    delete config.mcpServers[key];
+  } else {
+    const servers = config.projects?.[projectPath]?.mcpServers;
+    if (!servers || !(key in servers)) {
+      throw new Error(`MCP server "${key}" not found`);
+    }
+    delete servers[key];
   }
 
-  delete servers[key];
   await writeFileContent(resolveHome("~/.claude.json"), JSON.stringify(config, null, 2));
 }
