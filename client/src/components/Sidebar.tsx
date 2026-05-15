@@ -95,14 +95,13 @@ const CreateNewDropdown = ({ onSelect, onClose }: CreateNewDropdownProps) => {
   return (
     <div
       ref={ref}
-      className="absolute top-full left-0 right-0 mt-1.5 z-30 bg-(--bg-elevated) border border-(--border-default) rounded-lg overflow-hidden"
-      style={{ boxShadow: '0 4px 24px rgba(0,0,0,0.4)' }}
+      className="absolute top-full left-0 right-0 mt-1.5 z-30 bg-(--bg-elevated) border border-(--border-default) rounded-lg overflow-hidden shadow-[0_4px_24px_rgba(0,0,0,0.4)]"
     >
       {options.map(({ type, label, icon }) => (
         <button
           key={type}
           onClick={() => { onSelect(type); onClose(); }}
-          className="w-full flex items-center gap-2.5 px-3.5 py-[9px] text-left text-[14px] font-medium text-(--text-secondary) bg-transparent border-none cursor-pointer transition-colors duration-150 hover:bg-(--bg-hover) hover:text-(--text-primary)"
+          className="w-full flex items-center gap-2.5 px-3.5 py-2.25 text-left text-[14px] font-medium text-(--text-secondary) bg-transparent border-none cursor-pointer transition-colors duration-150 hover:bg-(--bg-hover) hover:text-(--text-primary)"
         >
           <span className="text-(--text-muted)">{icon}</span>
           {label}
@@ -127,7 +126,7 @@ const NavButton = ({ icon, label, active, disabled = false, onClick }: NavButton
     onClick={onClick}
     disabled={disabled}
     className={[
-      'w-full flex items-center gap-2.5 px-2.5 pl-2 rounded-md text-left text-[14px] font-medium min-h-[34px] border-none transition-all duration-150',
+      'w-full flex items-center gap-2.5 px-2.5 pl-2 rounded-md text-left text-[14px] font-medium min-h-8.5 border-none transition-all duration-150',
       'border-l-[3px]',
       active
         ? 'bg-(--bg-surface) text-(--text-primary) border-l-(--accent)'
@@ -178,7 +177,7 @@ export const Sidebar = ({
 
   if (collapsed) {
     return (
-      <aside className="w-[52px] shrink-0 flex flex-col items-center bg-(--bg-sidebar) border-r border-(--border-faint) h-full">
+      <aside className="w-13 shrink-0 flex flex-col items-center bg-(--bg-sidebar) border-r border-(--border-faint) h-full">
         {/* Logo / expand */}
         <div className="pt-4 pb-3 flex flex-col items-center gap-2 border-b border-(--border-faint) w-full shrink-0">
           <button
@@ -197,7 +196,7 @@ export const Sidebar = ({
             disabled={!hasProject}
             title="Create New"
             className={[
-              'w-full flex items-center justify-center p-2 rounded-md min-h-[34px] border-none transition-colors duration-150',
+              'w-full flex items-center justify-center p-2 rounded-md min-h-8.5 border-none transition-colors duration-150',
               hasProject
                 ? 'bg-(--accent) text-white cursor-pointer hover:bg-(--accent-hover)'
                 : 'bg-(--bg-surface) text-white cursor-not-allowed opacity-40',
@@ -222,7 +221,7 @@ export const Sidebar = ({
                 disabled={!hasProject}
                 title={title}
                 className={[
-                  'w-full flex items-center justify-center p-2 rounded-md min-h-[34px] border-none transition-colors duration-150',
+                  'w-full flex items-center justify-center p-2 rounded-md min-h-8.5 border-none transition-colors duration-150',
                   !hasProject ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer',
                   isActive ? 'bg-(--bg-surface) text-(--accent)' : 'bg-transparent text-(--text-muted)',
                 ].join(' ')}
@@ -241,7 +240,7 @@ export const Sidebar = ({
   // ── Expanded sidebar ───────────────────────────────────────────────────────
 
   return (
-    <aside className="w-[260px] shrink-0 flex flex-col bg-(--bg-sidebar) border-r border-(--border-faint) h-full">
+    <aside className="w-65 shrink-0 flex flex-col bg-(--bg-sidebar) border-r border-(--border-faint) h-full">
       {/* App header */}
       <div className="px-4 pt-5 pb-4 border-b border-(--border-faint) shrink-0">
         <div className="flex items-center gap-3">
@@ -275,7 +274,7 @@ export const Sidebar = ({
             onClick={() => hasProject && setCreateDropdownOpen((v) => !v)}
             disabled={!hasProject}
             className={[
-              'w-full flex items-center gap-2.5 px-3 py-[7px] rounded-lg text-left text-[14px] font-medium min-h-[34px] border-none transition-colors duration-150',
+              'w-full flex items-center gap-2.5 px-3 py-1.75 rounded-lg text-left text-[14px] font-medium min-h-8.5 border-none transition-colors duration-150',
               hasProject
                 ? 'bg-(--accent) text-white cursor-pointer hover:bg-(--accent-hover)'
                 : 'bg-(--bg-surface) text-(--text-muted) cursor-not-allowed border border-(--border-faint) opacity-50',
@@ -358,7 +357,7 @@ export const Sidebar = ({
                   <button
                     onClick={() => onRecentClick(item)}
                     title={`${recentTypeLabel(item.type)} — ${item.name}`}
-                    className="w-full text-left px-4 flex items-center gap-2.5 min-h-[30px] bg-transparent border-none cursor-pointer text-(--text-secondary) transition-colors duration-150 hover:bg-(--bg-hover) hover:text-(--text-primary)"
+                    className="w-full text-left px-4 flex items-center gap-2.5 min-h-7.5 bg-transparent border-none cursor-pointer text-(--text-secondary) transition-colors duration-150 hover:bg-(--bg-hover) hover:text-(--text-primary)"
                   >
                     <span className="text-(--text-muted) shrink-0">{recentTypeIcon(item.type)}</span>
                     <span className="text-[12px] font-medium text-(--text-muted) shrink-0">

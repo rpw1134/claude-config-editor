@@ -85,7 +85,7 @@ export const ProjectPicker = ({ selectedPath, onSelect }: ProjectPickerProps) =>
           className="absolute left-3 right-3 top-full mt-1 z-50 rounded-lg border border-(--border-default) bg-(--bg-elevated) overflow-hidden"
           style={{ boxShadow: '0 4px 24px rgba(0,0,0,0.4)' }}
         >
-          <div className="max-h-[260px] overflow-y-auto">
+          <div className="max-h-65 overflow-y-auto">
             {projects.length === 0 ? (
               <p className='px-3 py-2.5 text-[13px] text-(--text-muted) font-["Fira_Code",monospace]'>
                 No projects found
@@ -112,7 +112,7 @@ export const ProjectPicker = ({ selectedPath, onSelect }: ProjectPickerProps) =>
                           {project.name}
                         </span>
                         {isGlobal && (
-                          <span className="inline-flex items-center px-[5px] py-px rounded text-[11px] font-semibold uppercase tracking-[0.05em] bg-(--bg-surface) text-(--text-muted) border border-(--border-subtle)">
+                          <span className="inline-flex items-center px-1.25 py-px rounded text-[11px] font-semibold uppercase tracking-wider bg-(--bg-surface) text-(--text-muted) border border-(--border-subtle)">
                             Global
                           </span>
                         )}

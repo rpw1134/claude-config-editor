@@ -43,7 +43,7 @@ const TagInput = ({ value, onChange, placeholder = 'Add…', disabled }: TagInpu
 
   return (
     <div
-      className="bg-white/4 border border-white/8 rounded-md px-2 py-1.5 flex flex-wrap gap-1.5 cursor-text min-h-[34px]"
+      className="bg-white/4 border border-white/8 rounded-md px-2 py-1.5 flex flex-wrap gap-1.5 cursor-text min-h-8.5"
       onClick={() => inputRef.current?.focus()}
     >
       {value.map((tag, i) => (
@@ -69,7 +69,7 @@ const TagInput = ({ value, onChange, placeholder = 'Add…', disabled }: TagInpu
           onKeyDown={handleKeyDown}
           onBlur={commit}
           placeholder={value.length === 0 ? placeholder : ''}
-          className="bg-transparent text-[13px] text-white/80 outline-none placeholder:text-white/20 min-w-[80px] flex-1"
+          className="bg-transparent text-[13px] text-white/80 outline-none placeholder:text-white/20 min-w-20 flex-1"
         />
       )}
     </div>
@@ -139,7 +139,7 @@ const Toggle = ({ checked, onChange, disabled }: ToggleProps) => (
   >
     <span
       className={[
-        'absolute top-[1px] left-[1px] h-[10px] w-[10px] rounded-full bg-white/70 transition-transform',
+        'absolute top-px left-px h-2.5 w-2.5 rounded-full bg-white/70 transition-transform',
         checked ? 'translate-x-3' : 'translate-x-0',
       ].join(' ')}
     />
@@ -209,7 +209,7 @@ const ChevronIcon = ({ open }: { open: boolean }) => (
     height="10"
     viewBox="0 0 10 10"
     fill="currentColor"
-    style={{ transform: open ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 0.15s' }}
+    className={['transition-transform duration-150', open ? 'rotate-90' : 'rotate-0'].join(' ')}
   >
     <path d="M3 2l4 3-4 3V2z" />
   </svg>
@@ -435,7 +435,7 @@ export const AgentFormEditor = ({ content, onChange, disabled }: AgentFormEditor
 
   return (
     <div className="h-full flex flex-col bg-[#0d0d10]">
-      <div className="shrink-0 overflow-y-auto px-5 py-4" style={{ maxHeight: '320px' }}>
+      <div className="shrink-0 overflow-y-auto px-5 py-4 max-h-80">
         <div className="mb-4">
           <label className={labelClass}>Name</label>
           <input

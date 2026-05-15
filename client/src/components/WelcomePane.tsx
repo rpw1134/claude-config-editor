@@ -11,7 +11,7 @@ interface QuickCardProps {
 const QuickCard = ({ icon, title, description, isPrimary = false, onClick }: QuickCardProps) => (
   <button
     onClick={onClick}
-    className="text-left w-full p-4 rounded-[10px] border border-(--border-subtle) bg-(--bg-surface) cursor-pointer transition-colors duration-150 block hover:border-(--border-default) hover:bg-(--bg-elevated)"
+    className="text-left w-full p-4 rounded-2.5 border border-(--border-subtle) bg-(--bg-surface) cursor-pointer transition-colors duration-150 block hover:border-(--border-default) hover:bg-(--bg-elevated)"
   >
     <div className="flex items-start gap-3.5">
       <div className={[
@@ -24,7 +24,7 @@ const QuickCard = ({ icon, title, description, isPrimary = false, onClick }: Qui
         <p className="text-[14px] font-medium text-(--text-primary) leading-[1.3]">
           {title}
         </p>
-        <p className="mt-1 text-[13px] text-(--text-secondary) leading-[1.5]">
+        <p className="mt-1 text-[13px] text-(--text-secondary) leading-normal">
           {description}
         </p>
       </div>
@@ -80,17 +80,17 @@ export const WelcomePane = ({
   onOpenMcp,
 }: WelcomePaneProps) => (
   <div className="flex-1 flex flex-col items-center justify-center px-10 py-16 min-h-0 overflow-y-auto bg-(--bg-base)">
-    <div className="w-full max-w-[440px]">
+    <div className="w-full max-w-110">
       {/* Heading */}
       <div className="mb-8">
         {/* Project badge */}
         <div className="flex items-center gap-2 mb-3.5">
-          <div className="w-[7px] h-[7px] rounded-full bg-(--accent) shrink-0" />
+          <div className="w-1.75 h-1.75 rounded-full bg-(--accent) shrink-0" />
           <span className="text-[12px] text-(--text-secondary) bg-(--bg-surface) border border-(--border-subtle) px-2 py-0.5 rounded-full">
             {projectName}
           </span>
         </div>
-        <h1 className="text-[22px] font-semibold text-(--text-primary) leading-[1.25] tracking-[-0.01em] m-0">
+        <h1 className="text-[22px] font-semibold text-(--text-primary) leading-tight tracking-[-0.01em] m-0">
           What are you working on?
         </h1>
         <p className="mt-2 text-[14px] text-(--text-secondary) leading-[1.6]">

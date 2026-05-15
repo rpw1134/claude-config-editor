@@ -64,10 +64,10 @@ const ItemRow = ({ name, isLast, onClick }: ItemRowProps) => (
   <button
     onClick={onClick}
     className={[
-      'w-full flex items-center pl-4 pr-1 min-h-[64px] text-left cursor-pointer',
-      'bg-transparent text-[var(--text-secondary)] transition-colors duration-[120ms]',
-      'border-none hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]',
-      !isLast ? 'border-b border-[var(--border-faint)]' : '',
+      'w-full flex items-center pl-4 pr-1 min-h-16 text-left cursor-pointer',
+      'bg-transparent text-(--text-secondary) transition-colors duration-120',
+      'border-none hover:bg-(--bg-hover) hover:text-(--text-primary)',
+      !isLast ? 'border-b border-(--border-faint)' : '',
     ].join(' ')}
   >
     <span className="font-['Instrument_Sans',sans-serif] text-[17px] font-medium overflow-hidden text-ellipsis whitespace-nowrap">
@@ -119,18 +119,18 @@ export const TypeLandingPage = (props: TypeLandingPageProps) => {
   const singularType = title === 'MCP Servers' ? 'MCP Server' : title.replace(/s$/, '');
 
   return (
-    <div className="flex-1 flex flex-col min-h-0 overflow-y-auto bg-[var(--bg-base)]">
+    <div className="flex-1 flex flex-col min-h-0 overflow-y-auto bg-(--bg-base)">
       <div className="w-full px-14 py-12">
 
         {/* Heading row */}
         <div className="flex items-center justify-between mb-8">
-          <h1 className="font-['Bricolage_Grotesque',sans-serif] text-[40px] font-bold text-[var(--text-primary)] tracking-[-0.03em] leading-[1.05] m-0">
+          <h1 className="font-['Bricolage_Grotesque',sans-serif] text-[40px] font-bold text-(--text-primary) tracking-[-0.03em] leading-[1.05] m-0">
             {title}
           </h1>
 
           <button
             onClick={onNew}
-            className="flex items-center gap-[7px] px-4 py-2 rounded-lg bg-[var(--accent)] text-white text-[14px] font-medium border-none cursor-pointer shrink-0 transition-colors duration-150 hover:bg-[var(--accent-hover)]"
+            className="flex items-center gap-1.75 px-4 py-2 rounded-lg bg-(--accent) text-white text-[14px] font-medium border-none cursor-pointer shrink-0 transition-colors duration-150 hover:bg-(--accent-hover)"
           >
             <PlusIcon />
             New {singularType}
@@ -140,8 +140,7 @@ export const TypeLandingPage = (props: TypeLandingPageProps) => {
         {/* Search bar */}
         <div className="relative mb-6">
           <span
-            className="absolute left-[14px] top-1/2 text-[var(--text-muted)] flex items-center pointer-events-none"
-            style={{ transform: 'translateY(-50%)' }}
+            className="absolute left-3.5 top-1/2 -translate-y-1/2 text-(--text-muted) flex items-center pointer-events-none"
           >
             <SearchIcon />
           </span>
@@ -150,7 +149,7 @@ export const TypeLandingPage = (props: TypeLandingPageProps) => {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder={`Search ${title.toLowerCase()}...`}
-            className="w-full h-11 pl-10 pr-[14px] bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-[10px] text-[15px] text-[var(--text-primary)] outline-none box-border transition-colors duration-[120ms] focus:border-[var(--border-default)]"
+            className="w-full h-11 pl-10 pr-3.5 bg-(--bg-surface) border border-(--border-subtle) rounded-2.5 text-[15px] text-(--text-primary) outline-none box-border transition-colors duration-120 focus:border-(--border-default)"
           />
         </div>
 
@@ -160,11 +159,8 @@ export const TypeLandingPage = (props: TypeLandingPageProps) => {
             {[1, 2, 3].map((i) => (
               <div
                 key={i}
-                className="shimmer h-16 bg-[var(--bg-surface)]"
-                style={{
-                  borderBottom: i < 3 ? '1px solid var(--border-faint)' : 'none',
-                  animationDelay: `${(i - 1) * 0.15}s`,
-                }}
+                className={['shimmer h-16 bg-(--bg-surface)', i < 3 ? 'border-b border-(--border-faint)' : ''].join(' ')}
+                style={{ animationDelay: `${(i - 1) * 0.15}s` }}
               />
             ))}
           </div>
@@ -172,7 +168,7 @@ export const TypeLandingPage = (props: TypeLandingPageProps) => {
 
         {/* Error */}
         {error && !loading && (
-          <div className="px-4 py-3 rounded-lg bg-[rgba(248,113,113,0.08)] border border-[rgba(248,113,113,0.2)] text-[var(--error)] text-[13px]">
+          <div className="px-4 py-3 rounded-lg bg-[rgba(248,113,113,0.08)] border border-[rgba(248,113,113,0.2)] text-(--error) text-[13px]">
             {error}
           </div>
         )}
@@ -180,7 +176,7 @@ export const TypeLandingPage = (props: TypeLandingPageProps) => {
         {/* Empty state — no items at all */}
         {!loading && !error && items.length === 0 && (
           <div className="pt-16 text-center">
-            <p className="text-[15px] text-[var(--text-muted)] m-0">
+            <p className="text-[15px] text-(--text-muted) m-0">
               No {title.toLowerCase()} yet
             </p>
           </div>
@@ -189,7 +185,7 @@ export const TypeLandingPage = (props: TypeLandingPageProps) => {
         {/* Empty state — search has no results */}
         {!loading && !error && items.length > 0 && filtered.length === 0 && (
           <div className="pt-16 text-center">
-            <p className="text-[15px] text-[var(--text-muted)] m-0">
+            <p className="text-[15px] text-(--text-muted) m-0">
               No results for "{query.trim()}"
             </p>
           </div>

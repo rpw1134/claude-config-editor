@@ -134,7 +134,7 @@ interface StepDotsProps {
 }
 
 const StepDots = ({ total, current, onGoTo }: StepDotsProps) => (
-  <div className="flex items-center gap-[10px]">
+  <div className="flex items-center gap-2.5">
     {Array.from({ length: total }).map((_, i) => {
       const completed = i < current;
       const active = i === current;
@@ -145,17 +145,13 @@ const StepDots = ({ total, current, onGoTo }: StepDotsProps) => (
           disabled={future}
           onClick={() => (completed ? onGoTo(i) : undefined)}
           aria-label={`Step ${i + 1}`}
-          className="focus-visible:outline-2 focus-visible:outline-(--accent) focus-visible:outline-offset-2"
+          className="rounded-full border-none p-0 shrink-0 focus-visible:outline-2 focus-visible:outline-(--accent) focus-visible:outline-offset-2"
           style={{
             width: active ? 10 : 8,
             height: active ? 10 : 8,
-            borderRadius: "50%",
             background: future ? "var(--text-muted)" : "var(--accent)",
-            border: "none",
-            padding: 0,
             cursor: completed ? "pointer" : "default",
             transition: "width 200ms, height 200ms, background 200ms",
-            flexShrink: 0,
           }}
         />
       );
@@ -173,14 +169,14 @@ const StepHeading = ({ heading, subtext }: StepHeadingProps) => (
     <h1 className="m-0 mb-3 text-4xl font-['Bricolage_Grotesque',sans-serif] font-bold tracking-[-0.02em] leading-[1.1] text-(--text-primary)">
       {heading}
     </h1>
-    <p className="m-0 text-[14px] text-[var(--text-secondary)] leading-[1.55]">
+    <p className="m-0 text-[14px] text-(--text-secondary) leading-[1.55]">
       {subtext}
     </p>
   </div>
 );
 
 const InlineError = ({ message }: { message: string }) => (
-  <p className="mt-2 text-[13px] text-[var(--error)] font-['Fira_Code',monospace]">
+  <p className="mt-2 text-[13px] text-(--error) font-['Fira_Code',monospace]">
     {message}
   </p>
 );
@@ -201,15 +197,15 @@ const AccordionSection = ({
   buttonRef,
 }: AccordionSectionProps) => {
   return (
-    <div className="border border-[var(--border-subtle)] rounded-[14px] overflow-hidden shrink-0">
+    <div className="border border-(--border-subtle) rounded-3.5 overflow-hidden shrink-0">
       <button
         ref={buttonRef}
         onClick={onToggle}
-        className="w-full flex items-center justify-between px-5 py-4 text-left bg-transparent border-none cursor-pointer text-[var(--text-primary)] transition-colors duration-150 hover:bg-[var(--bg-hover)] focus-visible:outline-2 focus-visible:outline-(--accent)"
+        className="w-full flex items-center justify-between px-5 py-4 text-left bg-transparent border-none cursor-pointer text-(--text-primary) transition-colors duration-150 hover:bg-(--bg-hover) focus-visible:outline-2 focus-visible:outline-(--accent)"
       >
         <span className="text-[15px] font-semibold">{title}</span>
         <span
-          className="text-[var(--text-muted)] transition-transform duration-200"
+          className="text-(--text-muted) transition-transform duration-200"
           style={{ transform: open ? "rotate(180deg)" : "rotate(0deg)" }}
         >
           <ChevronDownIcon />
@@ -248,25 +244,25 @@ const DiscardModal = ({ onConfirm, onCancel }: DiscardModalProps) => {
       onClick={onCancel}
     >
       <div
-        className="bg-[var(--bg-surface)] rounded-[18px] border border-[var(--border-subtle)] p-8 max-w-[360px] w-full mx-4 shadow-2xl"
+        className="bg-(--bg-surface) rounded-4.5 border border-(--border-subtle) p-8 max-w-90 w-full mx-4 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 className="m-0 mb-2 text-[20px] font-bold text-[var(--text-primary)]">
+        <h2 className="m-0 mb-2 text-[20px] font-bold text-(--text-primary)">
           Discard this agent?
         </h2>
-        <p className="m-0 mb-6 text-[14px] text-[var(--text-secondary)]">
+        <p className="m-0 mb-6 text-[14px] text-(--text-secondary)">
           You'll lose everything you've entered so far.
         </p>
         <div className="flex items-center gap-3">
           <button
             onClick={onConfirm}
-            className="px-5 py-[10px] rounded-[10px] text-[14px] font-medium text-white bg-(--error) border-none cursor-pointer transition-colors duration-150"
+            className="px-5 py-2.5 rounded-2.5 text-[14px] font-medium text-white bg-(--error) border-none cursor-pointer transition-colors duration-150"
           >
             Discard
           </button>
           <button
             onClick={onCancel}
-            className="text-[14px] text-[var(--text-muted)] bg-transparent border-none cursor-pointer transition-colors duration-150 hover:text-[var(--text-secondary)]"
+            className="text-[14px] text-(--text-muted) bg-transparent border-none cursor-pointer transition-colors duration-150 hover:text-(--text-secondary)"
           >
             Keep editing
           </button>
@@ -309,7 +305,7 @@ const StepName = ({
         onKeyDown={handleKeyDown}
         placeholder="e.g. engineer, reviewer, tutor"
         className={[
-          "w-full px-4 py-4 rounded-[14px] text-lg text-(--text-primary) bg-(--bg-surface) outline-none ring-0 focus:ring-0 focus:outline-none box-border transition-colors duration-150",
+          "w-full px-4 py-4 rounded-3.5 text-lg text-(--text-primary) bg-(--bg-surface) outline-none ring-0 focus:ring-0 focus:outline-none box-border transition-colors duration-150",
           "placeholder:text-(--text-muted)",
           error
             ? "border border-[rgba(248,113,113,0.5)]"
@@ -320,7 +316,7 @@ const StepName = ({
       <div className="mt-6">
         <button
           onClick={onContinue}
-          className="flex items-center gap-2 px-5 py-[11px] rounded-[10px] bg-(--accent) text-white text-[15px] font-medium border-none cursor-pointer transition-colors duration-150 hover:bg-(--accent-hover) focus-visible:outline-2 focus-visible:outline-(--accent) focus-visible:outline-offset-2"
+          className="flex items-center gap-2 px-5 py-2.75 rounded-2.5 bg-(--accent) text-white text-[15px] font-medium border-none cursor-pointer transition-colors duration-150 hover:bg-(--accent-hover) focus-visible:outline-2 focus-visible:outline-(--accent) focus-visible:outline-offset-2"
         >
           Continue
           <ArrowRightIcon />
@@ -365,12 +361,12 @@ const StepDescription = ({
         onKeyDown={handleKeyDown}
         placeholder="e.g. A senior engineer focused on code review, refactoring, and architecture decisions."
         rows={4}
-        className="w-full px-4 py-4 rounded-[14px] text-[15px] text-(--text-primary) bg-(--bg-surface) border border-(--border-subtle) outline-none ring-0 focus:ring-0 focus:outline-none box-border transition-colors duration-150 leading-relaxed placeholder:text-(--text-muted) focus:border-(--accent) resize-none overflow-y-auto"
+        className="w-full px-4 py-4 rounded-3.5 text-[15px] text-(--text-primary) bg-(--bg-surface) border border-(--border-subtle) outline-none ring-0 focus:ring-0 focus:outline-none box-border transition-colors duration-150 leading-relaxed placeholder:text-(--text-muted) focus:border-(--accent) resize-none overflow-y-auto"
       />
       <div className="mt-6 flex items-center gap-4">
         <button
           onClick={onContinue}
-          className="flex items-center gap-2 px-5 py-[11px] rounded-[10px] bg-(--accent) text-white text-[15px] font-medium border-none cursor-pointer transition-colors duration-150 hover:bg-(--accent-hover) focus-visible:outline-2 focus-visible:outline-(--accent) focus-visible:outline-offset-2"
+          className="flex items-center gap-2 px-5 py-2.75 rounded-2.5 bg-(--accent) text-white text-[15px] font-medium border-none cursor-pointer transition-colors duration-150 hover:bg-(--accent-hover) focus-visible:outline-2 focus-visible:outline-(--accent) focus-visible:outline-offset-2"
         >
           Continue
           <ArrowRightIcon />
@@ -418,23 +414,23 @@ interface StepOptionsProps {
 
 const radioRow = (active: boolean) =>
   [
-    "w-full flex items-center justify-between px-4 py-3 rounded-[10px] text-left border cursor-pointer transition-colors duration-150",
+    "w-full flex items-center justify-between px-4 py-3 rounded-2.5 text-left border cursor-pointer transition-colors duration-150",
     active
       ? "bg-(--accent-dim) border-(--accent) text-(--text-primary)"
       : "bg-transparent border-(--border-subtle) text-(--text-secondary) hover:border-(--border-default) hover:text-(--text-primary)",
   ].join(" ");
 
 const fieldInput =
-  "w-full px-4 py-3 rounded-[12px] text-[14px] text-(--text-primary) bg-(--bg-surface) border border-(--border-subtle) outline-none ring-0 focus:ring-0 focus:outline-none box-border transition-colors duration-150 placeholder:text-(--text-muted) focus:border-(--accent)";
+  "w-full px-4 py-3 rounded-3 text-[14px] text-(--text-primary) bg-(--bg-surface) border border-(--border-subtle) outline-none ring-0 focus:ring-0 focus:outline-none box-border transition-colors duration-150 placeholder:text-(--text-muted) focus:border-(--accent)";
 
 const Toggle = ({ on, onToggle }: { on: boolean; onToggle: () => void }) => (
   <button
     onClick={onToggle}
-    className="relative flex-shrink-0 border-none cursor-pointer p-0 bg-transparent focus-visible:outline-2 focus-visible:outline-(--accent) focus-visible:outline-offset-2 rounded-[11px] w-10 h-5.5"
+    className="relative shrink-0 border-none cursor-pointer p-0 bg-transparent focus-visible:outline-2 focus-visible:outline-(--accent) focus-visible:outline-offset-2 rounded-2.75 w-10 h-5.5"
     aria-pressed={on}
   >
     <span
-      className="block w-full h-full rounded-[11px]"
+      className="block w-full h-full rounded-2.75"
       style={{
         background: on ? "var(--accent)" : "var(--border-default)",
         transition: "background 150ms",
@@ -532,15 +528,7 @@ function StepOptions({
                 aria-label={c.name}
                 title={c.name}
                 style={{
-                  width: 32,
-                  height: 32,
-                  borderRadius: "50%",
                   background: c.bg,
-                  border: "none",
-                  cursor: "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
                   outline:
                     color === c.name
                       ? `3px solid ${c.ring}`
@@ -548,7 +536,7 @@ function StepOptions({
                   outlineOffset: 2,
                   transition: "outline 150ms",
                 }}
-                className="focus-visible:outline-2 focus-visible:outline-(--accent) focus-visible:outline-offset-[5px]"
+                className="w-8 h-8 rounded-full border-none cursor-pointer flex items-center justify-center focus-visible:outline-2 focus-visible:outline-(--accent) focus-visible:outline-offset-[5px]"
               >
                 {color === c.name && (
                   <span className="text-white">
@@ -649,7 +637,7 @@ function StepOptions({
         >
           <div className="flex flex-col gap-3 pt-1">
             <div>
-              <p className="text-[12px] text-[var(--text-muted)] mb-1.5">
+              <p className="text-[12px] text-(--text-muted) mb-1.5">
                 Allowed tools — comma-separated. Leave empty to inherit all.
               </p>
               <input
@@ -661,7 +649,7 @@ function StepOptions({
               />
             </div>
             <div>
-              <p className="text-[12px] text-[var(--text-muted)] mb-1.5">
+              <p className="text-[12px] text-(--text-muted) mb-1.5">
                 Disallowed tools — removed from inherited or specified list.
               </p>
               <input
@@ -681,7 +669,7 @@ function StepOptions({
           onToggle={() => toggle("Skills")}
         >
           <div className="pt-1">
-            <p className="text-[12px] text-[var(--text-muted)] mb-1.5">
+            <p className="text-[12px] text-(--text-muted) mb-1.5">
               Comma-separated skill names to preload into context at startup.
             </p>
             <input
@@ -700,7 +688,7 @@ function StepOptions({
           onToggle={() => toggle("Max Turns")}
         >
           <div className="pt-1">
-            <p className="text-[12px] text-[var(--text-muted)] mb-1.5">
+            <p className="text-[12px] text-(--text-muted) mb-1.5">
               Maximum agentic turns before the subagent stops.
             </p>
             <input
@@ -720,7 +708,7 @@ function StepOptions({
           onToggle={() => toggle("Initial Prompt")}
         >
           <div className="pt-1">
-            <p className="text-[12px] text-[var(--text-muted)] mb-1.5">
+            <p className="text-[12px] text-(--text-muted) mb-1.5">
               Auto-submitted as the first user turn when run as the main session
               agent.
             </p>
@@ -747,7 +735,7 @@ function StepOptions({
                 <p className="text-[14px] font-medium text-(--text-primary) m-0">
                   Background
                 </p>
-                <p className="text-[12px] text-[var(--text-muted)] m-0 mt-0.5">
+                <p className="text-[12px] text-(--text-muted) m-0 mt-0.5">
                   Always run as a background task.
                 </p>
               </div>
@@ -761,7 +749,7 @@ function StepOptions({
                 <p className="text-[14px] font-medium text-(--text-primary) m-0">
                   Isolation
                 </p>
-                <p className="text-[12px] text-[var(--text-muted)] m-0 mt-0.5">
+                <p className="text-[12px] text-(--text-muted) m-0 mt-0.5">
                   Run in a temporary git worktree.
                 </p>
               </div>
@@ -778,7 +766,7 @@ function StepOptions({
       <div className="flex items-center gap-4 pt-2 pb-1">
         <button
           onClick={onContinue}
-          className="flex items-center gap-2 px-5 py-[11px] rounded-[10px] bg-(--accent) text-white text-[15px] font-medium border-none cursor-pointer transition-colors duration-150 hover:bg-(--accent-hover) focus-visible:outline-2 focus-visible:outline-(--accent) focus-visible:outline-offset-2"
+          className="flex items-center gap-2 px-5 py-2.75 rounded-2.5 bg-(--accent) text-white text-[15px] font-medium border-none cursor-pointer transition-colors duration-150 hover:bg-(--accent-hover) focus-visible:outline-2 focus-visible:outline-(--accent) focus-visible:outline-offset-2"
         >
           Continue <ArrowRightIcon />
         </button>
@@ -962,8 +950,7 @@ const StepSystemPrompt = ({
       <div className="flex justify-end mb-2">
         <button
           onClick={onPreviewToggle}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-[8px] text-[13px] border border-(--border-subtle) bg-transparent cursor-pointer transition-colors duration-150 hover:bg-(--bg-hover) focus-visible:outline-2 focus-visible:outline-(--accent) focus-visible:outline-offset-2"
-          style={{ color: showPreview ? "var(--accent)" : "var(--text-muted)" }}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-2 text-[13px] border border-(--border-subtle) bg-transparent cursor-pointer transition-colors duration-150 hover:bg-(--bg-hover) focus-visible:outline-2 focus-visible:outline-(--accent) focus-visible:outline-offset-2 ${showPreview ? "text-(--accent)" : "text-(--text-muted)"}`}
         >
           <EyeIcon crossed={!showPreview} />
           {showPreview ? "Hide preview" : "Preview"}
@@ -975,7 +962,7 @@ const StepSystemPrompt = ({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder="You are a senior software engineer with expertise in..."
-        className="w-full px-4 py-4 rounded-[14px] text-[14px] text-(--text-primary) bg-(--bg-surface) border border-(--border-subtle) outline-none ring-0 focus:ring-0 focus:outline-none box-border transition-colors duration-150 leading-relaxed placeholder:text-(--text-muted) focus:border-(--accent) font-['Fira_Code',monospace] min-h-50 resize-none overflow-y-auto"
+        className="w-full px-4 py-4 rounded-3.5 text-[14px] text-(--text-primary) bg-(--bg-surface) border border-(--border-subtle) outline-none ring-0 focus:ring-0 focus:outline-none box-border transition-colors duration-150 leading-relaxed placeholder:text-(--text-muted) focus:border-(--accent) font-['Fira_Code',monospace] min-h-50 resize-none overflow-y-auto"
         disabled={submitting}
       />
 
@@ -985,10 +972,10 @@ const StepSystemPrompt = ({
           onClick={onSubmit}
           disabled={submitting}
           className={[
-            "flex items-center gap-2 px-5 py-[11px] rounded-[10px] text-white text-[15px] font-medium border-none transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-(--accent) focus-visible:outline-offset-2",
+            "flex items-center gap-2 px-5 py-2.75 rounded-2.5 text-white text-[15px] font-medium border-none transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-(--accent) focus-visible:outline-offset-2",
             submitting
-              ? "bg-[var(--accent)] opacity-60 cursor-not-allowed"
-              : "bg-[var(--accent)] cursor-pointer hover:bg-[var(--accent-hover)]",
+              ? "bg-(--accent) opacity-60 cursor-not-allowed"
+              : "bg-(--accent) cursor-pointer hover:bg-(--accent-hover)",
           ].join(" ")}
         >
           {submitting ? "Creating…" : "Create Agent"}
@@ -996,7 +983,7 @@ const StepSystemPrompt = ({
         <button
           onClick={onBack}
           disabled={submitting}
-          className="text-[14px] text-[var(--text-muted)] bg-transparent border-none cursor-pointer transition-colors duration-150 hover:text-[var(--text-secondary)] disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline-2 focus-visible:outline-(--accent) focus-visible:outline-offset-2 rounded-md"
+          className="text-[14px] text-(--text-muted) bg-transparent border-none cursor-pointer transition-colors duration-150 hover:text-(--text-secondary) disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline-2 focus-visible:outline-(--accent) focus-visible:outline-offset-2 rounded-md"
         >
           ← Back
         </button>
@@ -1206,8 +1193,7 @@ export const AgentCreateFlow = ({
 
   return (
     <div
-      className="flex-1 overflow-hidden relative"
-      style={{ background: "var(--bg-base)" }}
+      className="flex-1 overflow-hidden relative bg-(--bg-base)"
     >
       {showDiscardModal && (
         <DiscardModal
@@ -1219,17 +1205,16 @@ export const AgentCreateFlow = ({
       <button
         onClick={() => setShowDiscardModal(true)}
         aria-label="Discard and exit"
-        className="absolute top-7 left-8 z-10 flex items-center justify-center w-8 h-8 rounded-full text-[var(--text-muted)] bg-transparent border-none cursor-pointer transition-colors duration-150 hover:text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] focus-visible:outline-2 focus-visible:outline-(--accent) focus-visible:outline-offset-2"
+        className="absolute top-7 left-8 z-10 flex items-center justify-center w-8 h-8 rounded-full text-(--text-muted) bg-transparent border-none cursor-pointer transition-colors duration-150 hover:text-(--text-secondary) hover:bg-(--bg-hover) focus-visible:outline-2 focus-visible:outline-(--accent) focus-visible:outline-offset-2"
       >
         <XIcon />
       </button>
 
       {/* Dots pinned to top */}
       <div
-        className="absolute top-8 left-0 right-0 flex justify-center z-10"
-        style={{ pointerEvents: "none" }}
+        className="absolute top-8 left-0 right-0 flex justify-center z-10 pointer-events-none"
       >
-        <div style={{ pointerEvents: "auto" }}>
+        <div className="pointer-events-auto">
           <StepDots total={TOTAL_STEPS} current={step} onGoTo={goTo} />
         </div>
       </div>
@@ -1327,25 +1312,11 @@ export const AgentCreateFlow = ({
                         boxSizing: "border-box",
                       }}
                     >
-                      <p
-                        style={{
-                          fontSize: 12,
-                          color: "var(--text-muted)",
-                          fontWeight: 500,
-                          textTransform: "uppercase",
-                          letterSpacing: "0.08em",
-                          margin: "0 0 16px",
-                        }}
-                      >
+                      <p className="text-[12px] text-(--text-muted) font-medium uppercase tracking-[0.08em] m-0 mb-4">
                         Preview
                       </p>
                       <div
-                        style={{
-                          fontSize: 14,
-                          color: "var(--text-primary)",
-                          lineHeight: 1.6,
-                          fontFamily: "inherit",
-                        }}
+                        className="text-[14px] text-(--text-primary) leading-[1.6] font-[inherit]"
                         dangerouslySetInnerHTML={{
                           __html: systemPrompt.trim()
                             ? renderMarkdown(systemPrompt)

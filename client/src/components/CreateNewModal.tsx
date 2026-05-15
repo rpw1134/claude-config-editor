@@ -65,7 +65,7 @@ export const CreateNewModal = ({ type, projectPath, onSuccess, onClose }: Create
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div
-        className="w-full max-w-[380px] mx-4 bg-(--bg-elevated) border border-(--border-default) rounded-[10px] overflow-hidden"
+        className="w-full max-w-95 mx-4 bg-(--bg-elevated) border border-(--border-default) rounded-2.5 overflow-hidden"
         style={{ boxShadow: '0 8px 40px rgba(0,0,0,0.5)' }}
       >
         {/* Header */}
