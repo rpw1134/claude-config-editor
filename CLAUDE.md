@@ -18,6 +18,8 @@ Pre-v0. Greenfield. Scaffolding.
 
 Frontend is written once. The "backend" boundary (file I/O calls) is the only thing that swaps — keep that layer thin and well-defined so the port is mechanical.
 
+All styles (unless impossible or stated otherwise) should be writtten in Tailwind. Do not use inline styles if avoidable.
+
 ## Stack
 
 - **Vite + React + TypeScript + TailwindCSS** — frontend
