@@ -107,7 +107,7 @@ export const CreateNewModal = ({ type, projectPath, onSuccess, onClose }: Create
         onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
       >
         <div
-          className="w-full max-w-95 mx-4 bg-(--bg-elevated) border border-(--border-default) rounded-2.5 overflow-hidden"
+          className="w-full max-w-xl mx-4 bg-(--bg-elevated) border border-(--border-default) rounded-2.5 overflow-hidden"
           style={{ boxShadow: '0 8px 40px rgba(0,0,0,0.5)' }}
         >
           {/* Header */}
@@ -116,14 +116,17 @@ export const CreateNewModal = ({ type, projectPath, onSuccess, onClose }: Create
               Configure MCP Server
             </h2>
             <p className="mt-1.5 text-[13px] text-(--text-secondary) leading-normal">
-              Paste or write the JSON configuration for <code className="font-['Fira_Code',monospace] text-(--text-primary)">{name.trim()}</code>.
+              Enter the <strong>value object</strong> for{' '}
+              <code className="font-['Fira_Code',monospace] text-(--text-primary)">{name.trim()}</code>.
+              The key is the name you just entered — paste only the{' '}
+              <code className="font-['Fira_Code',monospace] text-(--text-secondary)">{'{ … }'}</code> part.
             </p>
           </div>
 
           {/* Form */}
           <form onSubmit={handleBodySubmit} className="px-6 pt-5 pb-6">
             <label className="block text-[13px] font-medium text-(--text-secondary) mb-2">
-              Configuration
+              Value object
             </label>
             <textarea
               ref={textareaRef}
@@ -183,7 +186,7 @@ export const CreateNewModal = ({ type, projectPath, onSuccess, onClose }: Create
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div
-        className="w-full max-w-95 mx-4 bg-(--bg-elevated) border border-(--border-default) rounded-2.5 overflow-hidden"
+        className="w-full max-w-xl mx-4 bg-(--bg-elevated) border border-(--border-default) rounded-2.5 overflow-hidden"
         style={{ boxShadow: '0 8px 40px rgba(0,0,0,0.5)' }}
       >
         {/* Header */}
