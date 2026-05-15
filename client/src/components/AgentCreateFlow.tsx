@@ -188,14 +188,7 @@ interface StepNameProps {
   onContinue: () => void;
 }
 
-const StepName = ({ value, onChange, error, onContinue }: StepNameProps) => {
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    // Small delay so the slide animation completes before focus
-    const t = setTimeout(() => inputRef.current?.focus(), 60);
-    return () => clearTimeout(t);
-  }, []);
+const StepName = ({ value, onChange, error, onContinue, inputRef }: StepNameProps & { inputRef?: React.RefObject<HTMLInputElement | null> }) => {
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') onContinue();
@@ -250,11 +243,6 @@ interface StepDescriptionProps {
 
 const StepDescription = ({ value, onChange, onContinue, onSkip, onBack: _onBack }: StepDescriptionProps) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-
-  useEffect(() => {
-    const t = setTimeout(() => textareaRef.current?.focus(), 60);
-    return () => clearTimeout(t);
-  }, []);
 
   return (
     <div>
@@ -389,11 +377,6 @@ interface StepSystemPromptProps {
 const StepSystemPrompt = ({ value, onChange, submitting, error, onSubmit }: StepSystemPromptProps) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  useEffect(() => {
-    const t = setTimeout(() => textareaRef.current?.focus(), 60);
-    return () => clearTimeout(t);
-  }, []);
-
   return (
     <div>
       <StepHeading
@@ -435,6 +418,15 @@ const StepSystemPrompt = ({ value, onChange, submitting, error, onSubmit }: Step
 
 export const AgentCreateFlow = ({ projectPath, onCreated, onCancel }: AgentCreateFlowProps) => {
   const [step, setStep]               = useState(0);
+  const nameInputRef = useRef<HTMLInputElement>(null);
+
+  // Focus the active step's primary input after slide animation completes
+  useEffect(() => {
+    const t = setTimeout(() => {
+      if (step === 0) nameInputRef.current?.focus();
+    }, 380); // slightly longer than the 350ms slide transition
+    return () => clearTimeout(t);
+  }, [step]);
   const [name, setName]               = useState('');
   const [nameError, setNameError]     = useState<string | null>(null);
   const [description, setDescription] = useState('');
@@ -518,6 +510,7 @@ export const AgentCreateFlow = ({ projectPath, onCreated, onCancel }: AgentCreat
       onChange={(v) => { setName(v); if (nameError) setNameError(null); }}
       error={nameError}
       onContinue={handleStep1Continue}
+      inputRef={nameInputRef}
     />,
     <StepDescription
       key="desc"
@@ -562,7 +555,7 @@ export const AgentCreateFlow = ({ projectPath, onCreated, onCancel }: AgentCreat
         <div
           className="flex h-full"
           style={{
-            transform: `translateX(-${step * 100}%)`,
+            transform: `translateX(-${step * (100 / TOTAL_STEPS)}%)`,
             transition: 'transform 350ms cubic-bezier(0.4, 0, 0.2, 1)',
             width: `${TOTAL_STEPS * 100}%`,
           }}
