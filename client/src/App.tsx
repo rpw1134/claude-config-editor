@@ -4,6 +4,7 @@ import { EditorPane } from './components/Editor/EditorPane';
 import { WelcomePane, NoProjectPane } from './components/WelcomePane';
 import { AgentsLandingPage, SkillsLandingPage, McpLandingPage } from './components/LandingPage';
 import { CreateNewModal } from './components/CreateNewModal';
+import { AgentCreateFlow } from './components/AgentCreateFlow';
 import { fetchProjects } from './lib/api';
 import { addRecentItem, readRecents } from './hooks/useRecents';
 import type { RecentItem } from './hooks/useRecents';
@@ -25,6 +26,7 @@ export default function App() {
   const [selectedProjectPath, setSelectedProjectPath] = useState<string | null>(null);
   const [selectedName, setSelectedName] = useState<string | null>(null);
   const [creatingType, setCreatingType] = useState<'agent' | 'skill' | 'mcp-server' | null>(null);
+  const [agentCreateMode, setAgentCreateMode] = useState(false);
 
   // Refresh keys for landing pages
   const [agentsRefreshKey, setAgentsRefreshKey] = useState(0);
@@ -70,6 +72,7 @@ export default function App() {
     setRecents(readRecents(path));
     setSelectedName(null);
     setCreatingType(null);
+    setAgentCreateMode(false);
     setActiveTab('welcome');
   };
 
@@ -77,6 +80,7 @@ export default function App() {
     setActiveTab(tab as ActiveTab);
     setSelectedName(null);
     setCreatingType(null);
+    setAgentCreateMode(false);
   };
 
   // ── Item selection (from landing pages or recents) ─────────────────────────
@@ -116,7 +120,24 @@ export default function App() {
   const [modalType, setModalType] = useState<'agent' | 'skill' | 'mcp-server' | null>(null);
 
   const handleCreateNew = (type: 'agent' | 'skill' | 'mcp-server') => {
-    setModalType(type);
+    if (type === 'agent') {
+      setAgentCreateMode(true);
+      setActiveTab('landing-agents');
+      setSelectedName(null);
+    } else {
+      setModalType(type);
+    }
+  };
+
+  const handleAgentFlowCreated = (name: string) => {
+    setAgentCreateMode(false);
+    setAgentsRefreshKey((k) => k + 1);
+    addToRecents('agent', name);
+    handleSelectAgent(name);
+  };
+
+  const handleAgentFlowCancel = () => {
+    setAgentCreateMode(false);
   };
 
   const handleModalSuccess = (name: string) => {
@@ -242,13 +263,20 @@ export default function App() {
         )}
 
         {/* Landing pages */}
-        {selectedProjectPath && activeTab === 'landing-agents' && (
+        {selectedProjectPath && activeTab === 'landing-agents' && !agentCreateMode && (
           <AgentsLandingPage
             projectPath={selectedProjectPath}
             selectedName={selectedName}
             refreshKey={agentsRefreshKey}
             onSelect={handleSelectAgent}
             onNew={() => handleCreateNew('agent')}
+          />
+        )}
+        {selectedProjectPath && activeTab === 'landing-agents' && agentCreateMode && (
+          <AgentCreateFlow
+            projectPath={selectedProjectPath}
+            onCreated={handleAgentFlowCreated}
+            onCancel={handleAgentFlowCancel}
           />
         )}
         {selectedProjectPath && activeTab === 'landing-skills' && (
