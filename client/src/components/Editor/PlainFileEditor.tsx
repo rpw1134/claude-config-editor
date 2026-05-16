@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { Editor } from './Editor';
 
@@ -86,86 +85,25 @@ export function resolvedFilePath(projectPath: string, skillName: string, file: s
 
 // ── PlainFileEditor ────────────────────────────────────────────────────────────
 
-type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
-
 export interface PlainFileEditorProps {
   file: string;
   skillName: string;
   projectPath: string;
   content: string;
   onChange: (val: string) => void;
-  saveStatus: SaveStatus;
-  saveDisabled: boolean;
-  onSave: () => void;
+  previewMode: boolean;
 }
 
 export const PlainFileEditor = ({
   file,
-  skillName,
-  projectPath,
   content,
   onChange,
-  saveStatus,
-  saveDisabled,
-  onSave,
+  previewMode,
 }: PlainFileEditorProps) => {
-  const [previewMode, setPreviewMode] = useState(false);
-  const isSaved = saveStatus === 'saved';
-  const isDisabled = saveDisabled && !isSaved;
-  const saveLabel =
-    saveStatus === 'saving' ? 'Saving…' : isSaved ? 'Saved ✓' : saveDisabled ? 'Up to date' : 'Save';
-
   return (
     <div className="flex flex-1 flex-col min-h-0">
-      {/* Save row */}
-      <div className="px-5 border-b border-(--border-faint) flex items-center justify-between shrink-0 min-h-11 bg-(--bg-sidebar)">
-        <div className="flex items-center gap-3">
-          <FileBanner file={file} inline />
-        </div>
-        <div className="flex items-center gap-3">
-          <span className='font-["Fira_Code",monospace] text-[11px] text-(--text-muted) truncate max-w-64 hidden sm:block'>
-            {resolvedFilePath(projectPath, skillName, file)}
-          </span>
-          {/* Edit/Preview toggle */}
-          <div className="flex items-center bg-(--bg-surface) border border-(--border-subtle) rounded-md p-0.5 shrink-0">
-            <button
-              type="button"
-              onClick={() => setPreviewMode(false)}
-              className={[
-                'text-[13px] px-2.5 py-0.5 rounded cursor-pointer border-none transition-colors duration-150',
-                !previewMode
-                  ? 'bg-(--bg-elevated) text-(--text-primary)'
-                  : 'bg-transparent text-(--text-muted) hover:text-(--text-secondary)',
-              ].join(' ')}
-            >
-              Edit
-            </button>
-            <button
-              type="button"
-              onClick={() => setPreviewMode(true)}
-              className={[
-                'text-[13px] px-2.5 py-0.5 rounded cursor-pointer border-none transition-colors duration-150',
-                previewMode
-                  ? 'bg-(--bg-elevated) text-(--text-primary)'
-                  : 'bg-transparent text-(--text-muted) hover:text-(--text-secondary)',
-              ].join(' ')}
-            >
-              Preview
-            </button>
-          </div>
-          <button
-            onClick={isDisabled ? undefined : onSave}
-            disabled={isDisabled}
-            className={[
-              'text-[13px] px-3 py-1 rounded-md border-none transition-colors duration-150',
-              isDisabled
-                ? 'bg-(--bg-surface) text-(--text-muted) opacity-50 cursor-not-allowed'
-                : 'bg-(--accent) cursor-pointer text-white hover:bg-(--accent-hover)',
-            ].join(' ')}
-          >
-            {saveLabel}
-          </button>
-        </div>
+      <div className="px-7 pt-6 pb-3">
+        <FileBanner file={file} />
       </div>
 
       {previewMode ? (

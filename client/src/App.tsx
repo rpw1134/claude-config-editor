@@ -1,5 +1,5 @@
-import { createContext, useContext, useEffect, useRef, useState } from 'react';
-import { Routes, Route, useNavigate, useParams, Navigate, Outlet, useMatch, useBlocker } from 'react-router-dom';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { Routes, Route, useNavigate, useParams, Navigate, Outlet, useLocation, useBlocker } from 'react-router-dom';
 import { SkillTabBar } from './components/Editor/SkillTabBar';
 import type { SkillTabId } from './components/Editor/SkillTabBar';
 import { Sidebar } from './components/Sidebar';
@@ -61,6 +61,57 @@ const ShellContext = createContext<ShellContextValue | null>(null);
 const useShell = (): ShellContextValue => {
   const ctx = useContext(ShellContext);
   if (!ctx) throw new Error('useShell must be used inside ShellContext.Provider');
+  return ctx;
+};
+
+type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
+type DeleteStatus = 'idle' | 'confirm' | 'deleting' | 'error';
+
+// ── Skill draft cache (persist edits across tabs) ───────────────────────────-
+
+type SkillDraft = {
+  initialized: boolean;
+  fileContent: string;
+  savedContent: string;
+  contentLoading: boolean;
+  saveStatus: SaveStatus;
+  deleteStatus?: DeleteStatus;
+  hasEdits?: boolean;
+};
+
+interface SkillDraftContextValue {
+  getDraft: (file: string) => SkillDraft | null;
+  setDraft: (file: string, draft: SkillDraft) => void;
+  clear: () => void;
+}
+
+const SkillDraftContext = createContext<SkillDraftContextValue | null>(null);
+
+const useSkillDrafts = (): SkillDraftContextValue => {
+  const ctx = useContext(SkillDraftContext);
+  if (!ctx) throw new Error('useSkillDrafts must be used inside SkillDraftContext.Provider');
+  return ctx;
+};
+
+// ── Skill header (top-level save/path controls) ─────────────────────────────
+
+type SkillHeaderConfig = {
+  filePath: string;
+  saveStatus: SaveStatus;
+  saveDisabled: boolean;
+  onSave: () => void;
+  rightSlot?: React.ReactNode;
+};
+
+interface SkillHeaderContextValue {
+  setHeader: (config: SkillHeaderConfig | null) => void;
+}
+
+const SkillHeaderContext = createContext<SkillHeaderContextValue | null>(null);
+
+const useSkillHeader = (): SkillHeaderContextValue => {
+  const ctx = useContext(SkillHeaderContext);
+  if (!ctx) throw new Error('useSkillHeader must be used inside SkillHeaderContext.Provider');
   return ctx;
 };
 
@@ -300,8 +351,9 @@ type SkillSection = 'identity' | 'instructions' | 'settings';
 const SkillLayout = () => {
   const { projectId, name } = useParams<{ projectId: string; name: string }>();
   const navigate = useNavigate();
-  const matchFile = useMatch('/:projectId/skills/:name/:file');
-  const rawFile = matchFile?.params?.file;
+  const location = useLocation();
+  const match = location.pathname.match(/^\/[^/]+\/skills\/[^/]+(?:\/([^/]+))?$/);
+  const rawFile = match?.[1] ? decodeURIComponent(match[1]) : undefined;
 
   const projectPath = projectId ? decodeProject(projectId) : '';
   const skillName = name ? decodeURIComponent(name) : '';
@@ -310,6 +362,57 @@ const SkillLayout = () => {
   // For SKILL.md sections, pass the section name as activeTab so no file tab is highlighted
   const activeTab = (rawFile ?? 'directory') as SkillTabId;
 
+  const draftStore = useRef<Record<string, SkillDraft>>({});
+  const getDraft = useCallback((file: string) => draftStore.current[file] ?? null, []);
+  const setDraft = useCallback((file: string, draft: SkillDraft) => {
+    draftStore.current[file] = draft;
+  }, []);
+  const clearDrafts = useCallback(() => {
+    draftStore.current = {};
+  }, []);
+
+  const [headerConfig, setHeaderConfig] = useState<SkillHeaderConfig | null>(null);
+
+  const draftContextValue = useMemo<SkillDraftContextValue>(
+    () => ({ getDraft, setDraft, clear: clearDrafts }),
+    [getDraft, setDraft, clearDrafts]
+  );
+
+  const headerContextValue = useMemo<SkillHeaderContextValue>(
+    () => ({ setHeader: setHeaderConfig }),
+    []
+  );
+
+  useEffect(() => {
+    clearDrafts();
+  }, [clearDrafts, projectPath, skillName]);
+
+  useEffect(() => {
+    if (activeTab === 'directory') setHeaderConfig(null);
+  }, [activeTab]);
+
+  const headerSaveLabel = headerConfig
+    ? headerConfig.saveStatus === 'saving'
+      ? 'Saving…'
+      : headerConfig.saveStatus === 'saved'
+      ? 'Saved ✓'
+      : headerConfig.saveDisabled
+      ? 'Up to date'
+      : 'Save'
+    : '';
+  const headerSaveDisabled = headerConfig
+    ? headerConfig.saveDisabled && headerConfig.saveStatus !== 'saved'
+    : true;
+  const headerActions = headerConfig
+    ? {
+        filePath: headerConfig.filePath,
+        saveLabel: headerSaveLabel,
+        saveDisabled: headerSaveDisabled,
+        onSave: headerConfig.onSave,
+        rightSlot: headerConfig.rightSlot,
+      }
+    : null;
+
   return (
     <div className="flex flex-1 flex-col h-full w-full bg-(--bg-base) border-l border-(--border-faint)">
       <SkillTabBar
@@ -317,18 +420,39 @@ const SkillLayout = () => {
         skillName={skillName}
         projectPath={projectPath}
         onBack={() => navigate(`/${encodeProject(projectPath)}/skills`)}
+        headerActions={headerActions}
       />
-      {isSkillSection ? (
-        <SkillFormContent
-          key={`skill-form:${projectPath}:${skillName}`}
-          section={rawFile as SkillSection}
-          projectPath={projectPath}
-          skillName={skillName}
-        />
-      ) : (
-        <Outlet />
-      )}
+      <SkillDraftContext.Provider value={draftContextValue}>
+        <SkillHeaderContext.Provider value={headerContextValue}>
+          {isSkillSection ? (
+            <SkillFormContent
+              key={`skill-form:${projectPath}:${skillName}`}
+              section={rawFile as SkillSection}
+              projectPath={projectPath}
+              skillName={skillName}
+            />
+          ) : (
+            <Outlet />
+          )}
+        </SkillHeaderContext.Provider>
+      </SkillDraftContext.Provider>
     </div>
+  );
+};
+
+const matchSkillRoute = (pathname: string) => {
+  const match = pathname.match(/^\/([^/]+)\/skills\/([^/]+)(?:\/|$)/);
+  if (!match) return null;
+  return { projectId: match[1], skillName: match[2] };
+};
+
+const isSameSkillRoute = (current: string, next: string) => {
+  const currentMatch = matchSkillRoute(current);
+  const nextMatch = matchSkillRoute(next);
+  if (!currentMatch || !nextMatch) return false;
+  return (
+    currentMatch.projectId === nextMatch.projectId &&
+    currentMatch.skillName === nextMatch.skillName
   );
 };
 
@@ -348,9 +472,6 @@ const SkillEditorContent = () => {
   );
 };
 
-type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
-type DeleteStatus = 'idle' | 'confirm' | 'deleting' | 'error';
-
 // /:projectId/skills/:name/identity|instructions|settings — SKILL.md form editor
 // Rendered directly by SkillLayout (not via Outlet) so it keeps state across tab switches.
 const SkillFormContent = ({
@@ -364,12 +485,18 @@ const SkillFormContent = ({
 }) => {
   const navigate = useNavigate();
   const { onBumpSkillsRefresh, removeFromRecents } = useShell();
+  const draftStore = useSkillDrafts();
+  const { setHeader } = useSkillHeader();
+  const draftKey = 'SKILL.md';
+  const cachedDraft = draftStore.getDraft(draftKey);
+  const cachedEdits = cachedDraft?.hasEdits ?? (cachedDraft ? cachedDraft.fileContent !== cachedDraft.savedContent : false);
 
-  const [fileContent, setFileContent] = useState('');
-  const [savedContent, setSavedContent] = useState('');
-  const [contentLoading, setContentLoading] = useState(true);
-  const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
-  const [deleteStatus, setDeleteStatus] = useState<DeleteStatus>('idle');
+  const [fileContent, setFileContent] = useState(cachedDraft?.fileContent ?? '');
+  const [savedContent, setSavedContent] = useState(cachedDraft?.savedContent ?? '');
+  const [contentLoading, setContentLoading] = useState(cachedDraft?.contentLoading ?? true);
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>(cachedDraft?.saveStatus ?? 'idle');
+  const [deleteStatus, setDeleteStatus] = useState<DeleteStatus>(cachedDraft?.deleteStatus ?? 'idle');
+  const [hasEdits, setHasEdits] = useState(cachedEdits);
 
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const deleteTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -385,10 +512,21 @@ const SkillFormContent = ({
   useEffect(() => {
     let cancelled = false;
     const load = async () => {
+      const cached = draftStore.getDraft(draftKey);
+      if (cached?.initialized) {
+        setFileContent(cached.fileContent);
+        setSavedContent(cached.savedContent);
+        setSaveStatus(cached.saveStatus);
+        setDeleteStatus(cached.deleteStatus ?? 'idle');
+        setHasEdits(cached.hasEdits ?? cached.fileContent !== cached.savedContent);
+        setContentLoading(false);
+        return;
+      }
       setContentLoading(true);
       setFileContent('');
       setSavedContent('');
       setSaveStatus('idle');
+      setHasEdits(false);
       try {
         const raw = await fetchSkillContent(projectPath, skillName);
         if (cancelled) return;
@@ -396,12 +534,14 @@ const SkillFormContent = ({
         if (!frontmatter.name) {
           const filled = serializeSkillFrontmatter({ ...frontmatter, name: skillName }, body);
           setFileContent(filled);
-          setSavedContent(raw);
+          setSavedContent(filled);
+          setHasEdits(false);
           setContentLoading(false);
           return;
         }
         setFileContent(raw);
         setSavedContent(raw);
+        setHasEdits(false);
       } catch {
         if (!cancelled) { setFileContent(''); setSavedContent(''); }
       } finally {
@@ -410,7 +550,44 @@ const SkillFormContent = ({
     };
     load();
     return () => { cancelled = true; };
-  }, [projectPath, skillName]);
+  }, [projectPath, skillName, draftStore, draftKey]);
+
+  useEffect(() => {
+    draftStore.setDraft(draftKey, {
+      initialized: !contentLoading,
+      fileContent,
+      savedContent,
+      contentLoading,
+      saveStatus,
+      deleteStatus,
+      hasEdits,
+    });
+  }, [draftStore, fileContent, savedContent, contentLoading, saveStatus, deleteStatus, hasEdits]);
+
+  const handleSave = useCallback(async () => {
+    if (!dirty || saveStatus === 'saving') return;
+    setSaveStatus('saving');
+    try {
+      await updateSkillContent(projectPath, skillName, fileContent);
+      setSavedContent(fileContent);
+      setHasEdits(false);
+      setSaveStatus('saved');
+      saveTimer.current = setTimeout(() => setSaveStatus('idle'), 1500);
+    } catch {
+      setSaveStatus('error');
+      saveTimer.current = setTimeout(() => setSaveStatus('idle'), 2000);
+    }
+  }, [dirty, saveStatus, projectPath, skillName, fileContent]);
+
+  useEffect(() => {
+    setHeader({
+      filePath: resolvedFilePath(projectPath, skillName, 'SKILL.md'),
+      saveStatus,
+      saveDisabled: !dirty || saveStatus === 'saving',
+      onSave: handleSave,
+    });
+    return () => setHeader(null);
+  }, [setHeader, projectPath, skillName, saveStatus, dirty, handleSave]);
 
   // Cmd+S shortcut
   useEffect(() => {
@@ -421,25 +598,14 @@ const SkillFormContent = ({
     return () => document.removeEventListener('keydown', handler);
   });
 
-  // Block navigation away from SKILL.md when dirty, but allow switching between sections
+  // Block navigation away from this skill when dirty
   const blocker = useBlocker(({ currentLocation, nextLocation }) => {
-    if (!dirty || currentLocation.pathname === nextLocation.pathname) return false;
-    return !/\/(identity|instructions|settings)$/.test(nextLocation.pathname);
+    if (!dirty || !hasEdits || currentLocation.pathname === nextLocation.pathname) return false;
+    return !isSameSkillRoute(currentLocation.pathname, nextLocation.pathname);
   });
-
-  async function handleSave() {
-    if (!dirty || saveStatus === 'saving') return;
-    setSaveStatus('saving');
-    try {
-      await updateSkillContent(projectPath, skillName, fileContent);
-      setSavedContent(fileContent);
-      setSaveStatus('saved');
-      saveTimer.current = setTimeout(() => setSaveStatus('idle'), 1500);
-    } catch {
-      setSaveStatus('error');
-      saveTimer.current = setTimeout(() => setSaveStatus('idle'), 2000);
-    }
-  }
+  useEffect(() => {
+    if (!dirty && blocker.state === 'blocked') blocker.reset();
+  }, [dirty, blocker]);
 
   async function handleDeleteSkill() {
     if (deleteStatus === 'deleting') return;
@@ -470,18 +636,14 @@ const SkillFormContent = ({
       )}
       <SkillFormEditor
         content={fileContent}
-        onChange={setFileContent}
+        onChange={(next) => {
+          setHasEdits(true);
+          setFileContent(next);
+        }}
         onDelete={handleDeleteSkill}
         deleteStatus={deleteStatus}
-        onSave={handleSave}
-        saveStatus={saveStatus}
-        saveDisabled={!dirty || saveStatus === 'saving'}
         disabled={saveStatus === 'saving'}
-        filePath={resolvedFilePath(projectPath, skillName, 'SKILL.md')}
         activeSection={section}
-        onSectionChange={(s) =>
-          navigate(`/${encodeProject(projectPath)}/skills/${encodeURIComponent(skillName)}/${s}`)
-        }
       />
     </>
   );
@@ -490,15 +652,21 @@ const SkillFormContent = ({
 // /:projectId/skills/:name/reference.md|examples.md — supplementary file editor
 const SkillFileContent = () => {
   const { projectId, name, file } = useParams<{ projectId: string; name: string; file: string }>();
+  const draftStore = useSkillDrafts();
+  const { setHeader } = useSkillHeader();
 
   const projectPath = projectId ? decodeProject(projectId) : null;
   const skillName = name ? decodeURIComponent(name) : null;
   const fileName = file ? decodeURIComponent(file) : null;
 
-  const [fileContent, setFileContent] = useState('');
-  const [savedContent, setSavedContent] = useState('');
-  const [contentLoading, setContentLoading] = useState(true);
-  const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
+  const cachedDraft = fileName ? draftStore.getDraft(fileName) : null;
+  const cachedEdits = cachedDraft?.hasEdits ?? (cachedDraft ? cachedDraft.fileContent !== cachedDraft.savedContent : false);
+  const [fileContent, setFileContent] = useState(cachedDraft?.fileContent ?? '');
+  const [savedContent, setSavedContent] = useState(cachedDraft?.savedContent ?? '');
+  const [contentLoading, setContentLoading] = useState(cachedDraft?.contentLoading ?? true);
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>(cachedDraft?.saveStatus ?? 'idle');
+  const [previewMode, setPreviewMode] = useState(false);
+  const [hasEdits, setHasEdits] = useState(cachedEdits);
 
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const dirty = !contentLoading && fileContent !== savedContent;
@@ -509,16 +677,27 @@ const SkillFileContent = () => {
     if (!projectPath || !skillName || !fileName) return;
     let cancelled = false;
     const load = async () => {
+      const cached = draftStore.getDraft(fileName);
+      if (cached?.initialized) {
+        setFileContent(cached.fileContent);
+        setSavedContent(cached.savedContent);
+        setSaveStatus(cached.saveStatus);
+        setHasEdits(cached.hasEdits ?? cached.fileContent !== cached.savedContent);
+        setContentLoading(false);
+        return;
+      }
       setContentLoading(true);
       setFileContent('');
       setSavedContent('');
       setSaveStatus('idle');
+      setHasEdits(false);
       try { await createSkillFile(projectPath, skillName, fileName); } catch { /* already exists */ }
       try {
         const raw = await fetchSkillFile(projectPath, skillName, fileName);
         if (cancelled) return;
         setFileContent(raw);
         setSavedContent(raw);
+        setHasEdits(false);
       } catch {
         if (!cancelled) { setFileContent(''); setSavedContent(''); }
       } finally {
@@ -527,7 +706,87 @@ const SkillFileContent = () => {
     };
     load();
     return () => { cancelled = true; };
-  }, [projectPath, skillName, fileName]);
+  }, [projectPath, skillName, fileName, draftStore]);
+
+  useEffect(() => {
+    if (!fileName) return;
+    draftStore.setDraft(fileName, {
+      initialized: !contentLoading,
+      fileContent,
+      savedContent,
+      contentLoading,
+      saveStatus,
+      hasEdits,
+    });
+  }, [draftStore, fileName, fileContent, savedContent, contentLoading, saveStatus, hasEdits]);
+
+  const blocker = useBlocker(({ currentLocation, nextLocation }) => {
+    if (!dirty || !hasEdits || currentLocation.pathname === nextLocation.pathname) return false;
+    return !isSameSkillRoute(currentLocation.pathname, nextLocation.pathname);
+  });
+  useEffect(() => {
+    if (!dirty && blocker.state === 'blocked') blocker.reset();
+  }, [dirty, blocker]);
+
+  if (!projectPath || !skillName || !fileName) return <Navigate to="/" replace />;
+
+  const path = projectPath;
+  const skill = skillName;
+  const fname = fileName;
+
+  const handleSave = useCallback(async () => {
+    if (!dirty || saveStatus === 'saving') return;
+    setSaveStatus('saving');
+    try {
+      await updateSkillFile(path, skill, fname, fileContent);
+      setSavedContent(fileContent);
+      setHasEdits(false);
+      setSaveStatus('saved');
+      saveTimer.current = setTimeout(() => setSaveStatus('idle'), 1500);
+    } catch {
+      setSaveStatus('error');
+      saveTimer.current = setTimeout(() => setSaveStatus('idle'), 2000);
+    }
+  }, [dirty, saveStatus, path, skill, fname, fileContent]);
+
+  useEffect(() => {
+    if (!projectPath || !skillName || !fileName) return;
+    setHeader({
+      filePath: resolvedFilePath(projectPath, skillName, fileName),
+      saveStatus,
+      saveDisabled: !dirty || saveStatus === 'saving',
+      onSave: handleSave,
+      rightSlot: (
+        <div className="flex items-center bg-(--bg-surface) border border-(--border-subtle) rounded-md p-0.5 shrink-0">
+          <button
+            type="button"
+            onClick={() => setPreviewMode(false)}
+            className={[
+              'text-[13px] px-2.5 py-0.5 rounded cursor-pointer border-none transition-colors duration-150',
+              !previewMode
+                ? 'bg-(--bg-elevated) text-(--text-primary)'
+                : 'bg-transparent text-(--text-muted) hover:text-(--text-secondary)',
+            ].join(' ')}
+          >
+            Edit
+          </button>
+          <button
+            type="button"
+            onClick={() => setPreviewMode(true)}
+            className={[
+              'text-[13px] px-2.5 py-0.5 rounded cursor-pointer border-none transition-colors duration-150',
+              previewMode
+                ? 'bg-(--bg-elevated) text-(--text-primary)'
+                : 'bg-transparent text-(--text-muted) hover:text-(--text-secondary)',
+            ].join(' ')}
+          >
+            Preview
+          </button>
+        </div>
+      ),
+    });
+    return () => setHeader(null);
+  }, [setHeader, projectPath, skillName, fileName, saveStatus, dirty, previewMode, handleSave]);
 
   // Cmd+S shortcut
   useEffect(() => {
@@ -537,30 +796,6 @@ const SkillFileContent = () => {
     document.addEventListener('keydown', handler);
     return () => document.removeEventListener('keydown', handler);
   });
-
-  const blocker = useBlocker(({ currentLocation, nextLocation }) =>
-    dirty && currentLocation.pathname !== nextLocation.pathname
-  );
-
-  if (!projectPath || !skillName || !fileName) return <Navigate to="/" replace />;
-
-  const path = projectPath;
-  const skill = skillName;
-  const fname = fileName;
-
-  async function handleSave() {
-    if (!dirty || saveStatus === 'saving') return;
-    setSaveStatus('saving');
-    try {
-      await updateSkillFile(path, skill, fname, fileContent);
-      setSavedContent(fileContent);
-      setSaveStatus('saved');
-      saveTimer.current = setTimeout(() => setSaveStatus('idle'), 1500);
-    } catch {
-      setSaveStatus('error');
-      saveTimer.current = setTimeout(() => setSaveStatus('idle'), 2000);
-    }
-  }
 
   if (contentLoading) return <div className="flex-1" />;
 
@@ -574,10 +809,11 @@ const SkillFileContent = () => {
         skillName={skill}
         projectPath={path}
         content={fileContent}
-        onChange={setFileContent}
-        saveStatus={saveStatus}
-        saveDisabled={!dirty || saveStatus === 'saving'}
-        onSave={handleSave}
+        onChange={(next) => {
+          setHasEdits(true);
+          setFileContent(next);
+        }}
+        previewMode={previewMode}
       />
     </>
   );

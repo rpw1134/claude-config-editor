@@ -407,6 +407,7 @@ export const Sidebar = ({
     x: number;
     y: number;
   } | null>(null);
+  const createButtonRef = useRef<HTMLButtonElement>(null);
   const hasProject = selectedProjectPath !== null;
 
   const encodedProject = selectedProjectPath
@@ -504,10 +505,36 @@ export const Sidebar = ({
         {/* Create New button */}
         <div className="relative mb-1.5">
           <button
-            onClick={(e) => {
+            ref={createButtonRef}
+            onMouseDown={(e) => {
               if (!hasProject) return;
+              e.preventDefault();
+              e.stopPropagation();
               if (collapsed) {
-                setCollapsedMenuPos({ x: e.clientX, y: e.clientY });
+                if (collapsedMenuPos) {
+                  setCollapsedMenuPos(null);
+                } else {
+                  setCollapsedMenuPos({ x: e.clientX, y: e.clientY });
+                }
+              } else {
+                setCreateDropdownOpen((v) => !v);
+              }
+            }}
+            onKeyDown={(e) => {
+              if (!hasProject) return;
+              if (e.key !== "Enter" && e.key !== " ") return;
+              e.preventDefault();
+              if (collapsed) {
+                if (collapsedMenuPos) {
+                  setCollapsedMenuPos(null);
+                } else {
+                  const rect = createButtonRef.current?.getBoundingClientRect();
+                  if (rect) {
+                    setCollapsedMenuPos({ x: rect.left, y: rect.bottom });
+                  } else {
+                    setCollapsedMenuPos({ x: 0, y: 0 });
+                  }
+                }
               } else {
                 setCreateDropdownOpen((v) => !v);
               }

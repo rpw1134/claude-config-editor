@@ -489,13 +489,7 @@ export interface SkillFormEditorProps {
   onDelete?: () => void;
   deleteStatus?: 'idle' | 'confirm' | 'deleting' | 'error';
   disabled?: boolean;
-  onSave?: () => void;
-  saveStatus?: 'idle' | 'saving' | 'saved' | 'error';
-  saveDisabled?: boolean;
-  onBack?: () => void;
-  filePath?: string;
   activeSection?: Tab;
-  onSectionChange?: (section: Tab) => void;
 }
 
 export const SkillFormEditor = ({
@@ -504,10 +498,6 @@ export const SkillFormEditor = ({
   onDelete,
   deleteStatus = 'idle',
   disabled,
-  onSave,
-  saveStatus,
-  saveDisabled,
-  filePath,
   activeSection,
 }: SkillFormEditorProps) => {
   const { frontmatter: initialFm, body: initialBody } = useMemo(
@@ -552,42 +542,6 @@ export const SkillFormEditor = ({
 
   return (
     <div className="h-full flex flex-col bg-(--bg-base)">
-      {/* Actions header */}
-      {(filePath || onSave) && (
-        <div className="shrink-0 flex items-center justify-end border-b border-(--border-faint) px-4 py-3 gap-3">
-          {filePath && (
-            <span className='font-["Fira_Code",monospace] text-[11px] text-(--text-muted) truncate max-w-48 hidden sm:block'>
-              {filePath}
-            </span>
-          )}
-          {onSave && (() => {
-            const isSaved = saveStatus === 'saved';
-            const isDisabled = saveDisabled && !isSaved;
-            const label = saveStatus === 'saving'
-              ? 'Saving…'
-              : isSaved
-              ? 'Saved ✓'
-              : saveDisabled
-              ? 'Up to date'
-              : 'Save';
-            return (
-              <button
-                onClick={saveDisabled ? undefined : onSave}
-                disabled={saveDisabled}
-                className={[
-                  'text-[13px] font-medium px-3 py-1 rounded-lg border-none transition-colors duration-150',
-                  isDisabled
-                    ? 'bg-(--bg-surface) text-(--text-muted) opacity-50 cursor-not-allowed'
-                    : 'bg-(--accent) text-white cursor-pointer hover:bg-(--accent-hover)',
-                ].join(' ')}
-              >
-                {label}
-              </button>
-            );
-          })()}
-        </div>
-      )}
-
       {/* Tab content */}
       <div className="flex-1 min-h-0">
         {activeTab === 'identity' && (
