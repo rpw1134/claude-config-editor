@@ -196,6 +196,7 @@ interface AccordionSectionProps {
   onToggle: () => void;
   children: React.ReactNode;
   buttonRef?: React.RefObject<HTMLButtonElement | null>;
+  onEnterAdvance?: () => void;
 }
 
 const AccordionSection = ({
@@ -204,12 +205,19 @@ const AccordionSection = ({
   onToggle,
   children,
   buttonRef,
+  onEnterAdvance,
 }: AccordionSectionProps) => {
   return (
     <div className="border border-(--border-subtle) rounded-3.5 overflow-hidden shrink-0">
       <button
         ref={buttonRef}
         onClick={onToggle}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' && onEnterAdvance) {
+            e.preventDefault();
+            onEnterAdvance();
+          }
+        }}
         className="w-full flex items-center justify-between px-5 py-4 text-left bg-transparent border-none cursor-pointer text-(--text-primary) transition-colors duration-150 hover:bg-(--bg-hover) focus-visible:outline-2 focus-visible:outline-(--accent)"
       >
         <span className="text-[15px] font-semibold">{title}</span>
@@ -431,6 +439,7 @@ interface StepOptionsProps {
   onContinue: () => void;
   onBack: () => void;
   firstButtonRef?: React.RefObject<HTMLButtonElement | null>;
+  onEnterAdvance?: () => void;
 }
 
 const radioRow = (active: boolean) =>
@@ -495,6 +504,7 @@ function StepOptions({
   onContinue,
   onBack,
   firstButtonRef,
+  onEnterAdvance,
 }: StepOptionsProps) {
   const [openSection, setOpenSection] = useState<string | null>(null);
 
@@ -516,6 +526,7 @@ function StepOptions({
           open={openSection === "Model"}
           onToggle={() => toggle("Model")}
           buttonRef={firstButtonRef}
+          onEnterAdvance={onEnterAdvance}
         >
           <div className="flex flex-col gap-1.5 pt-1">
             {MODELS.map((m) => (
@@ -540,6 +551,7 @@ function StepOptions({
           title="Color"
           open={openSection === "Color"}
           onToggle={() => toggle("Color")}
+          onEnterAdvance={onEnterAdvance}
         >
           <div className="flex gap-3 flex-wrap pt-1">
             {COLORS.map((c) => (
@@ -573,6 +585,7 @@ function StepOptions({
           title="Permission Mode"
           open={openSection === "Permission Mode"}
           onToggle={() => toggle("Permission Mode")}
+          onEnterAdvance={onEnterAdvance}
         >
           <div className="flex flex-col gap-1.5 pt-1">
             {PERMISSION_MODES.map((p) => (
@@ -601,6 +614,7 @@ function StepOptions({
           title="Effort"
           open={openSection === "Effort"}
           onToggle={() => toggle("Effort")}
+          onEnterAdvance={onEnterAdvance}
         >
           <div className="flex flex-col gap-1.5 pt-1">
             {EFFORT_LEVELS.map((e) => (
@@ -629,6 +643,7 @@ function StepOptions({
           title="Memory"
           open={openSection === "Memory"}
           onToggle={() => toggle("Memory")}
+          onEnterAdvance={onEnterAdvance}
         >
           <div className="flex flex-col gap-1.5 pt-1">
             {MEMORY_SCOPES.map((m) => (
@@ -655,6 +670,7 @@ function StepOptions({
           title="Tools"
           open={openSection === "Tools"}
           onToggle={() => toggle("Tools")}
+          onEnterAdvance={onEnterAdvance}
         >
           <div className="flex flex-col gap-3 pt-1">
             <div>
@@ -688,6 +704,7 @@ function StepOptions({
           title="Skills"
           open={openSection === "Skills"}
           onToggle={() => toggle("Skills")}
+          onEnterAdvance={onEnterAdvance}
         >
           <div className="pt-1">
             <p className="text-[12px] text-(--text-muted) mb-1.5">
@@ -707,6 +724,7 @@ function StepOptions({
           title="Max Turns"
           open={openSection === "Max Turns"}
           onToggle={() => toggle("Max Turns")}
+          onEnterAdvance={onEnterAdvance}
         >
           <div className="pt-1">
             <p className="text-[12px] text-(--text-muted) mb-1.5">
@@ -727,6 +745,7 @@ function StepOptions({
           title="Initial Prompt"
           open={openSection === "Initial Prompt"}
           onToggle={() => toggle("Initial Prompt")}
+          onEnterAdvance={onEnterAdvance}
         >
           <div className="pt-1">
             <p className="text-[12px] text-(--text-muted) mb-1.5">
@@ -749,6 +768,7 @@ function StepOptions({
           title="Behavior"
           open={openSection === "Behavior"}
           onToggle={() => toggle("Behavior")}
+          onEnterAdvance={onEnterAdvance}
         >
           <div className="flex flex-col gap-4 pt-1">
             <div className="flex items-center justify-between">
@@ -1020,6 +1040,7 @@ export const AgentCreateFlow = ({
 }: AgentCreateFlowProps) => {
   const [step, setStep] = useState(0);
   const [showDiscardModal, setShowDiscardModal] = useState(false);
+  const submitted = useRef(false);
 
   // Fields are declared below but we need to forward-reference them for the
   // blocker condition. The state is initialized to empty strings so we track
@@ -1052,7 +1073,7 @@ export const AgentCreateFlow = ({
   // accidentally lose work by clicking a sidebar item or pressing back.
   const blocker = useBlocker(
     ({ currentLocation, nextLocation }) =>
-      currentLocation.pathname !== nextLocation.pathname && hasData,
+      currentLocation.pathname !== nextLocation.pathname && hasData && !submitted.current,
   );
 
   // The modal is shown either when the X/Escape path sets showDiscardModal,
@@ -1170,6 +1191,7 @@ export const AgentCreateFlow = ({
     try {
       const content = buildContent();
       await createAgent(projectPath, name.trim(), content);
+      submitted.current = true;
       onCreated(name.trim());
     } catch (err) {
       setSubmitError(
@@ -1229,6 +1251,7 @@ export const AgentCreateFlow = ({
       onContinue={handleStep3Continue}
       onBack={handleBack}
       firstButtonRef={optionsFirstButtonRef}
+      onEnterAdvance={handleStep3Continue}
     />,
     <StepSystemPrompt
       key="prompt"

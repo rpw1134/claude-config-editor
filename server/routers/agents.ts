@@ -1,6 +1,6 @@
 import express from "express";
 import type { NextFunction, Request, Response, Router } from "express";
-import { readFileContent, writeFileContent, fileExists, deleteFile } from "../utils/fileIO.js";
+import { readFileContent, writeFileContent, writeFileEnsureDir, fileExists, deleteFile } from "../utils/fileIO.js";
 import { requireProjectPath } from "../utils/parsing.js";
 import { getConfigDir } from "../services/claudeConfig.js";
 
@@ -67,7 +67,7 @@ router.post(
       if (await fileExists(filePath)) {
         return res.status(409).json({ message: "Agent already exists" });
       }
-      await writeFileContent(filePath, content);
+      await writeFileEnsureDir(filePath, content);
       res.status(201).json({ message: "Agent created" });
     } catch (err) {
       next(err);
