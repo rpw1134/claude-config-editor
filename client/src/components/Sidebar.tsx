@@ -3,6 +3,55 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { ProjectPicker } from './ProjectPicker';
 import type { RecentItem } from '../hooks/useRecents';
 
+// ── Collapsed create menu ─────────────────────────────────────────────────────
+
+interface CollapsedCreateMenuProps {
+  x: number;
+  y: number;
+  onSelect: (type: 'agent' | 'skill' | 'mcp-server') => void;
+  onClose: () => void;
+}
+
+const CollapsedCreateMenu = ({ x, y, onSelect, onClose }: CollapsedCreateMenuProps) => {
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) onClose();
+    };
+    const t = setTimeout(() => document.addEventListener('mousedown', handler), 50);
+    return () => {
+      clearTimeout(t);
+      document.removeEventListener('mousedown', handler);
+    };
+  }, [onClose]);
+
+  const options: { type: 'agent' | 'skill' | 'mcp-server'; label: string; icon: React.ReactNode }[] = [
+    { type: 'agent', label: 'Agent', icon: <AgentIcon /> },
+    { type: 'skill', label: 'Skill', icon: <SkillIcon /> },
+    { type: 'mcp-server', label: 'MCP Server', icon: <McpIcon /> },
+  ];
+
+  return (
+    <div
+      ref={ref}
+      className="fixed z-50 bg-(--bg-elevated) border border-(--border-default) rounded-lg overflow-hidden shadow-[0_4px_24px_rgba(0,0,0,0.4)]"
+      style={{ top: y, left: x }}
+    >
+      {options.map(({ type, label, icon }) => (
+        <button
+          key={type}
+          onClick={() => { onSelect(type); onClose(); }}
+          className="w-full flex items-center gap-2.5 px-3.5 py-2.25 text-left text-[14px] font-medium text-(--text-secondary) bg-transparent border-none cursor-pointer transition-colors duration-150 hover:bg-(--bg-hover) hover:text-(--text-primary)"
+        >
+          <span className="text-(--text-muted)">{icon}</span>
+          {label}
+        </button>
+      ))}
+    </div>
+  );
+};
+
 // ── Icons ─────────────────────────────────────────────────────────────────────
 
 const DocumentIcon = () => (
@@ -129,8 +178,8 @@ const NavButton = ({ icon, label, active, disabled = false, collapsed, onClick }
     disabled={disabled}
     title={collapsed ? label : undefined}
     className={[
-      'w-full flex items-center gap-2.5 px-2 rounded-md text-left text-[14px] font-medium min-h-8.5 border-none transition-all duration-150',
-      'border-l-[3px]',
+      'w-full flex items-center rounded-md text-left text-[14px] font-medium min-h-8.5 border-none transition-all duration-150',
+      collapsed ? 'justify-center px-0 border-l-0' : 'gap-2.5 px-2 border-l-[3px]',
       active
         ? 'bg-(--bg-surface) text-(--text-primary) border-l-(--accent)'
         : disabled
@@ -177,6 +226,7 @@ export const Sidebar = ({
   const location = useLocation();
   const navigate = useNavigate();
   const [createDropdownOpen, setCreateDropdownOpen] = useState(false);
+  const [collapsedMenuPos, setCollapsedMenuPos] = useState<{ x: number; y: number } | null>(null);
   const hasProject = selectedProjectPath !== null;
 
   const encodedProject = selectedProjectPath ? encodeURIComponent(selectedProjectPath) : '';
@@ -209,7 +259,7 @@ export const Sidebar = ({
       style={{ width: collapsed ? 52 : 260 }}
     >
       {/* App header */}
-      <div className="px-3 pt-4 pb-3 border-b border-(--border-faint) shrink-0 flex items-center gap-2.5 min-h-14.25">
+      <div className={['pt-4 pb-3 border-b border-(--border-faint) shrink-0 flex items-center min-h-14.25 transition-all duration-200', collapsed ? 'justify-center px-0' : 'px-3 gap-2.5'].join(' ')}>
         <button
           onClick={onToggleCollapsed}
           title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
@@ -247,11 +297,19 @@ export const Sidebar = ({
         {/* Create New button */}
         <div className="relative mb-1.5">
           <button
-            onClick={() => hasProject && (collapsed ? onCreateNew('agent') : setCreateDropdownOpen((v) => !v))}
+            onClick={(e) => {
+              if (!hasProject) return;
+              if (collapsed) {
+                setCollapsedMenuPos({ x: e.clientX, y: e.clientY });
+              } else {
+                setCreateDropdownOpen((v) => !v);
+              }
+            }}
             disabled={!hasProject}
             title="Create New"
             className={[
-              'w-full flex items-center gap-2.5 px-2 py-1.75 rounded-lg text-left text-[14px] font-medium min-h-8.5 border-none transition-colors duration-150',
+              'w-full flex items-center py-1.75 rounded-lg text-left text-[14px] font-medium min-h-8.5 border-none transition-colors duration-150',
+              collapsed ? 'justify-center px-0' : 'gap-2.5 px-2',
               hasProject
                 ? 'bg-(--accent) text-white cursor-pointer hover:bg-(--accent-hover)'
                 : 'bg-(--bg-surface) text-(--text-muted) cursor-not-allowed border border-(--border-faint) opacity-50',
@@ -277,6 +335,15 @@ export const Sidebar = ({
             <CreateNewDropdown
               onSelect={(type) => { onCreateNew(type); }}
               onClose={() => setCreateDropdownOpen(false)}
+            />
+          )}
+
+          {collapsedMenuPos && hasProject && collapsed && (
+            <CollapsedCreateMenu
+              x={collapsedMenuPos.x}
+              y={collapsedMenuPos.y}
+              onSelect={(type) => { onCreateNew(type); }}
+              onClose={() => setCollapsedMenuPos(null)}
             />
           )}
         </div>
