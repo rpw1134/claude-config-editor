@@ -2,14 +2,6 @@ import { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { Editor } from './Editor';
 
-// ── Icons ─────────────────────────────────────────────────────────────────────
-
-const BackArrowIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-    <path d="M8.5 2.5L4 7L8.5 11.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-  </svg>
-);
-
 const DocumentIcon = () => (
   <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
     <path
@@ -36,6 +28,7 @@ const ExamplesIcon = () => (
 
 interface FileBannerProps {
   file: string;
+  inline?: boolean;
 }
 
 const FILE_META: Record<string, { icon: React.ReactNode; title: string; subtitle: string }> = {
@@ -51,12 +44,22 @@ const FILE_META: Record<string, { icon: React.ReactNode; title: string; subtitle
   },
 };
 
-const FileBanner = ({ file }: FileBannerProps) => {
+const FileBanner = ({ file, inline }: FileBannerProps) => {
   const meta = FILE_META[file] ?? {
     icon: <DocumentIcon />,
     title: 'Supporting file',
     subtitle: 'Optional supplementary content for this skill.',
   };
+
+  if (inline) {
+    return (
+      <div className="flex items-center gap-2">
+        <span className="text-(--text-muted) shrink-0">{meta.icon}</span>
+        <span className="text-(--text-secondary) text-[13px] font-medium shrink-0">{meta.title}</span>
+        <span className="text-(--text-muted) text-[12px] truncate hidden sm:block">{meta.subtitle}</span>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-(--bg-surface) border-b border-(--border-faint) px-7 py-3 flex items-center gap-3 shrink-0">
@@ -94,7 +97,6 @@ export interface PlainFileEditorProps {
   saveStatus: SaveStatus;
   saveDisabled: boolean;
   onSave: () => void;
-  onBack: () => void;
 }
 
 export const PlainFileEditor = ({
@@ -106,7 +108,6 @@ export const PlainFileEditor = ({
   saveStatus,
   saveDisabled,
   onSave,
-  onBack,
 }: PlainFileEditorProps) => {
   const [previewMode, setPreviewMode] = useState(false);
   const isSaved = saveStatus === 'saved';
@@ -115,20 +116,43 @@ export const PlainFileEditor = ({
     saveStatus === 'saving' ? 'Saving…' : isSaved ? 'Saved ✓' : saveDisabled ? 'Up to date' : 'Save';
 
   return (
-    <div className="flex flex-1 flex-col h-full w-full bg-(--bg-base) border-l border-(--border-faint)">
-      {/* Action bar */}
-      <div className="px-5 border-b border-(--border-faint) flex items-center justify-between shrink-0 min-h-12 bg-(--bg-sidebar)">
-        <button
-          type="button"
-          onClick={onBack}
-          className="flex items-center gap-1.5 text-[13px] text-(--text-muted) hover:text-(--text-primary) bg-transparent border-none cursor-pointer transition-colors duration-150 p-0"
-        >
-          <BackArrowIcon /> Back
-        </button>
+    <div className="flex flex-1 flex-col min-h-0">
+      {/* Save row */}
+      <div className="px-5 border-b border-(--border-faint) flex items-center justify-between shrink-0 min-h-11 bg-(--bg-sidebar)">
+        <div className="flex items-center gap-3">
+          <FileBanner file={file} inline />
+        </div>
         <div className="flex items-center gap-3">
           <span className='font-["Fira_Code",monospace] text-[11px] text-(--text-muted) truncate max-w-64 hidden sm:block'>
             {resolvedFilePath(projectPath, skillName, file)}
           </span>
+          {/* Edit/Preview toggle */}
+          <div className="flex items-center bg-(--bg-surface) border border-(--border-subtle) rounded-md p-0.5 shrink-0">
+            <button
+              type="button"
+              onClick={() => setPreviewMode(false)}
+              className={[
+                'text-[13px] px-2.5 py-0.5 rounded cursor-pointer border-none transition-colors duration-150',
+                !previewMode
+                  ? 'bg-(--bg-elevated) text-(--text-primary)'
+                  : 'bg-transparent text-(--text-muted) hover:text-(--text-secondary)',
+              ].join(' ')}
+            >
+              Edit
+            </button>
+            <button
+              type="button"
+              onClick={() => setPreviewMode(true)}
+              className={[
+                'text-[13px] px-2.5 py-0.5 rounded cursor-pointer border-none transition-colors duration-150',
+                previewMode
+                  ? 'bg-(--bg-elevated) text-(--text-primary)'
+                  : 'bg-transparent text-(--text-muted) hover:text-(--text-secondary)',
+              ].join(' ')}
+            >
+              Preview
+            </button>
+          </div>
           <button
             onClick={isDisabled ? undefined : onSave}
             disabled={isDisabled}
@@ -140,47 +164,6 @@ export const PlainFileEditor = ({
             ].join(' ')}
           >
             {saveLabel}
-          </button>
-        </div>
-      </div>
-
-      {/* Description banner */}
-      <FileBanner file={file} />
-
-      {/* Title + Edit/Preview toggle */}
-      <div className="px-7 pt-7 pb-4 shrink-0 flex items-start justify-between">
-        <div>
-          <h2 className="m-0 mb-1 text-2xl font-['Bricolage_Grotesque',sans-serif] font-bold tracking-[-0.015em] text-(--text-primary)">
-            {file}
-          </h2>
-          <p className="m-0 text-[13px] text-(--text-muted)">
-            Supporting file in <span className='font-["Fira_Code",monospace]'>{skillName}/</span>
-          </p>
-        </div>
-        <div className="flex items-center bg-(--bg-surface) border border-(--border-subtle) rounded-md p-0.5 shrink-0 mt-1">
-          <button
-            type="button"
-            onClick={() => setPreviewMode(false)}
-            className={[
-              'text-[13px] px-2.5 py-0.5 rounded cursor-pointer border-none transition-colors duration-150',
-              !previewMode
-                ? 'bg-(--bg-elevated) text-(--text-primary)'
-                : 'bg-transparent text-(--text-muted) hover:text-(--text-secondary)',
-            ].join(' ')}
-          >
-            Edit
-          </button>
-          <button
-            type="button"
-            onClick={() => setPreviewMode(true)}
-            className={[
-              'text-[13px] px-2.5 py-0.5 rounded cursor-pointer border-none transition-colors duration-150',
-              previewMode
-                ? 'bg-(--bg-elevated) text-(--text-primary)'
-                : 'bg-transparent text-(--text-muted) hover:text-(--text-secondary)',
-            ].join(' ')}
-          >
-            Preview
           </button>
         </div>
       </div>

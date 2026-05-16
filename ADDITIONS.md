@@ -95,4 +95,7 @@ ${CLAUDE_SKILL_DIR} The directory containing the skill’s SKILL.md file. For pl
    Skill with context: fork From agent type (Explore, Plan, etc.) SKILL.md content CLAUDE.md
    Subagent with skills field Subagent’s markdown body Claude’s delegation message Preloaded skills + CLAUDE.md
    With context: fork, you write the task in your skill and pick an agent type to execute it. For the inverse (defining a custom subagent that uses skills as reference material), see Subagents.
-8.
+
+### Claude.md:
+
+1. Add an opinionated creator. Can see raw, or add links and references. Research what makes a good agent system

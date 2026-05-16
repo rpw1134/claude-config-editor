@@ -1,5 +1,7 @@
 import { createContext, useContext, useEffect, useRef, useState } from 'react';
-import { Routes, Route, useNavigate, useParams, Navigate, Outlet } from 'react-router-dom';
+import { Routes, Route, useNavigate, useParams, Navigate, Outlet, useMatch, useBlocker } from 'react-router-dom';
+import { SkillTabBar } from './components/Editor/SkillTabBar';
+import type { SkillTabId } from './components/Editor/SkillTabBar';
 import { Sidebar } from './components/Sidebar';
 import { EditorPane } from './components/Editor/EditorPane';
 import { SkillDirectoryView } from './components/Editor/SkillDirectoryView';
@@ -256,11 +258,82 @@ const SkillsLandingContent = () => {
   );
 };
 
-// /:projectId/skills/:name
-const SkillEditorContent = () => {
+// ── Shared unsaved-changes modal ─────────────────────────────────────────────
+
+const UnsavedModal = ({ onLeave, onKeep }: { onLeave: () => void; onKeep: () => void }) => (
+  <div
+    className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
+    onClick={onKeep}
+  >
+    <div
+      className="bg-(--bg-surface) rounded-4.5 border border-(--border-subtle) p-8 max-w-90 w-full mx-4 shadow-2xl"
+      onClick={(e) => e.stopPropagation()}
+    >
+      <h2 className="m-0 mb-2 text-[20px] font-bold text-(--text-primary)">Unsaved changes</h2>
+      <p className="m-0 mb-6 text-[14px] text-(--text-secondary)">
+        Leave without saving? Your changes will be lost.
+      </p>
+      <div className="flex items-center gap-3">
+        <button
+          onClick={onLeave}
+          className="px-5 py-2.5 rounded-2.5 text-[14px] font-medium text-white bg-(--error) border-none cursor-pointer transition-colors duration-150"
+        >
+          Leave
+        </button>
+        <button
+          onClick={onKeep}
+          className="text-[14px] text-(--text-muted) bg-transparent border-none cursor-pointer transition-colors duration-150 hover:text-(--text-secondary)"
+        >
+          Keep editing
+        </button>
+      </div>
+    </div>
+  </div>
+);
+
+// ── Skill routing ─────────────────────────────────────────────────────────────
+
+const SKILL_SECTIONS = new Set(['identity', 'instructions', 'settings']);
+type SkillSection = 'identity' | 'instructions' | 'settings';
+
+// /:projectId/skills/:name  — shared layout (tab bar stays mounted across tab switches)
+const SkillLayout = () => {
   const { projectId, name } = useParams<{ projectId: string; name: string }>();
   const navigate = useNavigate();
-  const { onBumpSkillsRefresh, removeFromRecents } = useShell();
+  const matchFile = useMatch('/:projectId/skills/:name/:file');
+  const rawFile = matchFile?.params?.file;
+
+  const projectPath = projectId ? decodeProject(projectId) : '';
+  const skillName = name ? decodeURIComponent(name) : '';
+
+  const isSkillSection = rawFile ? SKILL_SECTIONS.has(rawFile) : false;
+  // For SKILL.md sections, pass the section name as activeTab so no file tab is highlighted
+  const activeTab = (rawFile ?? 'directory') as SkillTabId;
+
+  return (
+    <div className="flex flex-1 flex-col h-full w-full bg-(--bg-base) border-l border-(--border-faint)">
+      <SkillTabBar
+        activeTab={activeTab}
+        skillName={skillName}
+        projectPath={projectPath}
+        onBack={() => navigate(`/${encodeProject(projectPath)}/skills`)}
+      />
+      {isSkillSection ? (
+        <SkillFormContent
+          key={`skill-form:${projectPath}:${skillName}`}
+          section={rawFile as SkillSection}
+          projectPath={projectPath}
+          skillName={skillName}
+        />
+      ) : (
+        <Outlet />
+      )}
+    </div>
+  );
+};
+
+const SkillEditorContent = () => {
+  const { projectId, name } = useParams<{ projectId: string; name: string }>();
   const projectPath = projectId ? decodeProject(projectId) : null;
   const skillName = name ? decodeURIComponent(name) : null;
 
@@ -271,28 +344,26 @@ const SkillEditorContent = () => {
       key={`skill:${projectPath}:${skillName}`}
       skillName={skillName}
       projectPath={projectPath}
-      onBack={() => navigate(`/${encodeProject(projectPath)}/skills`)}
-      onDeleted={() => {
-        onBumpSkillsRefresh();
-        removeFromRecents('skill', skillName);
-        navigate(`/${encodeProject(projectPath)}/skills`);
-      }}
     />
   );
 };
 
-// /:projectId/skills/:skillName/:file
 type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
 type DeleteStatus = 'idle' | 'confirm' | 'deleting' | 'error';
 
-const SkillFileContent = () => {
-  const { projectId, name, file } = useParams<{ projectId: string; name: string; file: string }>();
+// /:projectId/skills/:name/identity|instructions|settings — SKILL.md form editor
+// Rendered directly by SkillLayout (not via Outlet) so it keeps state across tab switches.
+const SkillFormContent = ({
+  section,
+  projectPath,
+  skillName,
+}: {
+  section: SkillSection;
+  projectPath: string;
+  skillName: string;
+}) => {
   const navigate = useNavigate();
   const { onBumpSkillsRefresh, removeFromRecents } = useShell();
-
-  const projectPath = projectId ? decodeProject(projectId) : null;
-  const skillName = name ? decodeURIComponent(name) : null;
-  const fileName = file ? decodeURIComponent(file) : null;
 
   const [fileContent, setFileContent] = useState('');
   const [savedContent, setSavedContent] = useState('');
@@ -305,103 +376,62 @@ const SkillFileContent = () => {
 
   const dirty = !contentLoading && fileContent !== savedContent;
 
-  useEffect(() => {
-    return () => {
-      if (saveTimer.current) clearTimeout(saveTimer.current);
-      if (deleteTimer.current) clearTimeout(deleteTimer.current);
-    };
+  useEffect(() => () => {
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    if (deleteTimer.current) clearTimeout(deleteTimer.current);
   }, []);
 
-  // Load file content whenever the target file changes
+  // Load SKILL.md once — the key on SkillLayout ensures remount only when skill changes
   useEffect(() => {
-    if (!projectPath || !skillName || !fileName) return;
-
     let cancelled = false;
-
     const load = async () => {
-      // Reset state at the start of the async work, not synchronously in the effect body
       setContentLoading(true);
       setFileContent('');
       setSavedContent('');
       setSaveStatus('idle');
-
-      // Create the file if it doesn't exist yet (no-op if it does)
-      if (fileName !== 'SKILL.md') {
-        try {
-          await createSkillFile(projectPath, skillName, fileName);
-        } catch {
-          // Already exists — fine
-        }
-      }
-
       try {
-        const raw = fileName === 'SKILL.md'
-          ? await fetchSkillContent(projectPath, skillName)
-          : await fetchSkillFile(projectPath, skillName, fileName);
-
+        const raw = await fetchSkillContent(projectPath, skillName);
         if (cancelled) return;
-
-        if (fileName === 'SKILL.md') {
-          const { frontmatter, body } = parseSkillFrontmatter(raw);
-          if (!frontmatter.name) {
-            const filled = serializeSkillFrontmatter({ ...frontmatter, name: skillName }, body);
-            setFileContent(filled);
-            setSavedContent(raw);
-            setContentLoading(false);
-            return;
-          }
+        const { frontmatter, body } = parseSkillFrontmatter(raw);
+        if (!frontmatter.name) {
+          const filled = serializeSkillFrontmatter({ ...frontmatter, name: skillName }, body);
+          setFileContent(filled);
+          setSavedContent(raw);
+          setContentLoading(false);
+          return;
         }
-
         setFileContent(raw);
         setSavedContent(raw);
       } catch {
-        if (!cancelled) {
-          setFileContent('');
-          setSavedContent('');
-        }
+        if (!cancelled) { setFileContent(''); setSavedContent(''); }
       } finally {
         if (!cancelled) setContentLoading(false);
       }
     };
-
     load();
     return () => { cancelled = true; };
-  }, [projectPath, skillName, fileName]);
+  }, [projectPath, skillName]);
 
-  // ── All hooks are above this point. Handlers below use narrowed strings. ──────
-
-  // Keyboard shortcut (no deps — re-registers every render so it always sees
-  // the latest `dirty` and `handleSave` without stale closure issues)
+  // Cmd+S shortcut
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 's') {
-        e.preventDefault();
-        void handleSave();
-      }
+      if ((e.metaKey || e.ctrlKey) && e.key === 's') { e.preventDefault(); void handleSave(); }
     };
     document.addEventListener('keydown', handler);
     return () => document.removeEventListener('keydown', handler);
   });
 
-  // Guard — after all hooks so Rules of Hooks is satisfied
-  if (!projectPath || !skillName || !fileName) return <Navigate to="/" replace />;
-
-  // Narrowed to string from here down
-  const path = projectPath;
-  const skill = skillName;
-  const fname = fileName;
-
-  const backUrl = `/${encodeProject(path)}/skills/${encodeURIComponent(skill)}`;
+  // Block navigation away from SKILL.md when dirty, but allow switching between sections
+  const blocker = useBlocker(({ currentLocation, nextLocation }) => {
+    if (!dirty || currentLocation.pathname === nextLocation.pathname) return false;
+    return !/\/(identity|instructions|settings)$/.test(nextLocation.pathname);
+  });
 
   async function handleSave() {
     if (!dirty || saveStatus === 'saving') return;
     setSaveStatus('saving');
     try {
-      if (fname === 'SKILL.md') {
-        await updateSkillContent(path, skill, fileContent);
-      } else {
-        await updateSkillFile(path, skill, fname, fileContent);
-      }
+      await updateSkillContent(projectPath, skillName, fileContent);
       setSavedContent(fileContent);
       setSaveStatus('saved');
       saveTimer.current = setTimeout(() => setSaveStatus('idle'), 1500);
@@ -421,51 +451,135 @@ const SkillFileContent = () => {
     if (deleteTimer.current) clearTimeout(deleteTimer.current);
     setDeleteStatus('deleting');
     try {
-      await deleteSkill(path, skill);
+      await deleteSkill(projectPath, skillName);
       onBumpSkillsRefresh();
-      removeFromRecents('skill', skill);
-      navigate(`/${encodeProject(path)}/skills`);
+      removeFromRecents('skill', skillName);
+      navigate(`/${encodeProject(projectPath)}/skills`);
     } catch {
       setDeleteStatus('error');
       deleteTimer.current = setTimeout(() => setDeleteStatus('idle'), 2000);
     }
   }
 
-  if (contentLoading) {
-    return <div className="flex flex-1 flex-col h-full w-full bg-(--bg-base) border-l border-(--border-faint)" />;
-  }
-
-  if (fname === 'SKILL.md') {
-    return (
-      <div className="flex flex-1 flex-col h-full w-full bg-(--bg-base) border-l border-(--border-faint)">
-        <SkillFormEditor
-          content={fileContent}
-          onChange={setFileContent}
-          onDelete={handleDeleteSkill}
-          deleteStatus={deleteStatus}
-          onSave={handleSave}
-          saveStatus={saveStatus}
-          saveDisabled={!dirty || saveStatus === 'saving'}
-          disabled={saveStatus === 'saving'}
-          onBack={() => navigate(backUrl)}
-          filePath={resolvedFilePath(path, skill, 'SKILL.md')}
-        />
-      </div>
-    );
-  }
+  if (contentLoading) return <div className="flex-1" />;
 
   return (
-    <PlainFileEditor
-      file={fname}
-      skillName={skill}
-      projectPath={path}
-      content={fileContent}
-      onChange={setFileContent}
-      saveStatus={saveStatus}
-      saveDisabled={!dirty || saveStatus === 'saving'}
-      onSave={handleSave}
-      onBack={() => navigate(backUrl)}
-    />
+    <>
+      {blocker.state === 'blocked' && (
+        <UnsavedModal onLeave={() => blocker.proceed()} onKeep={() => blocker.reset()} />
+      )}
+      <SkillFormEditor
+        content={fileContent}
+        onChange={setFileContent}
+        onDelete={handleDeleteSkill}
+        deleteStatus={deleteStatus}
+        onSave={handleSave}
+        saveStatus={saveStatus}
+        saveDisabled={!dirty || saveStatus === 'saving'}
+        disabled={saveStatus === 'saving'}
+        filePath={resolvedFilePath(projectPath, skillName, 'SKILL.md')}
+        activeSection={section}
+        onSectionChange={(s) =>
+          navigate(`/${encodeProject(projectPath)}/skills/${encodeURIComponent(skillName)}/${s}`)
+        }
+      />
+    </>
+  );
+};
+
+// /:projectId/skills/:name/reference.md|examples.md — supplementary file editor
+const SkillFileContent = () => {
+  const { projectId, name, file } = useParams<{ projectId: string; name: string; file: string }>();
+
+  const projectPath = projectId ? decodeProject(projectId) : null;
+  const skillName = name ? decodeURIComponent(name) : null;
+  const fileName = file ? decodeURIComponent(file) : null;
+
+  const [fileContent, setFileContent] = useState('');
+  const [savedContent, setSavedContent] = useState('');
+  const [contentLoading, setContentLoading] = useState(true);
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
+
+  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const dirty = !contentLoading && fileContent !== savedContent;
+
+  useEffect(() => () => { if (saveTimer.current) clearTimeout(saveTimer.current); }, []);
+
+  useEffect(() => {
+    if (!projectPath || !skillName || !fileName) return;
+    let cancelled = false;
+    const load = async () => {
+      setContentLoading(true);
+      setFileContent('');
+      setSavedContent('');
+      setSaveStatus('idle');
+      try { await createSkillFile(projectPath, skillName, fileName); } catch { /* already exists */ }
+      try {
+        const raw = await fetchSkillFile(projectPath, skillName, fileName);
+        if (cancelled) return;
+        setFileContent(raw);
+        setSavedContent(raw);
+      } catch {
+        if (!cancelled) { setFileContent(''); setSavedContent(''); }
+      } finally {
+        if (!cancelled) setContentLoading(false);
+      }
+    };
+    load();
+    return () => { cancelled = true; };
+  }, [projectPath, skillName, fileName]);
+
+  // Cmd+S shortcut
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 's') { e.preventDefault(); void handleSave(); }
+    };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  });
+
+  const blocker = useBlocker(({ currentLocation, nextLocation }) =>
+    dirty && currentLocation.pathname !== nextLocation.pathname
+  );
+
+  if (!projectPath || !skillName || !fileName) return <Navigate to="/" replace />;
+
+  const path = projectPath;
+  const skill = skillName;
+  const fname = fileName;
+
+  async function handleSave() {
+    if (!dirty || saveStatus === 'saving') return;
+    setSaveStatus('saving');
+    try {
+      await updateSkillFile(path, skill, fname, fileContent);
+      setSavedContent(fileContent);
+      setSaveStatus('saved');
+      saveTimer.current = setTimeout(() => setSaveStatus('idle'), 1500);
+    } catch {
+      setSaveStatus('error');
+      saveTimer.current = setTimeout(() => setSaveStatus('idle'), 2000);
+    }
+  }
+
+  if (contentLoading) return <div className="flex-1" />;
+
+  return (
+    <>
+      {blocker.state === 'blocked' && (
+        <UnsavedModal onLeave={() => blocker.proceed()} onKeep={() => blocker.reset()} />
+      )}
+      <PlainFileEditor
+        file={fname}
+        skillName={skill}
+        projectPath={path}
+        content={fileContent}
+        onChange={setFileContent}
+        saveStatus={saveStatus}
+        saveDisabled={!dirty || saveStatus === 'saving'}
+        onSave={handleSave}
+      />
+    </>
   );
 };
 
@@ -654,8 +768,10 @@ export default function App() {
 
           {/* Skills */}
           <Route path="/:projectId/skills" element={<SkillsLandingContent />} />
-          <Route path="/:projectId/skills/:name" element={<SkillEditorContent />} />
-          <Route path="/:projectId/skills/:name/:file" element={<SkillFileContent />} />
+          <Route path="/:projectId/skills/:name" element={<SkillLayout />}>
+            <Route index element={<SkillEditorContent />} />
+            <Route path=":file" element={<SkillFileContent />} />
+          </Route>
 
           {/* MCP */}
           <Route path="/:projectId/mcp" element={<McpLandingContent />} />

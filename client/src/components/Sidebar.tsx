@@ -367,8 +367,12 @@ const NavButton = ({
       {icon}
     </span>
     <span
-      className="overflow-hidden whitespace-nowrap transition-all duration-200 ease-in-out"
-      style={{ opacity: collapsed ? 0 : 1, maxWidth: collapsed ? 0 : 200 }}
+      className="overflow-hidden whitespace-nowrap"
+      style={{
+        opacity: collapsed ? 0 : 1,
+        maxWidth: collapsed ? 0 : 200,
+        transition: "opacity 150ms ease, max-width 200ms ease 50ms",
+      }}
     >
       {label}
     </span>
@@ -450,8 +454,12 @@ export const Sidebar = ({
           </span>
         </button>
         <div
-          className="flex-1 min-w-0 overflow-hidden transition-all duration-200 ease-in-out"
-          style={{ opacity: collapsed ? 0 : 1, maxWidth: collapsed ? 0 : 300 }}
+          className="flex-1 min-w-0 overflow-hidden"
+          style={{
+            opacity: collapsed ? 0 : 1,
+            maxWidth: collapsed ? 0 : 300,
+            transition: "opacity 150ms ease, max-width 200ms ease 50ms",
+          }}
         >
           <p className="text-[14px] font-semibold text-(--text-primary) leading-[1.2] whitespace-nowrap">
             Config Studio
@@ -468,6 +476,7 @@ export const Sidebar = ({
             opacity: collapsed ? 0 : 1,
             pointerEvents: collapsed ? "none" : "auto",
             width: collapsed ? 0 : undefined,
+            transition: "opacity 150ms ease, width 200ms ease 50ms",
           }}
         >
           <ChevronIcon direction="left" />
@@ -476,11 +485,12 @@ export const Sidebar = ({
 
       {/* Project picker — hidden when collapsed */}
       <div
-        className="shrink-0 overflow-hidden transition-all duration-200 ease-in-out"
+        className="shrink-0 overflow-hidden"
         style={{
           opacity: collapsed ? 0 : 1,
           maxHeight: collapsed ? 0 : 80,
           pointerEvents: collapsed ? "none" : "auto",
+          transition: "opacity 150ms ease, max-height 200ms ease 50ms",
         }}
       >
         <ProjectPicker
@@ -516,10 +526,11 @@ export const Sidebar = ({
               <PlusIcon />
             </span>
             <span
-              className="overflow-hidden whitespace-nowrap transition-all duration-200 ease-in-out flex items-center gap-2"
+              className="overflow-hidden whitespace-nowrap flex items-center gap-2"
               style={{
                 opacity: collapsed ? 0 : 1,
                 maxWidth: collapsed ? 0 : 200,
+                transition: "opacity 150ms ease, max-width 200ms ease 50ms",
               }}
             >
               Create New
@@ -608,10 +619,11 @@ export const Sidebar = ({
       {/* Recents — hidden when collapsed */}
       {hasProject && recents.length > 0 && (
         <div
-          className="flex-1 min-h-0 overflow-hidden transition-all duration-200 ease-in-out"
+          className="flex-1 min-h-0 overflow-hidden"
           style={{
             opacity: collapsed ? 0 : 1,
             pointerEvents: collapsed ? "none" : "auto",
+            transition: "opacity 150ms ease",
           }}
         >
           <div className="mx-3 my-4 border-t border-(--border-faint) shrink-0" />
@@ -651,8 +663,11 @@ export const Sidebar = ({
       {/* Bottom */}
       <div className="px-3 pt-3 pb-4 border-t border-(--border-faint) shrink-0">
         <p
-          className="px-2 text-[11px] font-['Fira_Code',monospace] text-(--text-muted) opacity-60 overflow-hidden whitespace-nowrap transition-all duration-200"
-          style={{ opacity: collapsed ? 0 : undefined }}
+          className="px-2 text-[11px] font-['Fira_Code',monospace] text-(--text-muted) overflow-hidden whitespace-nowrap"
+          style={{
+            opacity: collapsed ? 0 : 0.6,
+            transition: "opacity 150ms ease",
+          }}
         >
           v0.1.0-pre
         </p>

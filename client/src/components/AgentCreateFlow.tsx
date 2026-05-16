@@ -1084,8 +1084,11 @@ export const AgentCreateFlow = ({
   const handleDiscardConfirm = () => {
     if (blocker.state === "blocked") {
       blocker.proceed();
+      // blocker.proceed() already completes the intercepted navigation — don't also call
+      // onCancel() or it triggers a second navigation that the still-mounted blocker re-intercepts.
+    } else {
+      onCancel();
     }
-    onCancel();
   };
 
   const handleDiscardCancel = () => {

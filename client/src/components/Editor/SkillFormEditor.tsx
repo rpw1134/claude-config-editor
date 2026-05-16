@@ -494,6 +494,8 @@ export interface SkillFormEditorProps {
   saveDisabled?: boolean;
   onBack?: () => void;
   filePath?: string;
+  activeSection?: Tab;
+  onSectionChange?: (section: Tab) => void;
 }
 
 const BackArrowIcon = () => (
@@ -513,6 +515,8 @@ export const SkillFormEditor = ({
   saveDisabled,
   onBack,
   filePath,
+  activeSection,
+  onSectionChange,
 }: SkillFormEditorProps) => {
   const { frontmatter: initialFm, body: initialBody } = useMemo(
     () => parseSkillFrontmatter(content),
@@ -522,7 +526,8 @@ export const SkillFormEditor = ({
 
   const [fm, setFm] = useState<SkillFrontmatter>(initialFm);
   const [body, setBody] = useState(initialBody);
-  const [activeTab, setActiveTab] = useState<Tab>('identity');
+  const [localTab, setLocalTab] = useState<Tab>('identity');
+  const activeTab = activeSection ?? localTab;
   const lastExternalContent = useRef(content);
 
   useEffect(() => {
@@ -579,7 +584,7 @@ export const SkillFormEditor = ({
             <button
               key={id}
               type="button"
-              onClick={() => setActiveTab(id)}
+              onClick={() => onSectionChange ? onSectionChange(id) : setLocalTab(id)}
               className={[
                 'pt-6 pb-5 px-3 bg-transparent border-none cursor-pointer transition-colors duration-150 relative',
                 activeTab === id
