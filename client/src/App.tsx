@@ -1,13 +1,24 @@
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { Routes, Route, useNavigate, useParams, Navigate, Outlet } from 'react-router-dom';
 import { Sidebar } from './components/Sidebar';
 import { EditorPane } from './components/Editor/EditorPane';
 import { SkillDirectoryView } from './components/Editor/SkillDirectoryView';
+import { SkillFormEditor } from './components/Editor/SkillFormEditor';
+import { PlainFileEditor, resolvedFilePath } from './components/Editor/PlainFileEditor';
 import { WelcomePane, NoProjectPane } from './components/WelcomePane';
 import { AgentsLandingPage, SkillsLandingPage, McpLandingPage } from './components/LandingPage';
 import { CreateNewModal } from './components/CreateNewModal';
 import { AgentCreateFlow } from './components/AgentCreateFlow';
-import { fetchProjects } from './lib/api';
+import {
+  fetchProjects,
+  fetchSkillContent,
+  fetchSkillFile,
+  updateSkillContent,
+  updateSkillFile,
+  deleteSkill,
+  createSkillFile,
+} from './lib/api';
+import { parseSkillFrontmatter, serializeSkillFrontmatter } from './lib/frontmatter';
 import { addRecentItem, readRecents, removeRecentItem } from './hooks/useRecents';
 import type { RecentItem } from './hooks/useRecents';
 
@@ -270,6 +281,194 @@ const SkillEditorContent = () => {
   );
 };
 
+// /:projectId/skills/:skillName/:file
+type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
+type DeleteStatus = 'idle' | 'confirm' | 'deleting' | 'error';
+
+const SkillFileContent = () => {
+  const { projectId, name, file } = useParams<{ projectId: string; name: string; file: string }>();
+  const navigate = useNavigate();
+  const { onBumpSkillsRefresh, removeFromRecents } = useShell();
+
+  const projectPath = projectId ? decodeProject(projectId) : null;
+  const skillName = name ? decodeURIComponent(name) : null;
+  const fileName = file ? decodeURIComponent(file) : null;
+
+  const [fileContent, setFileContent] = useState('');
+  const [savedContent, setSavedContent] = useState('');
+  const [contentLoading, setContentLoading] = useState(true);
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
+  const [deleteStatus, setDeleteStatus] = useState<DeleteStatus>('idle');
+
+  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const deleteTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const dirty = !contentLoading && fileContent !== savedContent;
+
+  useEffect(() => {
+    return () => {
+      if (saveTimer.current) clearTimeout(saveTimer.current);
+      if (deleteTimer.current) clearTimeout(deleteTimer.current);
+    };
+  }, []);
+
+  // Load file content whenever the target file changes
+  useEffect(() => {
+    if (!projectPath || !skillName || !fileName) return;
+
+    let cancelled = false;
+
+    const load = async () => {
+      // Reset state at the start of the async work, not synchronously in the effect body
+      setContentLoading(true);
+      setFileContent('');
+      setSavedContent('');
+      setSaveStatus('idle');
+
+      // Create the file if it doesn't exist yet (no-op if it does)
+      if (fileName !== 'SKILL.md') {
+        try {
+          await createSkillFile(projectPath, skillName, fileName);
+        } catch {
+          // Already exists — fine
+        }
+      }
+
+      try {
+        const raw = fileName === 'SKILL.md'
+          ? await fetchSkillContent(projectPath, skillName)
+          : await fetchSkillFile(projectPath, skillName, fileName);
+
+        if (cancelled) return;
+
+        if (fileName === 'SKILL.md') {
+          const { frontmatter, body } = parseSkillFrontmatter(raw);
+          if (!frontmatter.name) {
+            const filled = serializeSkillFrontmatter({ ...frontmatter, name: skillName }, body);
+            setFileContent(filled);
+            setSavedContent(raw);
+            setContentLoading(false);
+            return;
+          }
+        }
+
+        setFileContent(raw);
+        setSavedContent(raw);
+      } catch {
+        if (!cancelled) {
+          setFileContent('');
+          setSavedContent('');
+        }
+      } finally {
+        if (!cancelled) setContentLoading(false);
+      }
+    };
+
+    load();
+    return () => { cancelled = true; };
+  }, [projectPath, skillName, fileName]);
+
+  // ── All hooks are above this point. Handlers below use narrowed strings. ──────
+
+  // Keyboard shortcut (no deps — re-registers every render so it always sees
+  // the latest `dirty` and `handleSave` without stale closure issues)
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 's') {
+        e.preventDefault();
+        void handleSave();
+      }
+    };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  });
+
+  // Guard — after all hooks so Rules of Hooks is satisfied
+  if (!projectPath || !skillName || !fileName) return <Navigate to="/" replace />;
+
+  // Narrowed to string from here down
+  const path = projectPath;
+  const skill = skillName;
+  const fname = fileName;
+
+  const backUrl = `/${encodeProject(path)}/skills/${encodeURIComponent(skill)}`;
+
+  async function handleSave() {
+    if (!dirty || saveStatus === 'saving') return;
+    setSaveStatus('saving');
+    try {
+      if (fname === 'SKILL.md') {
+        await updateSkillContent(path, skill, fileContent);
+      } else {
+        await updateSkillFile(path, skill, fname, fileContent);
+      }
+      setSavedContent(fileContent);
+      setSaveStatus('saved');
+      saveTimer.current = setTimeout(() => setSaveStatus('idle'), 1500);
+    } catch {
+      setSaveStatus('error');
+      saveTimer.current = setTimeout(() => setSaveStatus('idle'), 2000);
+    }
+  }
+
+  async function handleDeleteSkill() {
+    if (deleteStatus === 'deleting') return;
+    if (deleteStatus !== 'confirm') {
+      setDeleteStatus('confirm');
+      deleteTimer.current = setTimeout(() => setDeleteStatus('idle'), 3000);
+      return;
+    }
+    if (deleteTimer.current) clearTimeout(deleteTimer.current);
+    setDeleteStatus('deleting');
+    try {
+      await deleteSkill(path, skill);
+      onBumpSkillsRefresh();
+      removeFromRecents('skill', skill);
+      navigate(`/${encodeProject(path)}/skills`);
+    } catch {
+      setDeleteStatus('error');
+      deleteTimer.current = setTimeout(() => setDeleteStatus('idle'), 2000);
+    }
+  }
+
+  if (contentLoading) {
+    return <div className="flex flex-1 flex-col h-full w-full bg-(--bg-base) border-l border-(--border-faint)" />;
+  }
+
+  if (fname === 'SKILL.md') {
+    return (
+      <div className="flex flex-1 flex-col h-full w-full bg-(--bg-base) border-l border-(--border-faint)">
+        <SkillFormEditor
+          content={fileContent}
+          onChange={setFileContent}
+          onDelete={handleDeleteSkill}
+          deleteStatus={deleteStatus}
+          onSave={handleSave}
+          saveStatus={saveStatus}
+          saveDisabled={!dirty || saveStatus === 'saving'}
+          disabled={saveStatus === 'saving'}
+          onBack={() => navigate(backUrl)}
+          filePath={resolvedFilePath(path, skill, 'SKILL.md')}
+        />
+      </div>
+    );
+  }
+
+  return (
+    <PlainFileEditor
+      file={fname}
+      skillName={skill}
+      projectPath={path}
+      content={fileContent}
+      onChange={setFileContent}
+      saveStatus={saveStatus}
+      saveDisabled={!dirty || saveStatus === 'saving'}
+      onSave={handleSave}
+      onBack={() => navigate(backUrl)}
+    />
+  );
+};
+
 // /:projectId/mcp
 const McpLandingContent = () => {
   const { projectId } = useParams<{ projectId: string }>();
@@ -456,6 +655,7 @@ export default function App() {
           {/* Skills */}
           <Route path="/:projectId/skills" element={<SkillsLandingContent />} />
           <Route path="/:projectId/skills/:name" element={<SkillEditorContent />} />
+          <Route path="/:projectId/skills/:name/:file" element={<SkillFileContent />} />
 
           {/* MCP */}
           <Route path="/:projectId/mcp" element={<McpLandingContent />} />

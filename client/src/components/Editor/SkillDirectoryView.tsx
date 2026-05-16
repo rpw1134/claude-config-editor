@@ -1,18 +1,10 @@
-import { useEffect, useRef, useState } from 'react';
-import ReactMarkdown from 'react-markdown';
+import { useEffect, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import {
-  fetchSkillContent,
   fetchSkillFiles,
-  fetchSkillFile,
-  updateSkillContent,
-  updateSkillFile,
   createSkillFile,
   deleteSkillFile,
-  deleteSkill,
 } from '../../lib/api';
-import { parseSkillFrontmatter, serializeSkillFrontmatter } from '../../lib/frontmatter';
-import { SkillFormEditor } from './SkillFormEditor';
-import { Editor } from './Editor';
 
 // ── Icons ─────────────────────────────────────────────────────────────────────
 
@@ -31,7 +23,6 @@ const FolderIcon = () => (
   </svg>
 );
 
-
 const XIcon = () => (
   <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
     <path d="M2 2L10 10M10 2L2 10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
@@ -48,18 +39,6 @@ const PlusIcon = () => (
 
 const OPTIONAL_FILES = ['reference.md', 'examples.md'] as const;
 
-// ── Helper ─────────────────────────────────────────────────────────────────────
-
-function shortenHome(p: string): string {
-  return p.replace(/^(\/Users\/[^/]+|\/home\/[^/]+)/, '~');
-}
-
-function resolvedFilePath(projectPath: string, skillName: string, file: string): string {
-  const isGlobal = projectPath?.endsWith('/.claude') ?? true;
-  const configDir = isGlobal ? '~/.claude' : shortenHome(projectPath) + '/.claude';
-  return `${configDir}/skills/${skillName}/${file}`;
-}
-
 // ── SkillDirectoryView ─────────────────────────────────────────────────────────
 
 export interface SkillDirectoryViewProps {
@@ -69,109 +48,24 @@ export interface SkillDirectoryViewProps {
   onDeleted: () => void;
 }
 
-type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
-type DeleteStatus = 'idle' | 'confirm' | 'deleting' | 'error';
-
 export const SkillDirectoryView = ({
   skillName,
   projectPath,
   onBack,
-  onDeleted,
 }: SkillDirectoryViewProps) => {
+  const navigate = useNavigate();
+  const { projectId } = useParams<{ projectId: string }>();
+
   // Which files actually exist on disk (fetched once on mount)
   const [existingFiles, setExistingFiles] = useState<Set<string>>(new Set(['SKILL.md']));
 
-  // File editor state
-  const [selectedFile, setSelectedFile] = useState<string | null>(null);
-  const [fileContent, setFileContent] = useState('');
-  const [savedContent, setSavedContent] = useState('');
-  const [contentLoading, setContentLoading] = useState(false);
-  const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
-  const [deleteStatus, setDeleteStatus] = useState<DeleteStatus>('idle');
-
-  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const deleteTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const dirty = selectedFile !== null && !contentLoading && fileContent !== savedContent;
-
-  // Fetch which files exist — used only for create-on-click logic, not for display
   useEffect(() => {
     fetchSkillFiles(projectPath, skillName)
       .then((files) => setExistingFiles(new Set(['SKILL.md', ...files])))
       .catch(() => {/* existingFiles stays as {SKILL.md} */});
   }, [projectPath, skillName]);
 
-  const handleSave = async () => {
-    if (!selectedFile || !dirty || saveStatus === 'saving') return;
-    setSaveStatus('saving');
-    try {
-      if (selectedFile === 'SKILL.md') {
-        await updateSkillContent(projectPath, skillName, fileContent);
-      } else {
-        await updateSkillFile(projectPath, skillName, selectedFile, fileContent);
-      }
-      setSavedContent(fileContent);
-      setSaveStatus('saved');
-      saveTimer.current = setTimeout(() => setSaveStatus('idle'), 1500);
-    } catch {
-      setSaveStatus('error');
-      saveTimer.current = setTimeout(() => setSaveStatus('idle'), 2000);
-    }
-  };
-
-  // Load file content when selectedFile changes
-  useEffect(() => {
-    if (selectedFile === null) return;
-    const loadFile = async () => {
-      setContentLoading(true);
-      setFileContent('');
-      setSavedContent('');
-      setSaveStatus('idle');
-      try {
-        const c = selectedFile === 'SKILL.md'
-          ? await fetchSkillContent(projectPath, skillName)
-          : await fetchSkillFile(projectPath, skillName, selectedFile);
-        if (selectedFile === 'SKILL.md') {
-          const { frontmatter, body } = parseSkillFrontmatter(c);
-          if (!frontmatter.name) {
-            const filled = serializeSkillFrontmatter({ ...frontmatter, name: skillName }, body);
-            setFileContent(filled);
-            setSavedContent(c);
-            return;
-          }
-        }
-        setFileContent(c);
-        setSavedContent(c);
-      } catch {
-        setFileContent('');
-        setSavedContent('');
-      } finally {
-        setContentLoading(false);
-      }
-    };
-    loadFile();
-  }, [selectedFile, projectPath, skillName]);
-
-  // Keyboard shortcuts
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 's') {
-        e.preventDefault();
-        if (dirty) handleSave();
-      }
-    };
-    document.addEventListener('keydown', handler);
-    return () => document.removeEventListener('keydown', handler);
-  });
-
-  useEffect(() => {
-    return () => {
-      if (saveTimer.current) clearTimeout(saveTimer.current);
-      if (deleteTimer.current) clearTimeout(deleteTimer.current);
-    };
-  }, []);
-
-  // Open a file — create it first if it doesn't exist yet
+  // Open a file — create it first if it doesn't exist yet, then navigate
   const handleOpenFile = async (file: string) => {
     if (!existingFiles.has(file)) {
       try {
@@ -181,24 +75,10 @@ export const SkillDirectoryView = ({
         // File may have been created externally — proceed anyway
       }
     }
-    setSelectedFile(file);
-  };
-
-  const handleDeleteSkill = async () => {
-    if (deleteStatus === 'deleting') return;
-    if (deleteStatus !== 'confirm') {
-      setDeleteStatus('confirm');
-      deleteTimer.current = setTimeout(() => setDeleteStatus('idle'), 3000);
-      return;
-    }
-    if (deleteTimer.current) clearTimeout(deleteTimer.current);
-    setDeleteStatus('deleting');
-    try {
-      await deleteSkill(projectPath, skillName);
-      onDeleted();
-    } catch {
-      setDeleteStatus('error');
-      deleteTimer.current = setTimeout(() => setDeleteStatus('idle'), 2000);
+    if (projectId) {
+      navigate(
+        `/${encodeURIComponent(projectId)}/skills/${encodeURIComponent(skillName)}/${encodeURIComponent(file)}`
+      );
     }
   };
 
@@ -206,50 +86,8 @@ export const SkillDirectoryView = ({
     try {
       await deleteSkillFile(projectPath, skillName, file);
       setExistingFiles((prev) => { const next = new Set(prev); next.delete(file); return next; });
-      if (selectedFile === file) setSelectedFile(null);
     } catch {/* silently fail */}
   };
-
-  // ── File editor views ──────────────────────────────────────────────────────
-
-  if (selectedFile !== null) {
-    if (contentLoading) {
-      return <div className="flex flex-1 flex-col h-full w-full bg-(--bg-base) border-l border-(--border-faint)" />;
-    }
-
-    if (selectedFile === 'SKILL.md') {
-      return (
-        <div className="flex flex-1 flex-col h-full w-full bg-(--bg-base) border-l border-(--border-faint)">
-          <SkillFormEditor
-            content={fileContent}
-            onChange={setFileContent}
-            onDelete={handleDeleteSkill}
-            deleteStatus={deleteStatus}
-            onSave={handleSave}
-            saveStatus={saveStatus}
-            saveDisabled={!dirty || saveStatus === 'saving'}
-            disabled={saveStatus === 'saving'}
-            onBack={() => setSelectedFile(null)}
-            filePath={resolvedFilePath(projectPath, skillName, 'SKILL.md')}
-          />
-        </div>
-      );
-    }
-
-    return (
-      <PlainFileEditor
-        file={selectedFile}
-        skillName={skillName}
-        projectPath={projectPath}
-        content={fileContent}
-        onChange={setFileContent}
-        saveStatus={saveStatus}
-        saveDisabled={!dirty || saveStatus === 'saving'}
-        onSave={handleSave}
-        onBack={() => setSelectedFile(null)}
-      />
-    );
-  }
 
   // ── Directory view ─────────────────────────────────────────────────────────
 
@@ -272,7 +110,7 @@ export const SkillDirectoryView = ({
 
       {/* Centered card */}
       <div className="flex-1 overflow-y-auto flex items-center justify-center p-16">
-        <div className="w-full max-w-2xl bg-(--bg-surface) border border-(--border-subtle) rounded-2xl shadow-2xl shadow-black/40">
+        <div className="w-full max-w-3xl bg-(--bg-surface) border border-(--border-subtle) rounded-2xl shadow-2xl shadow-black/40">
           {/* Card header */}
           <div className="px-10 pt-9 pb-7 border-b border-(--border-faint) flex items-center gap-3">
             <span className="text-(--text-muted)"><FolderIcon /></span>
@@ -288,7 +126,7 @@ export const SkillDirectoryView = ({
               file="SKILL.md"
               connector="├"
               onClick={() => handleOpenFile('SKILL.md')}
-              description="Core definition. Frontmatter + instructions Claude reads when this skill runs."
+              badge="core"
             />
 
             {OPTIONAL_FILES.map((file) => (
@@ -298,11 +136,7 @@ export const SkillDirectoryView = ({
                 connector="├"
                 onClick={() => handleOpenFile(file)}
                 onDelete={existingFiles.has(file) ? () => handleDeleteExtraFile(file) : undefined}
-                description={
-                  file === 'reference.md'
-                    ? 'Optional. Reference material Claude can consult during execution.'
-                    : 'Optional. Example inputs and outputs to guide Claude\'s behavior.'
-                }
+                badge={file === 'reference.md' ? 'reference · optional' : 'examples · optional'}
               />
             ))}
 
@@ -321,31 +155,29 @@ interface FileRowProps {
   connector: '├' | '└';
   onClick: () => void;
   onDelete?: () => void;
-  description?: string;
+  badge?: string;
 }
 
-const FileRow = ({ file, connector, onClick, onDelete, description }: FileRowProps) => (
+const FileRow = ({ file, connector, onClick, onDelete, badge }: FileRowProps) => (
   <button
     type="button"
     onClick={onClick}
-    className='group relative w-full flex items-start gap-0 px-6 py-3 rounded-lg bg-transparent border-none cursor-pointer hover:bg-(--bg-hover) transition-colors duration-100 text-left'
+    className='group relative w-full flex items-center gap-0 px-6 py-3.5 rounded-lg bg-transparent border-none cursor-pointer hover:bg-(--bg-hover) transition-colors duration-100 text-left'
   >
     <span className='font-["Fira_Code",monospace] text-[15px] text-(--text-muted) select-none shrink-0 pr-2 leading-[1.4]'>
       {connector}──
     </span>
-    <span className="flex-1 min-w-0">
-      <span className='block font-["Fira_Code",monospace] text-[15px] text-(--text-primary) group-hover:text-white transition-colors duration-100 leading-[1.4]'>
-        {file}
-      </span>
-      {description && (
-        <span className="block text-[12px] text-(--text-muted) mt-0.5 leading-snug">
-          {description}
-        </span>
-      )}
+    <span className='font-["Fira_Code",monospace] text-[15px] text-(--text-primary) group-hover:text-white transition-colors duration-100 leading-[1.4] flex-1 min-w-0'>
+      {file}
     </span>
+    {badge && (
+      <span className='text-[11px] text-(--text-secondary) group-hover:text-(--text-primary) bg-white/5 border border-(--border-faint) rounded-full px-2.5 py-0.5 shrink-0 transition-colors duration-100 ml-3'>
+        {badge}
+      </span>
+    )}
     {onDelete && (
       <span
-        className="opacity-0 group-hover:opacity-100 text-(--text-muted) hover:text-red-400 p-1 transition-all duration-100 shrink-0 mt-0.5"
+        className="opacity-0 group-hover:opacity-100 text-(--text-muted) hover:text-red-400 p-1 transition-all duration-100 shrink-0 ml-1"
         onClick={(e) => { e.stopPropagation(); onDelete(); }}
         role="button"
         aria-label={`Delete ${file}`}
@@ -366,21 +198,19 @@ const ScriptsRow = () => {
   return (
     <div className="pb-1">
       {/* scripts/ folder line */}
-      <div className="w-full flex items-start gap-0 px-6 py-3">
+      <div className="w-full flex items-center gap-0 px-6 py-3.5">
         <span className='font-["Fira_Code",monospace] text-[15px] text-(--text-muted) select-none shrink-0 pr-2 leading-[1.4]'>
           └──
         </span>
-        <span className="flex-1 min-w-0">
-          <span className='block font-["Fira_Code",monospace] text-[15px] text-(--text-primary) leading-[1.4]'>
-            scripts/
-          </span>
-          <span className="block text-[12px] text-(--text-muted) mt-0.5 leading-snug">
-            Optional. Shell scripts executed during skill runs via !`...` syntax.
-          </span>
+        <span className='font-["Fira_Code",monospace] text-[15px] text-(--text-primary) leading-[1.4] flex-1 min-w-0'>
+          scripts/
+        </span>
+        <span className='text-[11px] text-(--text-secondary) bg-white/5 border border-(--border-faint) rounded-full px-2.5 py-0.5 shrink-0 ml-3'>
+          scripts · optional
         </span>
       </div>
 
-      {/* Child line: indented green + button */}
+      {/* Child line: indented + button */}
       <div className="w-full flex items-center gap-0 px-6 py-1.5">
         <span className='font-["Fira_Code",monospace] text-[15px] text-(--text-muted) select-none shrink-0' style={{ paddingRight: '0.5rem', paddingLeft: '2.1ch' }}>
           └──
@@ -402,111 +232,6 @@ const ScriptsRow = () => {
           )}
         </div>
       </div>
-    </div>
-  );
-};
-
-// ── PlainFileEditor ────────────────────────────────────────────────────────────
-
-interface PlainFileEditorProps {
-  file: string;
-  skillName: string;
-  projectPath: string;
-  content: string;
-  onChange: (val: string) => void;
-  saveStatus: SaveStatus;
-  saveDisabled: boolean;
-  onSave: () => void;
-  onBack: () => void;
-}
-
-const PlainFileEditor = ({
-  file,
-  skillName,
-  projectPath,
-  content,
-  onChange,
-  saveStatus,
-  saveDisabled,
-  onSave,
-  onBack,
-}: PlainFileEditorProps) => {
-  const [previewMode, setPreviewMode] = useState(false);
-  const isSaved = saveStatus === 'saved';
-  const isDisabled = saveDisabled && !isSaved;
-  const saveLabel = saveStatus === 'saving' ? 'Saving…' : isSaved ? 'Saved ✓' : saveDisabled ? 'Up to date' : 'Save';
-
-  return (
-    <div className="flex flex-1 flex-col h-full w-full bg-(--bg-base) border-l border-(--border-faint)">
-      <div className="px-5 border-b border-(--border-faint) flex items-center justify-between shrink-0 min-h-12 bg-(--bg-sidebar)">
-        <button
-          type="button"
-          onClick={onBack}
-          className="flex items-center gap-1.5 text-[13px] text-(--text-muted) hover:text-(--text-primary) bg-transparent border-none cursor-pointer transition-colors duration-150 p-0"
-        >
-          <BackArrowIcon /> Back
-        </button>
-        <div className="flex items-center gap-3">
-          <span className='font-["Fira_Code",monospace] text-[11px] text-(--text-muted) truncate max-w-64 hidden sm:block'>
-            {resolvedFilePath(projectPath, skillName, file)}
-          </span>
-          <button
-            onClick={isDisabled ? undefined : onSave}
-            disabled={isDisabled}
-            className={[
-              'text-[13px] px-3 py-1 rounded-md border-none transition-colors duration-150',
-              isDisabled
-                ? 'bg-(--bg-surface) text-(--text-muted) opacity-50 cursor-not-allowed'
-                : 'bg-(--accent) cursor-pointer text-white hover:bg-(--accent-hover)',
-            ].join(' ')}
-          >
-            {saveLabel}
-          </button>
-        </div>
-      </div>
-
-      <div className="px-7 pt-8 pb-4 shrink-0 flex items-start justify-between">
-        <div>
-          <h2 className="m-0 mb-1 text-2xl font-['Bricolage_Grotesque',sans-serif] font-bold tracking-[-0.015em] text-(--text-primary)">
-            {file}
-          </h2>
-          <p className="m-0 text-[13px] text-(--text-muted)">
-            Supporting file in <span className='font-["Fira_Code",monospace]'>{skillName}/</span>
-          </p>
-        </div>
-        <div className="flex items-center bg-(--bg-surface) border border-(--border-subtle) rounded-md p-0.5 shrink-0 mt-1">
-          <button
-            type="button"
-            onClick={() => setPreviewMode(false)}
-            className={[
-              'text-[13px] px-2.5 py-0.5 rounded cursor-pointer border-none transition-colors duration-150',
-              !previewMode ? 'bg-(--bg-elevated) text-(--text-primary)' : 'bg-transparent text-(--text-muted) hover:text-(--text-secondary)',
-            ].join(' ')}
-          >
-            Edit
-          </button>
-          <button
-            type="button"
-            onClick={() => setPreviewMode(true)}
-            className={[
-              'text-[13px] px-2.5 py-0.5 rounded cursor-pointer border-none transition-colors duration-150',
-              previewMode ? 'bg-(--bg-elevated) text-(--text-primary)' : 'bg-transparent text-(--text-muted) hover:text-(--text-secondary)',
-            ].join(' ')}
-          >
-            Preview
-          </button>
-        </div>
-      </div>
-
-      {previewMode ? (
-        <div className="flex-1 min-h-0 overflow-y-auto px-7 py-6 prose prose-invert prose-sm max-w-none">
-          <ReactMarkdown>{content}</ReactMarkdown>
-        </div>
-      ) : (
-        <div className="flex-1 min-h-0">
-          <Editor value={content} onChange={(val) => onChange(val ?? '')} language="markdown" />
-        </div>
-      )}
     </div>
   );
 };

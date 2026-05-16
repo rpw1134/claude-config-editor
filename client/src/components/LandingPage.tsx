@@ -65,12 +65,12 @@ const ItemRow = ({ name, isLast, onClick }: ItemRowProps) => (
     onClick={onClick}
     className={[
       'w-full flex items-center pl-4 pr-1 min-h-16 text-left cursor-pointer',
-      'bg-transparent text-(--text-secondary) transition-colors duration-120',
-      'border-none hover:bg-(--bg-hover) hover:text-(--text-primary)',
+      'bg-transparent transition-colors duration-120',
+      'border-none hover:bg-(--bg-hover)',
       !isLast ? 'border-b border-(--border-faint)' : '',
     ].join(' ')}
   >
-    <span className="font-['Instrument_Sans',sans-serif] text-[17px] font-medium overflow-hidden text-ellipsis whitespace-nowrap">
+    <span className="font-['Instrument_Sans',sans-serif] text-[17px] font-medium text-(--text-primary) overflow-hidden text-ellipsis whitespace-nowrap">
       {name}
     </span>
   </button>

@@ -251,7 +251,7 @@ const IdentityTab = ({ fm, onFieldChange, disabled }: IdentityTabProps) => (
       <h2 className="m-0 mb-1 text-2xl font-['Bricolage_Grotesque',sans-serif] font-bold tracking-[-0.015em] text-(--text-primary)">
         Identity
       </h2>
-      <p className="m-0 text-[13px] text-(--text-muted)">
+      <p className="m-0 text-[13px] text-(--text-secondary)">
         Name, description, and color for this agent.
       </p>
     </div>
@@ -323,7 +323,7 @@ const PromptTab = ({ body, onBodyChange, disabled }: PromptTabProps) => {
           <h2 className="m-0 mb-1 text-2xl font-['Bricolage_Grotesque',sans-serif] font-bold tracking-[-0.015em] text-(--text-primary)">
             System Prompt
           </h2>
-          <p className="m-0 text-[13px] text-(--text-muted)">
+          <p className="m-0 text-[13px] text-(--text-secondary)">
             Markdown supported. Defines how this agent thinks and behaves.
           </p>
         </div>
@@ -390,7 +390,7 @@ const SettingsTab = ({ fm, onFieldChange, onDelete, deleteStatus, disabled }: Se
       <h2 className="m-0 mb-1 text-2xl font-['Bricolage_Grotesque',sans-serif] font-bold tracking-[-0.015em] text-(--text-primary)">
         Settings &amp; Config
       </h2>
-      <p className="m-0 text-[13px] text-(--text-muted)">
+      <p className="m-0 text-[13px] text-(--text-secondary)">
         Runtime behavior, permissions, and tool access for this agent.
       </p>
     </div>
@@ -462,7 +462,7 @@ const SettingsTab = ({ fm, onFieldChange, onDelete, deleteStatus, disabled }: Se
               onChange={(v) => onFieldChange('background', v || undefined)}
               disabled={disabled}
             />
-            <span className="text-[13px] text-(--text-muted)">Run as a background task</span>
+            <span className="text-[13px] text-(--text-secondary)">Run as a background task</span>
           </div>
         </div>
       </div>
@@ -712,7 +712,7 @@ export const AgentFormEditor = ({
             <button
               type="button"
               onClick={onBack}
-              className="flex items-center gap-1.5 pb-4 pt-5 text-[14px] text-(--text-secondary) hover:text-(--text-primary) bg-transparent border-none cursor-pointer transition-colors duration-150 pr-3 mr-2 border-r border-(--border-subtle)"
+              className="flex items-center gap-1.5 pt-6 pb-5 text-[14px] text-(--text-secondary) hover:text-(--text-primary) bg-transparent border-none cursor-pointer transition-colors duration-150 pr-3 mr-2 border-r border-(--border-subtle)"
             >
               <BackArrowIcon /> Back
             </button>
@@ -723,10 +723,10 @@ export const AgentFormEditor = ({
               type="button"
               onClick={() => setActiveTab(id)}
               className={[
-                'pb-4 pt-5 px-3 font-medium bg-transparent border-none cursor-pointer transition-colors duration-150 relative',
+                'pt-6 pb-5 px-3 bg-transparent border-none cursor-pointer transition-colors duration-150 relative',
                 activeTab === id
-                  ? 'text-[15px] text-(--text-primary) after:absolute after:bottom-0 after:left-0 after:right-0 after:h-px after:bg-(--accent)'
-                  : 'text-[14px] text-(--text-muted) hover:text-(--text-secondary)',
+                  ? 'text-[15px] font-semibold text-(--text-primary) after:absolute after:bottom-0 after:left-0 after:right-0 after:h-px after:bg-(--accent)'
+                  : 'text-[14px] font-medium text-(--text-secondary) hover:text-(--text-primary)',
               ].join(' ')}
             >
               {label}

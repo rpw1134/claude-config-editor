@@ -71,8 +71,8 @@ const CollapsedCreateMenu = ({
 
 const DocumentIcon = () => (
   <svg
-    width="17"
-    height="17"
+    width="20"
+    height="20"
     viewBox="0 0 15 15"
     fill="none"
     xmlns="http://www.w3.org/2000/svg"
@@ -102,8 +102,8 @@ const DocumentIcon = () => (
 
 const AgentIcon = () => (
   <svg
-    width="17"
-    height="17"
+    width="20"
+    height="20"
     viewBox="0 0 15 15"
     fill="none"
     xmlns="http://www.w3.org/2000/svg"
@@ -128,8 +128,8 @@ const AgentIcon = () => (
 
 const SkillIcon = () => (
   <svg
-    width="17"
-    height="17"
+    width="20"
+    height="20"
     viewBox="0 0 15 15"
     fill="none"
     xmlns="http://www.w3.org/2000/svg"
@@ -146,8 +146,8 @@ const SkillIcon = () => (
 
 const McpIcon = () => (
   <svg
-    width="17"
-    height="17"
+    width="20"
+    height="20"
     viewBox="0 0 15 15"
     fill="none"
     xmlns="http://www.w3.org/2000/svg"
@@ -173,8 +173,8 @@ const McpIcon = () => (
 
 const PluginIcon = () => (
   <svg
-    width="17"
-    height="17"
+    width="20"
+    height="20"
     viewBox="0 0 15 15"
     fill="none"
     xmlns="http://www.w3.org/2000/svg"
@@ -211,8 +211,8 @@ const PluginIcon = () => (
 
 const PlusIcon = () => (
   <svg
-    width="14"
-    height="14"
+    width="20"
+    height="20"
     viewBox="0 0 13 13"
     fill="none"
     xmlns="http://www.w3.org/2000/svg"

@@ -182,7 +182,7 @@ const IdentityTab = ({ fm, onFieldChange, disabled }: IdentityTabProps) => (
       <h2 className="m-0 mb-1 text-2xl font-['Bricolage_Grotesque',sans-serif] font-bold tracking-[-0.015em] text-(--text-primary)">
         Identity
       </h2>
-      <p className="m-0 text-[13px] text-(--text-muted)">
+      <p className="m-0 text-[13px] text-(--text-secondary)">
         Name, description, and invocation trigger for this skill.
       </p>
     </div>
@@ -254,7 +254,7 @@ const InstructionsTab = ({ body, onBodyChange, disabled }: InstructionsTabProps)
           <h2 className="m-0 mb-1 text-2xl font-['Bricolage_Grotesque',sans-serif] font-bold tracking-[-0.015em] text-(--text-primary)">
             Instructions
           </h2>
-          <p className="m-0 text-[13px] text-(--text-muted)">
+          <p className="m-0 text-[13px] text-(--text-secondary)">
             Markdown body sent to Claude when this skill is invoked.
           </p>
         </div>
@@ -329,7 +329,7 @@ const SkillSettingsTab = ({ fm, onFieldChange, onDelete, deleteStatus, disabled 
       <h2 className="m-0 mb-1 text-2xl font-['Bricolage_Grotesque',sans-serif] font-bold tracking-[-0.015em] text-(--text-primary)">
         Settings
       </h2>
-      <p className="m-0 text-[13px] text-(--text-muted)">
+      <p className="m-0 text-[13px] text-(--text-secondary)">
         Invocation behavior, model, and tool access for this skill.
       </p>
     </div>
@@ -362,7 +362,7 @@ const SkillSettingsTab = ({ fm, onFieldChange, onDelete, deleteStatus, disabled 
               onChange={(v) => onFieldChange('user-invocable', v || undefined)}
               disabled={disabled}
             />
-            <span className="text-[13px] text-(--text-muted)">Invocable by user with /skill-name</span>
+            <span className="text-[13px] text-(--text-secondary)">Invocable by user with /skill-name</span>
           </div>
         </div>
 
@@ -374,7 +374,7 @@ const SkillSettingsTab = ({ fm, onFieldChange, onDelete, deleteStatus, disabled 
               onChange={(v) => onFieldChange('disable-model-invocation', v || undefined)}
               disabled={disabled}
             />
-            <span className="text-[13px] text-(--text-muted)">Disable model invocation (run as script only)</span>
+            <span className="text-[13px] text-(--text-secondary)">Disable model invocation (run as script only)</span>
           </div>
         </div>
 
@@ -570,7 +570,7 @@ export const SkillFormEditor = ({
             <button
               type="button"
               onClick={onBack}
-              className="flex items-center gap-1.5 pb-4 pt-5 text-[14px] text-(--text-secondary) hover:text-(--text-primary) bg-transparent border-none cursor-pointer transition-colors duration-150 pr-3 mr-2 border-r border-(--border-subtle)"
+              className="flex items-center gap-1.5 pt-6 pb-5 text-[14px] text-(--text-secondary) hover:text-(--text-primary) bg-transparent border-none cursor-pointer transition-colors duration-150 pr-3 mr-2 border-r border-(--border-subtle)"
             >
               <BackArrowIcon /> Back
             </button>
@@ -581,10 +581,10 @@ export const SkillFormEditor = ({
               type="button"
               onClick={() => setActiveTab(id)}
               className={[
-                'pb-4 pt-5 px-3 font-medium bg-transparent border-none cursor-pointer transition-colors duration-150 relative',
+                'pt-6 pb-5 px-3 bg-transparent border-none cursor-pointer transition-colors duration-150 relative',
                 activeTab === id
-                  ? 'text-[15px] text-(--text-primary) after:absolute after:bottom-0 after:left-0 after:right-0 after:h-px after:bg-(--accent)'
-                  : 'text-[14px] text-(--text-muted) hover:text-(--text-secondary)',
+                  ? 'text-[15px] font-semibold text-(--text-primary) after:absolute after:bottom-0 after:left-0 after:right-0 after:h-px after:bg-(--accent)'
+                  : 'text-[14px] font-medium text-(--text-secondary) hover:text-(--text-primary)',
               ].join(' ')}
             >
               {label}

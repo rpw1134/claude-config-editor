@@ -150,7 +150,7 @@ const CreateHeader = ({
   return (
     <div className="px-5 border-b border-(--border-faint) flex items-center justify-between shrink-0 min-h-12 bg-(--bg-sidebar)">
       <div className="flex items-center gap-1.5">
-        <span className='font-["Fira_Code",monospace] text-[12px] text-(--text-muted)'>
+        <span className='font-["Fira_Code",monospace] text-[12px] text-(--text-secondary)'>
           {pathPrefix}
         </span>
         <input
@@ -260,7 +260,7 @@ const MarkdownEditorView = ({
           <h2 className="m-0 mb-1 text-2xl font-['Bricolage_Grotesque',sans-serif] font-bold tracking-[-0.015em] text-(--text-primary)">
             {title}
           </h2>
-          <p className="m-0 text-[13px] text-(--text-muted)">{description}</p>
+          <p className="m-0 text-[13px] text-(--text-secondary)">{description}</p>
         </div>
         <div className="flex items-center bg-(--bg-surface) border border-(--border-subtle) rounded-md p-0.5 shrink-0 mt-1">
           <button
