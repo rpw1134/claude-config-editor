@@ -272,9 +272,9 @@ export const SkillDirectoryView = ({
 
       {/* Centered card */}
       <div className="flex-1 overflow-y-auto flex items-center justify-center p-16">
-        <div className="w-full max-w-xl bg-(--bg-surface) border border-(--border-subtle) rounded-2xl shadow-2xl shadow-black/40">
+        <div className="w-full max-w-2xl bg-(--bg-surface) border border-(--border-subtle) rounded-2xl shadow-2xl shadow-black/40">
           {/* Card header */}
-          <div className="px-8 pt-7 pb-5 border-b border-(--border-faint) flex items-center gap-3">
+          <div className="px-10 pt-9 pb-7 border-b border-(--border-faint) flex items-center gap-3">
             <span className="text-(--text-muted)"><FolderIcon /></span>
             <span className='font-["Bricolage_Grotesque",sans-serif] font-bold text-[22px] tracking-tight text-(--text-primary)'>
               {skillName}
@@ -288,6 +288,7 @@ export const SkillDirectoryView = ({
               file="SKILL.md"
               connector="├"
               onClick={() => handleOpenFile('SKILL.md')}
+              description="Core definition. Frontmatter + instructions Claude reads when this skill runs."
             />
 
             {OPTIONAL_FILES.map((file) => (
@@ -297,6 +298,11 @@ export const SkillDirectoryView = ({
                 connector="├"
                 onClick={() => handleOpenFile(file)}
                 onDelete={existingFiles.has(file) ? () => handleDeleteExtraFile(file) : undefined}
+                description={
+                  file === 'reference.md'
+                    ? 'Optional. Reference material Claude can consult during execution.'
+                    : 'Optional. Example inputs and outputs to guide Claude\'s behavior.'
+                }
               />
             ))}
 
@@ -315,23 +321,31 @@ interface FileRowProps {
   connector: '├' | '└';
   onClick: () => void;
   onDelete?: () => void;
+  description?: string;
 }
 
-const FileRow = ({ file, connector, onClick, onDelete }: FileRowProps) => (
+const FileRow = ({ file, connector, onClick, onDelete, description }: FileRowProps) => (
   <button
     type="button"
     onClick={onClick}
-    className='group relative w-full flex items-center gap-0 px-6 py-2.5 rounded-lg bg-transparent border-none cursor-pointer hover:bg-(--bg-hover) transition-colors duration-100 text-left'
+    className='group relative w-full flex items-start gap-0 px-6 py-3 rounded-lg bg-transparent border-none cursor-pointer hover:bg-(--bg-hover) transition-colors duration-100 text-left'
   >
-    <span className='font-["Fira_Code",monospace] text-[15px] text-(--text-muted) select-none shrink-0 pr-2'>
+    <span className='font-["Fira_Code",monospace] text-[15px] text-(--text-muted) select-none shrink-0 pr-2 leading-[1.4]'>
       {connector}──
     </span>
-    <span className='font-["Fira_Code",monospace] text-[15px] text-(--text-primary) flex-1 min-w-0 group-hover:text-white transition-colors duration-100'>
-      {file}
+    <span className="flex-1 min-w-0">
+      <span className='block font-["Fira_Code",monospace] text-[15px] text-(--text-primary) group-hover:text-white transition-colors duration-100 leading-[1.4]'>
+        {file}
+      </span>
+      {description && (
+        <span className="block text-[12px] text-(--text-muted) mt-0.5 leading-snug">
+          {description}
+        </span>
+      )}
     </span>
     {onDelete && (
       <span
-        className="opacity-0 group-hover:opacity-100 text-(--text-muted) hover:text-red-400 p-1 transition-all duration-100 shrink-0"
+        className="opacity-0 group-hover:opacity-100 text-(--text-muted) hover:text-red-400 p-1 transition-all duration-100 shrink-0 mt-0.5"
         onClick={(e) => { e.stopPropagation(); onDelete(); }}
         role="button"
         aria-label={`Delete ${file}`}
@@ -352,12 +366,17 @@ const ScriptsRow = () => {
   return (
     <div className="pb-1">
       {/* scripts/ folder line */}
-      <div className="w-full flex items-center gap-0 px-6 py-2.5">
-        <span className='font-["Fira_Code",monospace] text-[15px] text-(--text-muted) select-none shrink-0 pr-2'>
+      <div className="w-full flex items-start gap-0 px-6 py-3">
+        <span className='font-["Fira_Code",monospace] text-[15px] text-(--text-muted) select-none shrink-0 pr-2 leading-[1.4]'>
           └──
         </span>
-        <span className='font-["Fira_Code",monospace] text-[15px] text-(--text-primary)'>
-          scripts/
+        <span className="flex-1 min-w-0">
+          <span className='block font-["Fira_Code",monospace] text-[15px] text-(--text-primary) leading-[1.4]'>
+            scripts/
+          </span>
+          <span className="block text-[12px] text-(--text-muted) mt-0.5 leading-snug">
+            Optional. Shell scripts executed during skill runs via !`...` syntax.
+          </span>
         </span>
       </div>
 

@@ -16,6 +16,18 @@ const TYPE_LABELS: Record<CreateType, string> = {
   'mcp-server': 'MCP Server',
 };
 
+const TYPE_SUBTITLES: Record<CreateType, string> = {
+  agent: 'Give your agent a name — you can rename it later.',
+  skill: 'Give your skill a name — you can rename it later.',
+  'mcp-server': 'Give your server a name, then configure its JSON body.',
+};
+
+const TYPE_PLACEHOLDERS: Record<CreateType, string> = {
+  agent: 'e.g. coworker',
+  skill: 'e.g. ship-pr',
+  'mcp-server': 'e.g. filesystem',
+};
+
 const validateBody = (val: string, setBodyError: (e: string | null) => void): boolean => {
   if (!val.trim()) { setBodyError(null); return false; }
   try { JSON.parse(val); setBodyError(null); return true; }
@@ -96,41 +108,114 @@ export const CreateNewModal = ({ type, projectPath, onSuccess, onClose }: Create
   };
 
   const label = TYPE_LABELS[type];
+  const isMcp = type === 'mcp-server';
   const canSubmitName = name.trim().length > 0 && !submitting;
   const bodyIsValid = body.trim().length > 0 && !bodyError;
   const canSubmitBody = bodyIsValid && !submitting;
 
-  if (step === 'body') {
-    return (
-      <div
-        className="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
-        onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
-      >
-        <div
-          className="w-full max-w-xl mx-4 bg-(--bg-elevated) border border-(--border-default) rounded-2.5 overflow-hidden"
-          style={{ boxShadow: '0 8px 40px rgba(0,0,0,0.5)' }}
-        >
-          {/* Header */}
-          <div className="px-6 pt-6 pb-4 border-b border-(--border-faint)">
-            <h2 className="text-[16px] font-semibold text-(--text-primary) m-0">
-              Configure MCP Server
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div className="w-full max-w-md mx-4 bg-(--bg-surface) border border-(--border-subtle) rounded-2xl p-8 shadow-2xl">
+
+        {/* Header */}
+        <div className="flex items-start justify-between mb-1">
+          <div className="flex-1 min-w-0 pr-4">
+            {/* Step indicator — only shown for MCP server (2-step flow) */}
+            {isMcp && (
+              <span className="block text-[11px] font-medium text-(--text-muted) tracking-widest uppercase mb-2">
+                {step === 'name' ? '1 / 2' : '2 / 2'}
+              </span>
+            )}
+            <h2 className="text-[22px] font-semibold text-(--text-primary) leading-tight font-['Bricolage_Grotesque',sans-serif] m-0">
+              {step === 'body' ? 'Configure Server' : `New ${label}`}
             </h2>
-            <p className="mt-1.5 text-[13px] text-(--text-secondary) leading-normal">
-              Enter the <strong>value object</strong> for{' '}
-              <code className="font-['Fira_Code',monospace] text-(--text-primary)">{name.trim()}</code>.
-              The key is the name you just entered — paste only the{' '}
-              <code className="font-['Fira_Code',monospace] text-(--text-secondary)">{'{ … }'}</code> part.
+            <p className="mt-2 text-[13px] text-(--text-muted) leading-relaxed">
+              {step === 'body'
+                ? <>
+                    Paste the <strong className="text-(--text-secondary) font-medium">value object</strong> for{' '}
+                    <code className="font-['Fira_Code',monospace] text-(--text-secondary) text-[12px]">{name.trim()}</code>.
+                    The key is the name you just entered.
+                  </>
+                : TYPE_SUBTITLES[type]
+              }
             </p>
           </div>
 
-          {/* Form */}
-          <form onSubmit={handleBodySubmit} className="px-6 pt-5 pb-6">
-            <label className="block text-[13px] font-medium text-(--text-secondary) mb-2">
+          {/* Close button */}
+          <button
+            type="button"
+            onClick={onClose}
+            className="shrink-0 w-8 h-8 flex items-center justify-center rounded-lg text-(--text-muted) hover:text-(--text-primary) hover:bg-(--bg-elevated) transition-colors duration-150 cursor-pointer border-none bg-transparent"
+            aria-label="Close"
+          >
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
+              <path d="M1.293 1.293a1 1 0 0 1 1.414 0L7 5.586l4.293-4.293a1 1 0 1 1 1.414 1.414L8.414 7l4.293 4.293a1 1 0 0 1-1.414 1.414L7 8.414l-4.293 4.293a1 1 0 0 1-1.414-1.414L5.586 7 1.293 2.707a1 1 0 0 1 0-1.414z" />
+            </svg>
+          </button>
+        </div>
+
+        {/* Divider */}
+        <div className="border-t border-(--border-subtle) my-6" />
+
+        {/* Step: Name */}
+        {step === 'name' && (
+          <form onSubmit={handleNameSubmit}>
+            <label className="block text-[11px] font-medium text-(--text-muted) tracking-widest uppercase mb-3">
+              Name
+            </label>
+            <input
+              ref={inputRef}
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder={TYPE_PLACEHOLDERS[type]}
+              disabled={submitting}
+              className={[
+                'w-full px-4 py-3 rounded-xl text-[16px] font-["Fira_Code",monospace]',
+                'bg-(--bg-elevated) text-(--text-primary) outline-none transition-colors duration-150 box-border',
+                'focus:border-(--accent)',
+                error
+                  ? 'border border-(--error)'
+                  : 'border border-(--border-subtle)',
+              ].join(' ')}
+            />
+
+            {error && (
+              <p className="mt-2 text-[12px] text-(--error) font-['Fira_Code',monospace]">{error}</p>
+            )}
+
+            <button
+              type="submit"
+              disabled={!canSubmitName}
+              className={[
+                'w-full mt-6 py-3 rounded-xl text-[14px] font-semibold transition-colors duration-150',
+                canSubmitName
+                  ? 'bg-(--accent) text-white cursor-pointer hover:bg-(--accent-hover) border-none'
+                  : 'bg-(--bg-elevated) text-(--text-muted) border border-(--border-subtle) cursor-not-allowed',
+              ].join(' ')}
+            >
+              {submitting
+                ? 'Creating…'
+                : isMcp
+                  ? 'Continue →'
+                  : `Create ${label}`
+              }
+            </button>
+          </form>
+        )}
+
+        {/* Step: Body (MCP only) */}
+        {step === 'body' && (
+          <form onSubmit={handleBodySubmit}>
+            <label className="block text-[11px] font-medium text-(--text-muted) tracking-widest uppercase mb-3">
               Value object
             </label>
             <textarea
               ref={textareaRef}
-              rows={12}
+              rows={10}
               value={body}
               onChange={(e) => {
                 setBody(e.target.value);
@@ -139,24 +224,30 @@ export const CreateNewModal = ({ type, projectPath, onSuccess, onClose }: Create
               onBlur={() => validateBody(body, setBodyError)}
               placeholder={'{\n  "command": "npx",\n  "args": ["-y", "@modelcontextprotocol/server-filesystem", "/"]\n}'}
               disabled={submitting}
-              className="w-full font-['Fira_Code',monospace] text-[13px] text-(--text-primary) bg-(--bg-surface) border border-(--border-subtle) rounded-lg px-3 py-2.5 resize-none outline-none focus:border-(--border-default) transition-colors leading-relaxed"
+              className={[
+                'w-full font-["Fira_Code",monospace] text-[13px] text-(--text-primary)',
+                'bg-(--bg-elevated) rounded-xl px-4 py-3 resize-none outline-none transition-colors leading-relaxed box-border',
+                'focus:border-(--accent)',
+                bodyError
+                  ? 'border border-(--error)'
+                  : 'border border-(--border-subtle)',
+              ].join(' ')}
             />
 
             {bodyError && (
-              <p className="mt-1.5 text-(--error) text-[12px]">{bodyError}</p>
+              <p className="mt-2 text-[12px] text-(--error) font-['Fira_Code',monospace]">{bodyError}</p>
             )}
 
             {error && (
               <p className="mt-2 text-[12px] text-(--error) font-['Fira_Code',monospace]">{error}</p>
             )}
 
-            {/* Actions */}
-            <div className="flex items-center gap-2 mt-5">
+            <div className="flex gap-3 mt-6">
               <button
                 type="button"
                 onClick={handleBack}
                 disabled={submitting}
-                className="flex-1 px-4 py-2 rounded-lg text-[14px] font-normal text-(--text-muted) bg-transparent border-none cursor-pointer transition-colors duration-150 hover:text-(--text-secondary)"
+                className="px-5 py-3 rounded-xl text-[14px] font-medium text-(--text-muted) bg-(--bg-elevated) border border-(--border-subtle) cursor-pointer hover:text-(--text-secondary) hover:border-(--border-default) transition-colors duration-150"
               >
                 ← Back
               </button>
@@ -164,91 +255,18 @@ export const CreateNewModal = ({ type, projectPath, onSuccess, onClose }: Create
                 type="submit"
                 disabled={!canSubmitBody}
                 className={[
-                  'flex-1 px-4 py-2 rounded-lg text-[14px] font-medium text-white transition-colors duration-150',
+                  'flex-1 py-3 rounded-xl text-[14px] font-semibold transition-colors duration-150',
                   canSubmitBody
-                    ? 'bg-(--accent) border-none cursor-pointer hover:bg-(--accent-hover)'
-                    : 'bg-(--bg-surface) border border-(--border-subtle) cursor-not-allowed',
+                    ? 'bg-(--accent) text-white cursor-pointer hover:bg-(--accent-hover) border-none'
+                    : 'bg-(--bg-elevated) text-(--text-muted) border border-(--border-subtle) cursor-not-allowed',
                 ].join(' ')}
               >
                 {submitting ? 'Creating…' : 'Create MCP Server'}
               </button>
             </div>
           </form>
-        </div>
-      </div>
-    );
-  }
+        )}
 
-  return (
-    // Backdrop
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
-    >
-      <div
-        className="w-full max-w-xl mx-4 bg-(--bg-elevated) border border-(--border-default) rounded-2.5 overflow-hidden"
-        style={{ boxShadow: '0 8px 40px rgba(0,0,0,0.5)' }}
-      >
-        {/* Header */}
-        <div className="px-6 pt-6 pb-4 border-b border-(--border-faint)">
-          <h2 className="text-[16px] font-semibold text-(--text-primary) m-0">
-            New {label}
-          </h2>
-          <p className="mt-1.5 text-[13px] text-(--text-secondary) leading-normal">
-            Give your {label.toLowerCase()} a name — you can rename it later.
-          </p>
-        </div>
-
-        {/* Form */}
-        <form onSubmit={handleNameSubmit} className="px-6 pt-5 pb-6">
-          <label className="block text-[13px] font-medium text-(--text-secondary) mb-2">
-            Name
-          </label>
-          <input
-            ref={inputRef}
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder={`e.g. ${type === 'agent' ? 'coworker' : type === 'skill' ? 'ship-pr' : 'filesystem'}`}
-            disabled={submitting}
-            className={[
-              'w-full px-3 py-2.5 rounded-lg text-[14px] font-["Fira_Code",monospace]',
-              'bg-(--bg-surface) text-(--text-primary) outline-none transition-colors duration-150 box-border',
-              'focus:border-(--border-default)',
-              error
-                ? 'border border-[rgba(248,113,113,0.5)]'
-                : 'border border-(--border-subtle)',
-            ].join(' ')}
-          />
-
-          {error && (
-            <p className="mt-2 text-[12px] text-(--error) font-['Fira_Code',monospace]">{error}</p>
-          )}
-
-          {/* Actions */}
-          <div className="flex items-center gap-2 mt-5">
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={submitting}
-              className="flex-1 px-4 py-2 rounded-lg text-[14px] font-normal text-(--text-muted) bg-transparent border-none cursor-pointer transition-colors duration-150 hover:text-(--text-secondary)"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={!canSubmitName}
-              className={[
-                'flex-1 px-4 py-2 rounded-lg text-[14px] font-medium text-white transition-colors duration-150',
-                canSubmitName
-                  ? 'bg-(--accent) border-none cursor-pointer hover:bg-(--accent-hover)'
-                  : 'bg-(--bg-surface) border border-(--border-subtle) cursor-not-allowed',
-              ].join(' ')}
-            >
-              {submitting ? 'Creating…' : type === 'mcp-server' ? 'Next →' : `Create ${label}`}
-            </button>
-          </div>
-        </form>
       </div>
     </div>
   );

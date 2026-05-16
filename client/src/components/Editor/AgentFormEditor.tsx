@@ -712,7 +712,7 @@ export const AgentFormEditor = ({
             <button
               type="button"
               onClick={onBack}
-              className="flex items-center gap-1.5 pb-3 pt-4 text-[13px] text-(--text-muted) hover:text-(--text-primary) bg-transparent border-none cursor-pointer transition-colors duration-150 pr-3 mr-2 border-r border-(--border-faint)"
+              className="flex items-center gap-1.5 pb-4 pt-5 text-[14px] text-(--text-secondary) hover:text-(--text-primary) bg-transparent border-none cursor-pointer transition-colors duration-150 pr-3 mr-2 border-r border-(--border-subtle)"
             >
               <BackArrowIcon /> Back
             </button>
@@ -723,10 +723,10 @@ export const AgentFormEditor = ({
               type="button"
               onClick={() => setActiveTab(id)}
               className={[
-                'pb-3 pt-4 px-3 text-[14px] font-medium bg-transparent border-none cursor-pointer transition-colors duration-150 relative',
+                'pb-4 pt-5 px-3 font-medium bg-transparent border-none cursor-pointer transition-colors duration-150 relative',
                 activeTab === id
-                  ? 'text-(--text-primary) after:absolute after:bottom-0 after:left-0 after:right-0 after:h-px after:bg-(--accent)'
-                  : 'text-(--text-muted) hover:text-(--text-secondary)',
+                  ? 'text-[15px] text-(--text-primary) after:absolute after:bottom-0 after:left-0 after:right-0 after:h-px after:bg-(--accent)'
+                  : 'text-[14px] text-(--text-muted) hover:text-(--text-secondary)',
               ].join(' ')}
             >
               {label}

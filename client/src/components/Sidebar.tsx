@@ -171,6 +171,44 @@ const McpIcon = () => (
   </svg>
 );
 
+const PluginIcon = () => (
+  <svg
+    width="17"
+    height="17"
+    viewBox="0 0 15 15"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    {/* body */}
+    <rect
+      x="2"
+      y="5"
+      width="8"
+      height="8"
+      rx="1.5"
+      stroke="currentColor"
+      strokeWidth="1.2"
+      fill="none"
+    />
+    {/* top tab */}
+    <path
+      d="M5.5 5V3.5C5.5 2.67 6.17 2 7 2C7.83 2 8.5 2.67 8.5 3.5V5"
+      stroke="currentColor"
+      strokeWidth="1.2"
+      strokeLinecap="round"
+      fill="none"
+    />
+    {/* right tab */}
+    <path
+      d="M10 8.5H11.5C12.33 8.5 13 7.83 13 7C13 6.17 12.33 5.5 11.5 5.5H10"
+      stroke="currentColor"
+      strokeWidth="1.2"
+      strokeLinecap="round"
+      fill="none"
+    />
+  </svg>
+);
+
 const PlusIcon = () => (
   <svg
     width="14"
@@ -305,12 +343,12 @@ const NavButton = ({
     disabled={disabled}
     title={collapsed ? label : undefined}
     className={[
-      "w-full flex items-center rounded-md text-left text-[14px] font-medium min-h-8.5 border-none transition-all duration-150",
+      "w-full flex items-center rounded-md text-left text-[14px] font-medium min-h-10 py-2 border-none transition-all duration-150",
       collapsed
         ? "justify-center px-0 border-l-0"
         : "gap-2.5 px-2 border-l-[3px]",
       active
-        ? "bg-(--bg-surface) text-(--text-primary) border-l-(--accent)"
+        ? "bg-(--bg-elevated) text-(--text-primary) border-l-(--accent)"
         : disabled
           ? "bg-transparent text-(--text-muted) border-l-transparent cursor-not-allowed"
           : "bg-transparent text-(--text-secondary) border-l-transparent cursor-pointer hover:bg-(--bg-hover) hover:text-(--text-primary)",
@@ -323,7 +361,7 @@ const NavButton = ({
           ? "text-(--text-muted)"
           : active
             ? "text-(--accent)"
-            : "text-(--text-muted)",
+            : "text-(--text-secondary)",
       ].join(" ")}
     >
       {icon}
@@ -379,6 +417,7 @@ export const Sidebar = ({
     if (pathname.startsWith(`${base}/agents`)) return "agents";
     if (pathname.startsWith(`${base}/skills`)) return "skills";
     if (pathname.startsWith(`${base}/mcp`)) return "mcp-servers";
+    if (pathname.startsWith(`${base}/plugins`)) return "plugins";
     if (pathname.startsWith(`${base}/claude-md`)) return "claude-md";
     return "welcome";
   })();
@@ -390,6 +429,7 @@ export const Sidebar = ({
     else if (tab === "agents") navigate(`${base}/agents`);
     else if (tab === "skills") navigate(`${base}/skills`);
     else if (tab === "mcp-servers") navigate(`${base}/mcp`);
+    else if (tab === "plugins") navigate(`${base}/plugins`);
     else navigate(base);
   };
 
@@ -554,6 +594,14 @@ export const Sidebar = ({
           disabled={!hasProject}
           collapsed={collapsed}
           onClick={() => navigateTo("mcp-servers")}
+        />
+        <NavButton
+          icon={<PluginIcon />}
+          label="Plugins"
+          active={activeTab === "plugins"}
+          disabled={!hasProject}
+          collapsed={collapsed}
+          onClick={() => navigateTo("plugins")}
         />
       </div>
 

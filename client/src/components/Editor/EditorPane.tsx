@@ -227,16 +227,16 @@ const MarkdownEditorView = ({
   return (
     <div className="flex flex-col h-full bg-(--bg-base)">
       {/* Thin top bar */}
-      <div className="px-5 border-b border-(--border-faint) flex items-center justify-between shrink-0 min-h-12 bg-(--bg-sidebar)">
+      <div className="px-5 border-b border-(--border-faint) flex items-center justify-between shrink-0 min-h-14 bg-(--bg-sidebar)">
         <button
           type="button"
           onClick={onBack}
-          className="flex items-center gap-1.5 text-[13px] text-(--text-muted) hover:text-(--text-primary) bg-transparent border-none cursor-pointer transition-colors duration-150 p-0"
+          className="flex items-center gap-1.5 text-[14px] text-(--text-secondary) hover:text-(--text-primary) bg-transparent border-none cursor-pointer transition-colors duration-150 p-0"
         >
           <BackArrowIcon /> Back
         </button>
         <div className="flex items-center gap-3">
-          <span className='font-["Fira_Code",monospace] text-[11px] text-(--text-muted) truncate max-w-64 hidden sm:block'>
+          <span className='font-["Fira_Code",monospace] text-[11px] text-(--text-secondary) truncate max-w-64 hidden sm:block'>
             {resolvedFilePath}
           </span>
           <button
@@ -344,7 +344,7 @@ const EditHeader = ({
   const isDisabled = saveDisabled && !isSaved;
 
   return (
-    <div className="px-5 border-b border-(--border-faint) flex items-center justify-between shrink-0 min-h-12 bg-(--bg-sidebar)">
+    <div className="px-5 border-b border-(--border-faint) flex items-center justify-between shrink-0 min-h-14 bg-(--bg-sidebar)">
       {/* Left: optional Back button + file path */}
       <div className="flex items-center gap-0 min-w-0">
         {onBack && (
@@ -352,14 +352,14 @@ const EditHeader = ({
             <button
               type="button"
               onClick={onBack}
-              className="flex items-center gap-1.5 text-[13px] text-(--text-muted) hover:text-(--text-primary) bg-transparent border-none cursor-pointer transition-colors duration-150 p-0 pr-3 shrink-0"
+              className="flex items-center gap-1.5 text-[14px] text-(--text-secondary) hover:text-(--text-primary) bg-transparent border-none cursor-pointer transition-colors duration-150 p-0 pr-3 shrink-0"
             >
               <BackArrowIcon /> Back
             </button>
-            <span className="w-px h-4 bg-(--border-faint) mx-3 shrink-0" />
+            <span className="w-px h-4 bg-(--border-subtle) mx-3 shrink-0" />
           </>
         )}
-        <span className='font-["Fira_Code",monospace] text-[12px] text-(--text-muted) truncate'>
+        <span className='font-["Fira_Code",monospace] text-[12px] text-(--text-secondary) truncate'>
           {filePath(name, type, projectPath)}
         </span>
       </div>
