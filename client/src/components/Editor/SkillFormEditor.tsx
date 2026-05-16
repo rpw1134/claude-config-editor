@@ -498,12 +498,6 @@ export interface SkillFormEditorProps {
   onSectionChange?: (section: Tab) => void;
 }
 
-const BackArrowIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M8.5 2.5L4 7L8.5 11.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-  </svg>
-);
-
 export const SkillFormEditor = ({
   content,
   onChange,
@@ -513,10 +507,8 @@ export const SkillFormEditor = ({
   onSave,
   saveStatus,
   saveDisabled,
-  onBack,
   filePath,
   activeSection,
-  onSectionChange,
 }: SkillFormEditorProps) => {
   const { frontmatter: initialFm, body: initialBody } = useMemo(
     () => parseSkillFrontmatter(content),
@@ -526,8 +518,7 @@ export const SkillFormEditor = ({
 
   const [fm, setFm] = useState<SkillFrontmatter>(initialFm);
   const [body, setBody] = useState(initialBody);
-  const [localTab, setLocalTab] = useState<Tab>('identity');
-  const activeTab = activeSection ?? localTab;
+  const activeTab = activeSection ?? 'identity';
   const lastExternalContent = useRef(content);
 
   useEffect(() => {
@@ -559,46 +550,11 @@ export const SkillFormEditor = ({
     emit(fm, val);
   };
 
-  const tabs: { id: Tab; label: string }[] = [
-    { id: 'identity',     label: 'Identity' },
-    { id: 'instructions', label: 'Instructions' },
-    { id: 'settings',     label: 'Settings' },
-  ];
-
   return (
     <div className="h-full flex flex-col bg-(--bg-base)">
-      {/* Tab bar + actions header */}
-      <div className="shrink-0 flex items-stretch justify-between border-b border-(--border-faint) px-4">
-        {/* Left: Back + tabs */}
-        <div className="flex items-stretch gap-1">
-          {onBack && (
-            <button
-              type="button"
-              onClick={onBack}
-              className="flex items-center gap-1.5 pt-6 pb-5 text-[14px] text-(--text-secondary) hover:text-(--text-primary) bg-transparent border-none cursor-pointer transition-colors duration-150 pr-3 mr-2 border-r border-(--border-subtle)"
-            >
-              <BackArrowIcon /> Back
-            </button>
-          )}
-          {tabs.map(({ id, label }) => (
-            <button
-              key={id}
-              type="button"
-              onClick={() => onSectionChange ? onSectionChange(id) : setLocalTab(id)}
-              className={[
-                'pt-6 pb-5 px-3 bg-transparent border-none cursor-pointer transition-colors duration-150 relative',
-                activeTab === id
-                  ? 'text-[15px] font-semibold text-(--text-primary) after:absolute after:bottom-0 after:left-0 after:right-0 after:h-px after:bg-(--accent)'
-                  : 'text-[14px] font-medium text-(--text-secondary) hover:text-(--text-primary)',
-              ].join(' ')}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-
-        {/* Right: file path + Save */}
-        <div className="flex items-center gap-3">
+      {/* Actions header */}
+      {(filePath || onSave) && (
+        <div className="shrink-0 flex items-center justify-end border-b border-(--border-faint) px-4 py-3 gap-3">
           {filePath && (
             <span className='font-["Fira_Code",monospace] text-[11px] text-(--text-muted) truncate max-w-48 hidden sm:block'>
               {filePath}
@@ -630,7 +586,7 @@ export const SkillFormEditor = ({
             );
           })()}
         </div>
-      </div>
+      )}
 
       {/* Tab content */}
       <div className="flex-1 min-h-0">

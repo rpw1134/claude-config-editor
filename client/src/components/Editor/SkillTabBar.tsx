@@ -43,6 +43,9 @@ interface TabDef {
 
 const TABS: TabDef[] = [
   { id: "directory", label: "Skill Directory" },
+  { id: "identity", label: "Identity" },
+  { id: "instructions", label: "Instructions" },
+  { id: "settings", label: "Settings" },
   { id: "reference.md", label: "References" },
   { id: "examples.md", label: "Examples" },
   {
@@ -71,6 +74,13 @@ export const SkillTabBar = ({
     if (tab.id === "directory") {
       navigate(
         `/${encodeURIComponent(projectId)}/skills/${encodeURIComponent(skillName)}`,
+      );
+      return;
+    }
+
+    if (tab.id === "identity" || tab.id === "instructions" || tab.id === "settings") {
+      navigate(
+        `/${encodeURIComponent(projectId)}/skills/${encodeURIComponent(skillName)}/${tab.id}`,
       );
       return;
     }

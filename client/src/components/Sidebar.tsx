@@ -447,7 +447,7 @@ export const Sidebar = ({
         <button
           onClick={onToggleCollapsed}
           title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-          className="w-8 h-8 rounded-lg bg-[#2a2a30] flex items-center justify-center border-none cursor-pointer transition-colors duration-150 hover:bg-[#333340] shrink-0"
+          className="w-8 h-8 rounded-lg bg-(--accent) flex items-center justify-center border-none cursor-pointer transition-colors duration-150 hover:bg-(--accent-hover) shrink-0"
         >
           <span className="text-[13px] font-bold text-white leading-none">
             C
@@ -515,14 +515,14 @@ export const Sidebar = ({
             disabled={!hasProject}
             title="Create New"
             className={[
-              "w-full flex items-center py-1.75 rounded-lg text-left text-[14px] font-medium min-h-8.5 border-none transition-colors duration-150",
+              "w-full flex items-center py-1.75 rounded-lg text-left text-[14px] font-medium min-h-8.5 border-none transition-colors duration-150 group",
               collapsed ? "justify-center px-0" : "gap-2.5 px-2",
               hasProject
-                ? "bg-(--accent) text-white cursor-pointer hover:bg-(--accent-hover)"
+                ? "bg-transparent text-(--text-secondary) cursor-pointer hover:bg-(--bg-hover) hover:text-(--text-primary)"
                 : "bg-(--bg-surface) text-(--text-muted) cursor-not-allowed border border-(--border-faint) opacity-50",
             ].join(" ")}
           >
-            <span className="w-5 h-5 shrink-0 flex items-center justify-center text-white">
+            <span className="w-5 h-5 shrink-0 flex items-center justify-center text-(--text-secondary) group-hover:text-(--text-primary)">
               <PlusIcon />
             </span>
             <span
