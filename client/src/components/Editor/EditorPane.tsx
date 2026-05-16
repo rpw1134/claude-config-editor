@@ -71,6 +71,14 @@ const ViewModeToggle = ({ viewMode, onToggle }: ViewModeToggleProps) => (
   </div>
 );
 
+// ── Back arrow icon ───────────────────────────────────────────────────────────
+
+const BackArrowIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M8.5 2.5L4 7L8.5 11.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>
+);
+
 // ── Create header ─────────────────────────────────────────────────────────────
 
 interface CreateHeaderProps {
@@ -162,6 +170,8 @@ interface EditHeaderProps {
   viewMode: ViewMode;
   onViewModeToggle: (mode: ViewMode) => void;
   showViewToggle?: boolean;
+  // Fix 8: Back button integrated into header
+  onBack?: () => void;
 }
 
 const EditHeader = ({
@@ -173,6 +183,7 @@ const EditHeader = ({
   viewMode,
   onViewModeToggle,
   showViewToggle = true,
+  onBack,
 }: EditHeaderProps) => {
   const saveLabel =
     saveStatus === "saving"
@@ -183,7 +194,6 @@ const EditHeader = ({
       ? "Error"
       : "Save";
 
-  // Show the filled Save button only when there are unsaved changes
   const showSaveButton = !saveDisabled;
 
   const saveColor =
@@ -195,14 +205,30 @@ const EditHeader = ({
 
   return (
     <div className="px-5 border-b border-(--border-faint) flex items-center justify-between shrink-0 min-h-12 bg-(--bg-sidebar)">
-      <span className='font-["Fira_Code",monospace] text-[12px] text-(--text-muted)'>
-        {filePath(name, type)}
-      </span>
-      <div className="flex items-center gap-3">
+      {/* Left: optional Back button + file path */}
+      <div className="flex items-center gap-0 min-w-0">
+        {onBack && (
+          <>
+            <button
+              type="button"
+              onClick={onBack}
+              className="flex items-center gap-1.5 text-[13px] text-(--text-muted) hover:text-(--text-primary) bg-transparent border-none cursor-pointer transition-colors duration-150 p-0 pr-3 shrink-0"
+            >
+              <BackArrowIcon /> Back
+            </button>
+            <span className="w-px h-4 bg-(--border-faint) mx-3 shrink-0" />
+          </>
+        )}
+        <span className='font-["Fira_Code",monospace] text-[12px] text-(--text-muted) truncate'>
+          {filePath(name, type)}
+        </span>
+      </div>
+
+      {/* Right: view toggle + save */}
+      <div className="flex items-center gap-3 shrink-0 ml-3">
         {type === "agent" && showViewToggle && (
           <ViewModeToggle viewMode={viewMode} onToggle={onViewModeToggle} />
         )}
-        {/* Save — accent filled button only when dirty; transient status text otherwise */}
         {showSaveButton ? (
           <button
             onClick={onSave}
@@ -220,14 +246,6 @@ const EditHeader = ({
     </div>
   );
 };
-
-// ── Back button ───────────────────────────────────────────────────────────────
-
-const BackArrowIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M8.5 2.5L4 7L8.5 11.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-  </svg>
-);
 
 // ── EditorPane ────────────────────────────────────────────────────────────────
 
@@ -378,17 +396,7 @@ export const EditorPane = ({ name, type, projectPath, onCreated, onDeleted }: Ed
   const showFormView = type === "agent" && viewMode === "form";
 
   return (
-    <div className="relative flex flex-1 flex-col h-full w-full bg-(--bg-base) border-l border-(--border-faint)">
-      {/* Back button */}
-      <div className="absolute top-3.5 left-4 z-10">
-        <button
-          onClick={() => navigate(-1)}
-          className="flex items-center gap-1.5 text-[13px] text-(--text-muted) hover:text-(--text-primary) bg-transparent border-none cursor-pointer transition-colors duration-150 p-0"
-        >
-          <BackArrowIcon /> Back
-        </button>
-      </div>
-
+    <div className="flex flex-1 flex-col h-full w-full bg-(--bg-base) border-l border-(--border-faint)">
       {isCreateMode ? (
         <CreateHeader
           type={type}
@@ -401,6 +409,7 @@ export const EditorPane = ({ name, type, projectPath, onCreated, onDeleted }: Ed
           contentEmpty={content.trim() === ""}
         />
       ) : !showFormView ? (
+        // Fix 8: Back button is now part of EditHeader, not absolutely-positioned
         <EditHeader
           name={name}
           type={type}
@@ -410,6 +419,7 @@ export const EditorPane = ({ name, type, projectPath, onCreated, onDeleted }: Ed
           viewMode={viewMode}
           onViewModeToggle={setViewMode}
           showViewToggle={true}
+          onBack={() => navigate(-1)}
         />
       ) : null}
       <div className="flex-1 min-h-0">
@@ -420,10 +430,12 @@ export const EditorPane = ({ name, type, projectPath, onCreated, onDeleted }: Ed
             content={content}
             onChange={setContent}
             onDelete={handleDelete}
+            deleteStatus={deleteStatus}
             onSave={handleSave}
             saveStatus={saveStatus}
             saveDisabled={loading || !dirty || saving}
             disabled={saving}
+            onBack={() => navigate(-1)}
           />
         ) : (
           <Editor
