@@ -1066,6 +1066,7 @@ export const AgentCreateFlow = ({
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [showPreview, setShowPreview] = useState(false);
+  const [createSuccess, setCreateSuccess] = useState(false);
 
   const hasData = name !== "" || description !== "" || systemPrompt !== "";
 
@@ -1192,7 +1193,8 @@ export const AgentCreateFlow = ({
       const content = buildContent();
       await createAgent(projectPath, name.trim(), content);
       submitted.current = true;
-      onCreated(name.trim());
+      setCreateSuccess(true);
+      setTimeout(() => onCreated(name.trim()), 1600);
     } catch (err) {
       setSubmitError(
         err instanceof Error ? err.message : "Something went wrong.",
@@ -1276,6 +1278,37 @@ export const AgentCreateFlow = ({
           onConfirm={handleDiscardConfirm}
           onCancel={handleDiscardCancel}
         />
+      )}
+
+      {createSuccess && (
+        <div
+          className="absolute inset-0 z-30 flex items-center justify-center bg-(--bg-base)"
+          style={{ animation: 'ccs-fade-in 0.2s ease-out both' }}
+        >
+          <div
+            className="flex flex-col items-center gap-5 text-center"
+            style={{ animation: 'ccs-success-enter 0.35s cubic-bezier(0.34, 1.4, 0.64, 1) both' }}
+          >
+            {/* Spinning ring */}
+            <div className="relative w-16 h-16">
+              <svg className="w-full h-full" viewBox="0 0 64 64" fill="none">
+                <circle cx="32" cy="32" r="26" stroke="var(--border-subtle)" strokeWidth="4"/>
+                <circle
+                  cx="32" cy="32" r="26"
+                  stroke="var(--accent)"
+                  strokeWidth="4"
+                  strokeLinecap="round"
+                  strokeDasharray="40 124"
+                  style={{ animation: 'spin 0.9s linear infinite', transformOrigin: '32px 32px' }}
+                />
+              </svg>
+            </div>
+            <div>
+              <p className="m-0 text-[20px] font-semibold text-(--text-primary)">Creating agent…</p>
+              <p className="m-0 mt-1 text-[13px] text-(--text-muted)">Writing files and configuring {name.trim()}</p>
+            </div>
+          </div>
+        </div>
       )}
 
       <button

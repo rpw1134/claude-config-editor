@@ -259,7 +259,7 @@ export const Sidebar = ({
       style={{ width: collapsed ? 52 : 260 }}
     >
       {/* App header */}
-      <div className={['pt-4 pb-3 border-b border-(--border-faint) shrink-0 flex items-center min-h-14.25 transition-all duration-200', collapsed ? 'justify-center px-0' : 'px-3 gap-2.5'].join(' ')}>
+      <div className="pt-4 pb-3 border-b border-(--border-faint) shrink-0 flex items-center min-h-14.25 pl-[10px] pr-3 gap-2.5">
         <button
           onClick={onToggleCollapsed}
           title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}

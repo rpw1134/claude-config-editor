@@ -32,6 +32,13 @@ function writeRecents(projectPath: string, items: RecentItem[]): void {
   }
 }
 
+export function removeRecentItem(projectPath: string, type: RecentItemType, name: string): RecentItem[] {
+  const existing = readRecents(projectPath);
+  const updated = existing.filter((r) => !(r.type === type && r.name === name));
+  writeRecents(projectPath, updated);
+  return updated;
+}
+
 export function addRecentItem(projectPath: string, type: RecentItemType, name: string): RecentItem[] {
   const existing = readRecents(projectPath);
 

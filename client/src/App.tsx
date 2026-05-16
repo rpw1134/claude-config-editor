@@ -7,7 +7,7 @@ import { AgentsLandingPage, SkillsLandingPage, McpLandingPage } from './componen
 import { CreateNewModal } from './components/CreateNewModal';
 import { AgentCreateFlow } from './components/AgentCreateFlow';
 import { fetchProjects } from './lib/api';
-import { addRecentItem, readRecents } from './hooks/useRecents';
+import { addRecentItem, readRecents, removeRecentItem } from './hooks/useRecents';
 import type { RecentItem } from './hooks/useRecents';
 
 const RECENT_PROJECT_KEY = 'ccs:recentProject';
@@ -30,6 +30,7 @@ interface ShellContextValue {
   recents: RecentItem[];
   onRecentClick: (item: RecentItem) => void;
   addToRecents: (type: RecentItem['type'], name: string) => void;
+  removeFromRecents: (type: RecentItem['type'], name: string) => void;
   onCreateNew: (type: 'agent' | 'skill' | 'mcp-server') => void;
   sidebarCollapsed: boolean;
   onToggleCollapsed: () => void;
@@ -199,7 +200,7 @@ const AgentCreateContent = () => {
 const AgentEditorContent = () => {
   const { projectId, name } = useParams<{ projectId: string; name: string }>();
   const navigate = useNavigate();
-  const { onBumpAgentsRefresh } = useShell();
+  const { onBumpAgentsRefresh, removeFromRecents } = useShell();
   const projectPath = projectId ? decodeProject(projectId) : null;
   const agentName = name ? decodeURIComponent(name) : null;
 
@@ -213,6 +214,7 @@ const AgentEditorContent = () => {
       projectPath={projectPath}
       onDeleted={() => {
         onBumpAgentsRefresh();
+        removeFromRecents('agent', agentName);
         navigate(`/${encodeProject(projectPath)}/agents`);
       }}
     />
@@ -246,7 +248,7 @@ const SkillsLandingContent = () => {
 const SkillEditorContent = () => {
   const { projectId, name } = useParams<{ projectId: string; name: string }>();
   const navigate = useNavigate();
-  const { onBumpSkillsRefresh } = useShell();
+  const { onBumpSkillsRefresh, removeFromRecents } = useShell();
   const projectPath = projectId ? decodeProject(projectId) : null;
   const skillName = name ? decodeURIComponent(name) : null;
 
@@ -260,6 +262,7 @@ const SkillEditorContent = () => {
       projectPath={projectPath}
       onDeleted={() => {
         onBumpSkillsRefresh();
+        removeFromRecents('skill', skillName);
         navigate(`/${encodeProject(projectPath)}/skills`);
       }}
     />
@@ -293,7 +296,7 @@ const McpLandingContent = () => {
 const McpEditorContent = () => {
   const { projectId, name } = useParams<{ projectId: string; name: string }>();
   const navigate = useNavigate();
-  const { onBumpMcpRefresh } = useShell();
+  const { onBumpMcpRefresh, removeFromRecents } = useShell();
   const projectPath = projectId ? decodeProject(projectId) : null;
   const mcpName = name ? decodeURIComponent(name) : null;
 
@@ -307,6 +310,7 @@ const McpEditorContent = () => {
       projectPath={projectPath}
       onDeleted={() => {
         onBumpMcpRefresh();
+        removeFromRecents('mcp-server', mcpName);
         navigate(`/${encodeProject(projectPath)}/mcp`);
       }}
     />
@@ -352,6 +356,12 @@ export default function App() {
   const addToRecents = (type: RecentItem['type'], name: string) => {
     if (!selectedProjectPath) return;
     const updated = addRecentItem(selectedProjectPath, type, name);
+    setRecents(updated);
+  };
+
+  const removeFromRecents = (type: RecentItem['type'], name: string) => {
+    if (!selectedProjectPath) return;
+    const updated = removeRecentItem(selectedProjectPath, type, name);
     setRecents(updated);
   };
 
@@ -403,6 +413,7 @@ export default function App() {
     recents,
     onRecentClick: handleRecentClick,
     addToRecents,
+    removeFromRecents,
     onCreateNew: handleCreateNew,
     sidebarCollapsed,
     onToggleCollapsed: () => setSidebarCollapsed((v) => !v),
