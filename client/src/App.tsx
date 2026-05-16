@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState } from 'react';
 import { Routes, Route, useNavigate, useParams, Navigate, Outlet } from 'react-router-dom';
 import { Sidebar } from './components/Sidebar';
 import { EditorPane } from './components/Editor/EditorPane';
+import { SkillDirectoryView } from './components/Editor/SkillDirectoryView';
 import { WelcomePane, NoProjectPane } from './components/WelcomePane';
 import { AgentsLandingPage, SkillsLandingPage, McpLandingPage } from './components/LandingPage';
 import { CreateNewModal } from './components/CreateNewModal';
@@ -255,11 +256,11 @@ const SkillEditorContent = () => {
   if (!projectPath || !skillName) return <Navigate to="/" replace />;
 
   return (
-    <EditorPane
+    <SkillDirectoryView
       key={`skill:${projectPath}:${skillName}`}
-      name={skillName}
-      type="skill"
+      skillName={skillName}
       projectPath={projectPath}
+      onBack={() => navigate(`/${encodeProject(projectPath)}/skills`)}
       onDeleted={() => {
         onBumpSkillsRefresh();
         removeFromRecents('skill', skillName);

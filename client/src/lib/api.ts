@@ -129,3 +129,31 @@ export async function fetchProjectContent(projectPath: string): Promise<string> 
 export async function updateProjectContent(projectPath: string, content: string): Promise<void> {
   await put(`/api/projects/file?path=${encodeURIComponent(projectPath)}`, { content });
 }
+
+export async function fetchSkillFiles(projectPath: string, name: string): Promise<string[]> {
+  const data = await get<{ files: string[] }>(
+    `/api/skills/${encodeURIComponent(name)}/files?projectPath=${encodeURIComponent(projectPath)}`
+  );
+  return data.files;
+}
+
+export async function fetchSkillFile(projectPath: string, name: string, file: string): Promise<string> {
+  const data = await get<{ content: string }>(
+    `/api/skills/${encodeURIComponent(name)}/file?projectPath=${encodeURIComponent(projectPath)}&file=${encodeURIComponent(file)}`
+  );
+  return data.content;
+}
+
+export async function updateSkillFile(projectPath: string, name: string, file: string, content: string): Promise<void> {
+  await put(`/api/skills/${encodeURIComponent(name)}/file`, { projectPath, file, content });
+}
+
+export async function createSkillFile(projectPath: string, name: string, file: string): Promise<void> {
+  await post(`/api/skills/${encodeURIComponent(name)}/file`, { projectPath, file });
+}
+
+export async function deleteSkillFile(projectPath: string, name: string, file: string): Promise<void> {
+  await del(
+    `/api/skills/${encodeURIComponent(name)}/file?projectPath=${encodeURIComponent(projectPath)}&file=${encodeURIComponent(file)}`
+  );
+}
