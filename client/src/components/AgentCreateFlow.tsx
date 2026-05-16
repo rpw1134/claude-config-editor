@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useBlocker } from "react-router-dom";
 import { createAgent } from "../lib/api";
 
 export interface AgentCreateFlowProps {
@@ -79,6 +80,14 @@ const COLORS: ColorSwatch[] = [
 ];
 
 const NAME_PATTERN = /^[a-zA-Z0-9_-]+$/;
+
+function agentsDirDisplay(projectPath: string): string {
+  const isGlobal = projectPath.endsWith('/.claude');
+  if (isGlobal) return '~/.claude/agents/';
+  const home = projectPath.match(/^(\/Users\/[^/]+|\/home\/[^/]+)\//)?.[1];
+  const shortened = home ? projectPath.replace(home, '~') : projectPath;
+  return `${shortened}/.claude/agents/`;
+}
 
 const ChevronDownIcon = () => (
   <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
@@ -161,7 +170,7 @@ const StepDots = ({ total, current, onGoTo }: StepDotsProps) => (
 
 interface StepHeadingProps {
   heading: string;
-  subtext: string;
+  subtext: React.ReactNode;
 }
 
 const StepHeading = ({ heading, subtext }: StepHeadingProps) => (
@@ -277,6 +286,7 @@ interface StepNameProps {
   onChange: (v: string) => void;
   error: string | null;
   onContinue: () => void;
+  projectPath: string;
   inputRef?: React.RefObject<HTMLInputElement | null>;
 }
 
@@ -285,17 +295,28 @@ const StepName = ({
   onChange,
   error,
   onContinue,
+  projectPath,
   inputRef,
 }: StepNameProps) => {
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") onContinue();
   };
 
+  const displayPath = agentsDirDisplay(projectPath);
+
   return (
     <div>
       <StepHeading
         heading="What should we call this agent?"
-        subtext="Give your agent a unique name. This becomes its filename in ~/.claude/agents/."
+        subtext={
+          <>
+            Give your agent a unique name. This becomes its filename in{" "}
+            <code className="font-['Fira_Code',monospace] text-[13px] bg-(--bg-hover) border border-(--border-subtle) rounded px-1 py-px">
+              {displayPath}
+            </code>
+            .
+          </>
+        }
       />
       <input
         ref={inputRef}
@@ -999,6 +1020,59 @@ export const AgentCreateFlow = ({
 }: AgentCreateFlowProps) => {
   const [step, setStep] = useState(0);
   const [showDiscardModal, setShowDiscardModal] = useState(false);
+
+  // Fields are declared below but we need to forward-reference them for the
+  // blocker condition. The state is initialized to empty strings so we track
+  // whether the user has typed anything.
+  const [name, setName] = useState("");
+  const [nameError, setNameError] = useState<string | null>(null);
+  const [description, setDescription] = useState("");
+  const [model, setModel] = useState<ModelOption>(DEFAULT_MODEL);
+  const [color, setColor] = useState<string | null>(null);
+  const [permissionMode, setPermissionMode] = useState<PermissionMode | null>(
+    null,
+  );
+  const [effort, setEffort] = useState<EffortLevel | null>(null);
+  const [memory, setMemory] = useState<MemoryScope | null>(null);
+  const [background, setBackground] = useState(false);
+  const [isolation, setIsolation] = useState(false);
+  const [maxTurns, setMaxTurns] = useState("");
+  const [tools, setTools] = useState("");
+  const [disallowedTools, setDisallowedTools] = useState("");
+  const [skills, setSkills] = useState("");
+  const [initialPrompt, setInitialPrompt] = useState("");
+  const [systemPrompt, setSystemPrompt] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [showPreview, setShowPreview] = useState(false);
+
+  const hasData = name !== "" || description !== "" || systemPrompt !== "";
+
+  // Block router navigation when the user has entered data, so they don't
+  // accidentally lose work by clicking a sidebar item or pressing back.
+  const blocker = useBlocker(
+    ({ currentLocation, nextLocation }) =>
+      currentLocation.pathname !== nextLocation.pathname && hasData,
+  );
+
+  // The modal is shown either when the X/Escape path sets showDiscardModal,
+  // or when the router blocker has intercepted a navigation attempt.
+  const discardModalVisible = showDiscardModal || blocker.state === "blocked";
+
+  const handleDiscardConfirm = () => {
+    if (blocker.state === "blocked") {
+      blocker.proceed();
+    }
+    onCancel();
+  };
+
+  const handleDiscardCancel = () => {
+    if (blocker.state === "blocked") {
+      blocker.reset();
+    }
+    setShowDiscardModal(false);
+  };
+
   const nameInputRef = useRef<HTMLInputElement>(null);
   const descriptionRef = useRef<HTMLTextAreaElement>(null);
   const optionsFirstButtonRef = useRef<HTMLButtonElement>(null);
@@ -1021,28 +1095,6 @@ export const AgentCreateFlow = ({
     }, 380);
     return () => clearTimeout(t);
   }, [step]);
-
-  const [name, setName] = useState("");
-  const [nameError, setNameError] = useState<string | null>(null);
-  const [description, setDescription] = useState("");
-  const [model, setModel] = useState<ModelOption>(DEFAULT_MODEL);
-  const [color, setColor] = useState<string | null>(null);
-  const [permissionMode, setPermissionMode] = useState<PermissionMode | null>(
-    null,
-  );
-  const [effort, setEffort] = useState<EffortLevel | null>(null);
-  const [memory, setMemory] = useState<MemoryScope | null>(null);
-  const [background, setBackground] = useState(false);
-  const [isolation, setIsolation] = useState(false);
-  const [maxTurns, setMaxTurns] = useState("");
-  const [tools, setTools] = useState("");
-  const [disallowedTools, setDisallowedTools] = useState("");
-  const [skills, setSkills] = useState("");
-  const [initialPrompt, setInitialPrompt] = useState("");
-  const [systemPrompt, setSystemPrompt] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-  const [submitError, setSubmitError] = useState<string | null>(null);
-  const [showPreview, setShowPreview] = useState(false);
 
   const TOTAL_STEPS = 4;
 
@@ -1137,6 +1189,7 @@ export const AgentCreateFlow = ({
       }}
       error={nameError}
       onContinue={handleStep1Continue}
+      projectPath={projectPath}
       inputRef={nameInputRef}
     />,
     <StepDescription
@@ -1195,10 +1248,10 @@ export const AgentCreateFlow = ({
     <div
       className="flex-1 overflow-hidden relative bg-(--bg-base)"
     >
-      {showDiscardModal && (
+      {discardModalVisible && (
         <DiscardModal
-          onConfirm={onCancel}
-          onCancel={() => setShowDiscardModal(false)}
+          onConfirm={handleDiscardConfirm}
+          onCancel={handleDiscardCancel}
         />
       )}
 

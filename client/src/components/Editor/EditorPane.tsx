@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useBlocker } from "react-router-dom";
+import ReactMarkdown from "react-markdown";
 import {
   fetchAgentContent,
   fetchSkillContent,
@@ -32,10 +33,28 @@ type SaveStatus = "idle" | "saving" | "saved" | "error";
 type CreateStatus = "idle" | "creating" | "error";
 type DeleteStatus = "idle" | "confirm" | "deleting" | "error";
 
-function filePath(name: string, type: "agent" | "skill" | "mcp-server" | "project"): string {
-  if (type === "agent") return `~/.claude/agents/${name}`;
-  if (type === "skill") return `~/.claude/skills/${name}/SKILL.md`;
-  if (type === "project") return `${name}/CLAUDE.md`;
+function shortenHome(p: string): string {
+  return p.replace(/^(\/Users\/[^/]+|\/home\/[^/]+)/, '~');
+}
+
+function filePath(
+  name: string,
+  type: "agent" | "skill" | "mcp-server" | "project",
+  projectPath: string | null,
+): string {
+  const isGlobal = projectPath?.endsWith('/.claude') ?? true;
+  const configDir = isGlobal
+    ? '~/.claude'
+    : projectPath
+    ? shortenHome(projectPath) + '/.claude'
+    : '~/.claude';
+
+  if (type === "agent") return `${configDir}/agents/${name}.md`;
+  if (type === "skill") return `${configDir}/skills/${name}/SKILL.md`;
+  if (type === "project") {
+    // name is the full project path when type === "project"
+    return `${shortenHome(name)}/CLAUDE.md`;
+  }
   return `~/.claude.json → mcpServers → ${name}`;
 }
 
@@ -47,13 +66,15 @@ interface ViewModeToggleProps {
 }
 
 const ViewModeToggle = ({ viewMode, onToggle }: ViewModeToggleProps) => (
-  <div className="flex items-center gap-3">
+  <div className="flex items-center bg-(--bg-surface) border border-(--border-subtle) rounded-md p-0.5">
     <button
       type="button"
       onClick={() => onToggle("form")}
       className={[
-        'text-[13px] bg-transparent border-none cursor-pointer p-0 transition-colors duration-150',
-        viewMode === "form" ? "text-(--text-primary)" : "text-(--text-muted) hover:text-(--text-secondary)",
+        'text-[13px] px-2.5 py-0.5 rounded cursor-pointer border-none transition-colors duration-150',
+        viewMode === "form"
+          ? "bg-(--bg-elevated) text-(--text-primary)"
+          : "bg-transparent text-(--text-muted) hover:text-(--text-secondary)",
       ].join(' ')}
     >
       Form
@@ -62,8 +83,10 @@ const ViewModeToggle = ({ viewMode, onToggle }: ViewModeToggleProps) => (
       type="button"
       onClick={() => onToggle("raw")}
       className={[
-        'text-[13px] bg-transparent border-none cursor-pointer p-0 transition-colors duration-150',
-        viewMode === "raw" ? "text-(--text-primary)" : "text-(--text-muted) hover:text-(--text-secondary)",
+        'text-[13px] px-2.5 py-0.5 rounded cursor-pointer border-none transition-colors duration-150',
+        viewMode === "raw"
+          ? "bg-(--bg-elevated) text-(--text-primary)"
+          : "bg-transparent text-(--text-muted) hover:text-(--text-secondary)",
       ].join(' ')}
     >
       Raw
@@ -83,6 +106,7 @@ const BackArrowIcon = () => (
 
 interface CreateHeaderProps {
   type: "agent" | "skill" | "mcp-server" | "project";
+  projectPath: string | null;
   draftName: string;
   onDraftNameChange: (val: string) => void;
   createStatus: CreateStatus;
@@ -94,6 +118,7 @@ interface CreateHeaderProps {
 
 const CreateHeader = ({
   type,
+  projectPath,
   draftName,
   onDraftNameChange,
   createStatus,
@@ -109,15 +134,24 @@ const CreateHeader = ({
 
   const label = creating ? "Creating…" : isError ? "Error" : "Create";
 
+  const isGlobal = projectPath?.endsWith('/.claude') ?? true;
+  const configDir = isGlobal
+    ? '~/.claude'
+    : projectPath
+    ? shortenHome(projectPath) + '/.claude'
+    : '~/.claude';
+  const pathPrefix =
+    type === "agent"
+      ? `${configDir}/agents/`
+      : type === "skill"
+      ? `${configDir}/skills/`
+      : "~/.claude.json → mcpServers → ";
+
   return (
     <div className="px-5 border-b border-(--border-faint) flex items-center justify-between shrink-0 min-h-12 bg-(--bg-sidebar)">
       <div className="flex items-center gap-1.5">
         <span className='font-["Fira_Code",monospace] text-[12px] text-(--text-muted)'>
-          {type === "agent"
-            ? "~/.claude/agents/"
-            : type === "skill"
-            ? "~/.claude/skills/"
-            : "~/.claude.json → mcpServers → "}
+          {pathPrefix}
         </span>
         <input
           type="text"
@@ -164,19 +198,22 @@ const CreateHeader = ({
 interface EditHeaderProps {
   name: string;
   type: "agent" | "skill" | "mcp-server" | "project";
+  projectPath: string | null;
   saveStatus: SaveStatus;
   saveDisabled: boolean;
   onSave: () => void;
   viewMode: ViewMode;
   onViewModeToggle: (mode: ViewMode) => void;
   showViewToggle?: boolean;
-  // Fix 8: Back button integrated into header
   onBack?: () => void;
+  previewMode?: boolean;
+  onTogglePreview?: () => void;
 }
 
 const EditHeader = ({
   name,
   type,
+  projectPath,
   saveStatus,
   saveDisabled,
   onSave,
@@ -184,24 +221,20 @@ const EditHeader = ({
   onViewModeToggle,
   showViewToggle = true,
   onBack,
+  previewMode,
+  onTogglePreview,
 }: EditHeaderProps) => {
+  const isSaved = saveStatus === "saved";
   const saveLabel =
     saveStatus === "saving"
       ? "Saving…"
-      : saveStatus === "saved"
-      ? "Saved"
-      : saveStatus === "error"
-      ? "Error"
+      : isSaved
+      ? "Saved ✓"
+      : saveDisabled
+      ? "Up to date"
       : "Save";
 
-  const showSaveButton = !saveDisabled;
-
-  const saveColor =
-    saveStatus === "saved"
-      ? "text-(--success)"
-      : saveStatus === "error"
-      ? "text-(--error)"
-      : "text-(--text-muted)";
+  const isDisabled = saveDisabled && !isSaved;
 
   return (
     <div className="px-5 border-b border-(--border-faint) flex items-center justify-between shrink-0 min-h-12 bg-(--bg-sidebar)">
@@ -220,28 +253,56 @@ const EditHeader = ({
           </>
         )}
         <span className='font-["Fira_Code",monospace] text-[12px] text-(--text-muted) truncate'>
-          {filePath(name, type)}
+          {filePath(name, type, projectPath)}
         </span>
       </div>
 
-      {/* Right: view toggle + save */}
+      {/* Right: view toggle + preview toggle + save */}
       <div className="flex items-center gap-3 shrink-0 ml-3">
         {type === "agent" && showViewToggle && (
           <ViewModeToggle viewMode={viewMode} onToggle={onViewModeToggle} />
         )}
-        {showSaveButton ? (
-          <button
-            onClick={onSave}
-            aria-label="Save file"
-            className='text-[13px] px-3 py-1 rounded-md bg-(--accent) border-none cursor-pointer text-white transition-colors duration-150 hover:bg-(--accent-hover)'
-          >
-            {saveLabel}
-          </button>
-        ) : (saveStatus === "saving" || saveStatus === "saved" || saveStatus === "error") ? (
-          <span className={['text-[13px]', saveColor].join(' ')}>
-            {saveLabel}
-          </span>
-        ) : null}
+        {onTogglePreview && (
+          <div className="flex items-center bg-(--bg-surface) border border-(--border-subtle) rounded-md p-0.5">
+            <button
+              type="button"
+              onClick={() => previewMode && onTogglePreview()}
+              className={[
+                'text-[13px] px-2.5 py-0.5 rounded cursor-pointer border-none transition-colors duration-150',
+                !previewMode
+                  ? 'bg-(--bg-elevated) text-(--text-primary)'
+                  : 'bg-transparent text-(--text-muted) hover:text-(--text-secondary)',
+              ].join(' ')}
+            >
+              Edit
+            </button>
+            <button
+              type="button"
+              onClick={() => !previewMode && onTogglePreview()}
+              className={[
+                'text-[13px] px-2.5 py-0.5 rounded cursor-pointer border-none transition-colors duration-150',
+                previewMode
+                  ? 'bg-(--bg-elevated) text-(--text-primary)'
+                  : 'bg-transparent text-(--text-muted) hover:text-(--text-secondary)',
+              ].join(' ')}
+            >
+              Preview
+            </button>
+          </div>
+        )}
+        <button
+          onClick={isDisabled ? undefined : onSave}
+          disabled={isDisabled}
+          aria-label="Save file"
+          className={[
+            'text-[13px] px-3 py-1 rounded-md border-none transition-colors duration-150',
+            isDisabled
+              ? 'bg-(--bg-surface) text-(--text-muted) opacity-50 cursor-not-allowed'
+              : 'bg-(--accent) cursor-pointer text-white hover:bg-(--accent-hover)',
+          ].join(' ')}
+        >
+          {saveLabel}
+        </button>
       </div>
     </div>
   );
@@ -261,9 +322,15 @@ export const EditorPane = ({ name, type, projectPath, onCreated, onDeleted }: Ed
 
   const [draftName, setDraftName] = useState("");
   const [createStatus, setCreateStatus] = useState<CreateStatus>("idle");
+  const [storedPreviewKey, setStoredPreviewKey] = useState<string | null>(null);
 
   const isCreateMode = name === null;
   const currentKey = `${type}:${projectPath}:${name}`;
+
+  // previewMode is true only when the stored key matches the current file
+  const previewMode = storedPreviewKey === currentKey;
+  const setPreviewMode = (on: boolean) =>
+    setStoredPreviewKey(on ? currentKey : null);
 
   const defaultMode: ViewMode = type === "agent" ? "form" : "raw";
   const [storedViewMode, setStoredViewMode] = useState<{ key: string; mode: ViewMode }>({
@@ -394,12 +461,53 @@ export const EditorPane = ({ name, type, projectPath, onCreated, onDeleted }: Ed
 
   const editorLanguage = type === "mcp-server" ? "json" : "markdown";
   const showFormView = type === "agent" && viewMode === "form";
+  const isMarkdown = type === "project" || type === "skill";
+
+  // Block router navigation when there are unsaved changes.
+  const blocker = useBlocker(
+    ({ currentLocation, nextLocation }) =>
+      dirty && currentLocation.pathname !== nextLocation.pathname,
+  );
 
   return (
     <div className="flex flex-1 flex-col h-full w-full bg-(--bg-base) border-l border-(--border-faint)">
+      {/* Unsaved-changes confirmation modal */}
+      {blocker.state === "blocked" && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
+          onClick={() => blocker.reset()}
+        >
+          <div
+            className="bg-(--bg-surface) rounded-4.5 border border-(--border-subtle) p-8 max-w-90 w-full mx-4 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="m-0 mb-2 text-[20px] font-bold text-(--text-primary)">
+              Unsaved changes
+            </h2>
+            <p className="m-0 mb-6 text-[14px] text-(--text-secondary)">
+              Leave without saving? Your changes will be lost.
+            </p>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => blocker.proceed()}
+                className="px-5 py-2.5 rounded-2.5 text-[14px] font-medium text-white bg-(--error) border-none cursor-pointer transition-colors duration-150"
+              >
+                Leave
+              </button>
+              <button
+                onClick={() => blocker.reset()}
+                className="text-[14px] text-(--text-muted) bg-transparent border-none cursor-pointer transition-colors duration-150 hover:text-(--text-secondary)"
+              >
+                Keep editing
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {isCreateMode ? (
         <CreateHeader
           type={type}
+          projectPath={projectPath}
           draftName={draftName}
           onDraftNameChange={setDraftName}
           createStatus={createStatus}
@@ -409,10 +517,10 @@ export const EditorPane = ({ name, type, projectPath, onCreated, onDeleted }: Ed
           contentEmpty={content.trim() === ""}
         />
       ) : !showFormView ? (
-        // Fix 8: Back button is now part of EditHeader, not absolutely-positioned
         <EditHeader
           name={name}
           type={type}
+          projectPath={projectPath}
           saveStatus={saveStatus}
           saveDisabled={loading || !dirty || saving}
           onSave={handleSave}
@@ -420,6 +528,8 @@ export const EditorPane = ({ name, type, projectPath, onCreated, onDeleted }: Ed
           onViewModeToggle={setViewMode}
           showViewToggle={true}
           onBack={() => navigate(-1)}
+          previewMode={isMarkdown ? previewMode : undefined}
+          onTogglePreview={isMarkdown ? () => setPreviewMode(!previewMode) : undefined}
         />
       ) : null}
       <div className="flex-1 min-h-0">
@@ -436,7 +546,12 @@ export const EditorPane = ({ name, type, projectPath, onCreated, onDeleted }: Ed
             saveDisabled={loading || !dirty || saving}
             disabled={saving}
             onBack={() => navigate(-1)}
+            filePath={name ? filePath(name, 'agent', projectPath) : undefined}
           />
+        ) : isMarkdown && previewMode ? (
+          <div className="flex-1 min-h-0 overflow-y-auto h-full px-14 py-10 prose prose-invert prose-sm max-w-none bg-(--bg-base)">
+            <ReactMarkdown>{content}</ReactMarkdown>
+          </div>
         ) : (
           <Editor
             value={content}

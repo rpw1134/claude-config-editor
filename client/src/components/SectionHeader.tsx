@@ -20,8 +20,8 @@ export const SectionHeader = ({
   count,
 }: SectionHeaderProps) => {
   return (
-    <div className="mb-8">
-      <div className="flex items-start justify-between gap-4 mb-2">
+    <div className="mb-10">
+      <div className="flex items-start justify-between gap-4 mb-3">
         <div className="flex items-center gap-2.5 min-w-0">
           <h1 className="text-[20px] font-bold text-white/95 tracking-tight leading-tight">{title}</h1>
           {count !== undefined && (

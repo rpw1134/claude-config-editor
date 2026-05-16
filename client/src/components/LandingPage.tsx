@@ -82,8 +82,19 @@ export const TypeLandingPage = (props: TypeLandingPageProps) => {
   const { type, title, projectPath, refreshKey, onSelect, onNew } = props;
   const [items, setItems] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showSkeleton, setShowSkeleton] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState('');
+
+  // Only show skeleton after 200ms to avoid flash on fast loads
+  useEffect(() => {
+    if (!loading) {
+      setShowSkeleton(false);
+      return;
+    }
+    const timer = setTimeout(() => setShowSkeleton(true), 200);
+    return () => clearTimeout(timer);
+  }, [loading]);
 
   useEffect(() => {
     let cancelled = false;
@@ -120,10 +131,10 @@ export const TypeLandingPage = (props: TypeLandingPageProps) => {
 
   return (
     <div className="flex-1 flex flex-col min-h-0 overflow-y-auto bg-(--bg-base)">
-      <div className="w-full px-14 py-12">
+      <div className="w-full px-14 pt-16 pb-12">
 
         {/* Heading row */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center justify-between mb-10">
           <h1 className="font-['Bricolage_Grotesque',sans-serif] text-[40px] font-bold text-(--text-primary) tracking-[-0.03em] leading-[1.05] m-0">
             {title}
           </h1>
@@ -154,7 +165,7 @@ export const TypeLandingPage = (props: TypeLandingPageProps) => {
         </div>
 
         {/* Loading */}
-        {loading && (
+        {loading && showSkeleton && (
           <div className="flex flex-col">
             {[1, 2, 3].map((i) => (
               <div

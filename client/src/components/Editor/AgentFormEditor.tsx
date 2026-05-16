@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import ReactMarkdown from 'react-markdown';
 import { parseFrontmatter, serializeFrontmatter, type AgentFrontmatter } from '../../lib/frontmatter';
 import { Editor } from './Editor';
 
@@ -21,7 +22,7 @@ const tagPillClass =
 const FieldHelp = ({ text }: { text: string }) => (
   <span className="relative group inline-flex items-center ml-1.5">
     <span className="w-3.5 h-3.5 rounded-full border border-(--border-subtle) text-(--text-muted) text-[9px] font-medium inline-flex items-center justify-center cursor-default leading-none select-none">?</span>
-    <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 px-3 py-2 rounded-lg bg-(--bg-elevated) border border-(--border-default) text-[12px] text-(--text-secondary) leading-relaxed shadow-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-150 z-50 text-left whitespace-normal">
+    <span className="absolute bottom-full left-0 mb-1.5 w-56 px-3 py-2 rounded-lg bg-(--bg-elevated) border border-(--border-default) text-[12px] text-(--text-secondary) leading-relaxed shadow-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-150 z-50 text-left whitespace-normal">
       {text}
     </span>
   </span>
@@ -312,26 +313,64 @@ interface PromptTabProps {
   disabled?: boolean;
 }
 
-const PromptTab = ({ body, onBodyChange, disabled }: PromptTabProps) => (
-  <div className="flex flex-col h-full min-h-0">
-    <div className="px-7 pt-8 pb-4 shrink-0">
-      <h2 className="m-0 mb-1 text-2xl font-['Bricolage_Grotesque',sans-serif] font-bold tracking-[-0.015em] text-(--text-primary)">
-        System Prompt
-      </h2>
-      <p className="m-0 text-[13px] text-(--text-muted)">
-        Markdown supported. Defines how this agent thinks and behaves.
-      </p>
+const PromptTab = ({ body, onBodyChange, disabled }: PromptTabProps) => {
+  const [previewMode, setPreviewMode] = useState(false);
+
+  return (
+    <div className="flex flex-col h-full min-h-0">
+      <div className="px-7 pt-8 pb-4 shrink-0 flex items-start justify-between">
+        <div>
+          <h2 className="m-0 mb-1 text-2xl font-['Bricolage_Grotesque',sans-serif] font-bold tracking-[-0.015em] text-(--text-primary)">
+            System Prompt
+          </h2>
+          <p className="m-0 text-[13px] text-(--text-muted)">
+            Markdown supported. Defines how this agent thinks and behaves.
+          </p>
+        </div>
+        <div className="flex items-center bg-(--bg-surface) border border-(--border-subtle) rounded-md p-0.5 shrink-0 mt-1">
+          <button
+            type="button"
+            onClick={() => setPreviewMode(false)}
+            className={[
+              'text-[13px] px-2.5 py-0.5 rounded cursor-pointer border-none transition-colors duration-150',
+              !previewMode
+                ? 'bg-(--bg-elevated) text-(--text-primary)'
+                : 'bg-transparent text-(--text-muted) hover:text-(--text-secondary)',
+            ].join(' ')}
+          >
+            Edit
+          </button>
+          <button
+            type="button"
+            onClick={() => setPreviewMode(true)}
+            className={[
+              'text-[13px] px-2.5 py-0.5 rounded cursor-pointer border-none transition-colors duration-150',
+              previewMode
+                ? 'bg-(--bg-elevated) text-(--text-primary)'
+                : 'bg-transparent text-(--text-muted) hover:text-(--text-secondary)',
+            ].join(' ')}
+          >
+            Preview
+          </button>
+        </div>
+      </div>
+      {previewMode ? (
+        <div className="flex-1 min-h-0 overflow-y-auto px-7 py-6 prose prose-invert prose-sm max-w-none">
+          <ReactMarkdown>{body}</ReactMarkdown>
+        </div>
+      ) : (
+        <div className="flex-1 min-h-0">
+          <Editor
+            value={body}
+            onChange={onBodyChange}
+            language="markdown"
+            readOnly={disabled}
+          />
+        </div>
+      )}
     </div>
-    <div className="flex-1 min-h-0">
-      <Editor
-        value={body}
-        onChange={onBodyChange}
-        language="markdown"
-        readOnly={disabled}
-      />
-    </div>
-  </div>
-);
+  );
+};
 
 // ── SettingsTab ───────────────────────────────────────────────────────────────
 
@@ -594,6 +633,7 @@ export interface AgentFormEditorProps {
   saveDisabled?: boolean;
   onClose?: () => void;
   onBack?: () => void;
+  filePath?: string;
 }
 
 const BackArrowIcon = () => (
@@ -613,6 +653,7 @@ export const AgentFormEditor = ({
   saveDisabled,
   onClose,
   onBack,
+  filePath,
 }: AgentFormEditorProps) => {
   const { frontmatter: initialFm, body: initialBody } = useMemo(
     () => parseFrontmatter(content),
@@ -671,7 +712,7 @@ export const AgentFormEditor = ({
             <button
               type="button"
               onClick={onBack}
-              className="flex items-center gap-1.5 text-[13px] text-(--text-muted) hover:text-(--text-primary) bg-transparent border-none cursor-pointer transition-colors duration-150 pr-3 mr-2 border-r border-(--border-faint)"
+              className="flex items-center gap-1.5 pb-3 pt-4 text-[13px] text-(--text-muted) hover:text-(--text-primary) bg-transparent border-none cursor-pointer transition-colors duration-150 pr-3 mr-2 border-r border-(--border-faint)"
             >
               <BackArrowIcon /> Back
             </button>
@@ -693,21 +734,38 @@ export const AgentFormEditor = ({
           ))}
         </div>
 
-        {/* Right: Save + Close actions */}
+        {/* Right: file path + Save + Close actions */}
         <div className="flex items-center gap-3">
-          {onSave && !saveDisabled && (
-            <button
-              onClick={onSave}
-              className="text-[13px] font-medium px-3 py-1 rounded-lg bg-(--accent) text-white border-none cursor-pointer hover:bg-(--accent-hover) transition-colors duration-150"
-            >
-              {saveStatus === 'saving' ? 'Saving…' : 'Save'}
-            </button>
-          )}
-          {(saveStatus === 'saved' || saveStatus === 'error') && saveDisabled && (
-            <span className={`text-[13px] ${saveStatus === 'saved' ? 'text-(--success)' : 'text-(--error)'}`}>
-              {saveStatus === 'saved' ? 'Saved' : 'Error'}
+          {filePath && (
+            <span className='font-["Fira_Code",monospace] text-[11px] text-(--text-muted) truncate max-w-48 hidden sm:block'>
+              {filePath}
             </span>
           )}
+          {onSave && (() => {
+            const isSaved = saveStatus === 'saved';
+            const isDisabled = saveDisabled && !isSaved;
+            const label = saveStatus === 'saving'
+              ? 'Saving…'
+              : isSaved
+              ? 'Saved ✓'
+              : saveDisabled
+              ? 'Up to date'
+              : 'Save';
+            return (
+              <button
+                onClick={saveDisabled ? undefined : onSave}
+                disabled={saveDisabled}
+                className={[
+                  'text-[13px] font-medium px-3 py-1 rounded-lg border-none transition-colors duration-150',
+                  isDisabled
+                    ? 'bg-(--bg-surface) text-(--text-muted) opacity-50 cursor-not-allowed'
+                    : 'bg-(--accent) text-white cursor-pointer hover:bg-(--accent-hover)',
+                ].join(' ')}
+              >
+                {label}
+              </button>
+            );
+          })()}
           {onClose && (
             <button
               onClick={onClose}
