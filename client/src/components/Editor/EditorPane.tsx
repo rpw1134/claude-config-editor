@@ -570,6 +570,12 @@ export const EditorPane = ({ name, type, projectPath, onCreated, onDeleted }: Ed
       dirty && currentLocation.pathname !== nextLocation.pathname,
   );
 
+  useEffect(() => {
+    if (!dirty && blocker.state === "blocked") {
+      blocker.proceed();
+    }
+  }, [dirty, blocker]);
+
   return (
     <div className="flex flex-1 flex-col h-full w-full bg-(--bg-base) border-l border-(--border-faint)">
       {/* Unsaved-changes confirmation modal */}

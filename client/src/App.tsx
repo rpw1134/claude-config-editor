@@ -474,17 +474,33 @@ const SkillLayout = () => {
 
   // ── Global save ───────────────────────────────────────────────────────────────
   const handleGlobalSave = useCallback(async () => {
-    if (!anyDirty || saveStatus === "saving") return;
+    if (saveStatus === "saving") return;
+    const drafts = draftStore.current;
+    const pending = Object.entries(drafts).filter(([, draft]) =>
+      draft.initialized &&
+      !draft.contentLoading &&
+      draft.fileContent !== draft.savedContent
+    );
+    if (pending.length === 0) return;
     setSaveStatus("saving");
     try {
       await Promise.all(
-        Object.entries(dirtyFiles)
-          .filter(([, isDirty]) => isDirty)
-          .map(
-            ([file]) =>
-              saveHandlerRefs.current[file]?.() ?? Promise.resolve(),
-          ),
+        pending.map(([file, draft]) =>
+          file === "SKILL.md"
+            ? updateSkillContent(projectPath, skillName, draft.fileContent)
+            : updateSkillFile(projectPath, skillName, file, draft.fileContent)
+        ),
       );
+      pending.forEach(([file, draft]) => {
+        drafts[file] = { ...draft, savedContent: draft.fileContent, hasEdits: false };
+      });
+      setDirtyFiles((prev) => {
+        const next = { ...prev };
+        pending.forEach(([file]) => {
+          next[file] = false;
+        });
+        return next;
+      });
       setSaveStatus("saved");
       if (saveTimer.current) clearTimeout(saveTimer.current);
       saveTimer.current = setTimeout(() => setSaveStatus("idle"), 1500);
@@ -493,7 +509,7 @@ const SkillLayout = () => {
       if (saveTimer.current) clearTimeout(saveTimer.current);
       saveTimer.current = setTimeout(() => setSaveStatus("idle"), 2000);
     }
-  }, [anyDirty, saveStatus, dirtyFiles]);
+  }, [projectPath, skillName, saveStatus, draftStore]);
 
   // Cmd+S — global for the whole skill
   useEffect(() => {
@@ -706,7 +722,7 @@ const SkillFormContent = ({
   const [hasEdits, setHasEdits] = useState(cachedEdits);
 
   const deleteTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const dirty = !contentLoading && fileContent !== savedContent;
+  const dirty = !contentLoading && hasEdits;
 
   useEffect(
     () => () => {
@@ -720,24 +736,36 @@ const SkillFormContent = ({
     reportDirty("SKILL.md", dirty);
   }, [dirty, reportDirty]);
 
-  // Register save handler — stays registered across tab switches so cross-tab Cmd+S works.
-  // Handler updates both local state (no-op if unmounted) and the draft store
-  // so the component sees the correct savedContent when it remounts.
-  const handleSave = useCallback(async () => {
-    if (!dirty) return;
-    await updateSkillContent(projectPath, skillName, fileContent);
-    setSavedContent(fileContent);
-    setHasEdits(false);
-    const cached = draftStore.getDraft("SKILL.md");
-    if (cached) draftStore.setDraft("SKILL.md", { ...cached, savedContent: fileContent, hasEdits: false });
-    reportDirty("SKILL.md", false);
-  }, [dirty, projectPath, skillName, fileContent, reportDirty, draftStore]);
+  // Stable ref always holds the latest save logic. The wrapper registered in
+  // saveHandlerRefs is stable (registered once), so it survives tab switches and
+  // always delegates to the freshest closure via the ref.
+  const saveFnRef = useRef<(() => Promise<void>) | undefined>(undefined);
+  useEffect(() => {
+    saveFnRef.current = async () => {
+      const draft = draftStore.getDraft("SKILL.md");
+      const nextContent = draft?.fileContent ?? fileContent;
+      const nextSaved = draft?.savedContent ?? savedContent;
+      if (nextContent === nextSaved) return;
+      await updateSkillContent(projectPath, skillName, nextContent);
+      setSavedContent(nextContent);
+      setHasEdits(false);
+      const cached = draftStore.getDraft("SKILL.md");
+      if (cached) {
+        draftStore.setDraft("SKILL.md", {
+          ...cached,
+          savedContent: nextContent,
+          hasEdits: false,
+        });
+      }
+      reportDirty("SKILL.md", false);
+    };
+  }, [projectPath, skillName, fileContent, savedContent, reportDirty, draftStore]);
 
   useEffect(() => {
-    registerSaveHandler("SKILL.md", handleSave);
+    registerSaveHandler("SKILL.md", async () => saveFnRef.current?.());
     // No cleanup — handler must persist when switching tabs so SkillLayout can
     // save this file even when this component is not mounted.
-  }, [handleSave, registerSaveHandler]);
+  }, [registerSaveHandler]);
 
   // Load SKILL.md once — the key on SkillLayout ensures remount only when skill changes
   useEffect(() => {
@@ -872,7 +900,7 @@ const SkillFileContent = () => {
   );
   const [hasEdits, setHasEdits] = useState(cachedEdits);
 
-  const dirty = !contentLoading && fileContent !== savedContent;
+  const dirty = !contentLoading && hasEdits;
 
   // Report dirty state to SkillLayout
   useEffect(() => {
@@ -880,22 +908,37 @@ const SkillFileContent = () => {
     reportDirty(fileName, dirty);
   }, [dirty, fileName, reportDirty]);
 
-  // Register save handler — stays registered across tab switches so cross-tab Cmd+S works.
-  const handleSave = useCallback(async () => {
-    if (!dirty || !projectPath || !skillName || !fileName) return;
-    await updateSkillFile(projectPath, skillName, fileName, fileContent);
-    setSavedContent(fileContent);
-    setHasEdits(false);
-    const cached = draftStore.getDraft(fileName);
-    if (cached) draftStore.setDraft(fileName, { ...cached, savedContent: fileContent, hasEdits: false });
-    reportDirty(fileName, false);
-  }, [dirty, projectPath, skillName, fileName, fileContent, reportDirty, draftStore]);
+  // Stable ref always holds the latest save logic. The wrapper registered in
+  // saveHandlerRefs is stable (registered once per fileName), so it survives tab
+  // switches and always delegates to the freshest closure via the ref.
+  const saveFnRef = useRef<(() => Promise<void>) | undefined>(undefined);
+  useEffect(() => {
+    if (!projectPath || !skillName || !fileName) return;
+    saveFnRef.current = async () => {
+      const draft = draftStore.getDraft(fileName);
+      const nextContent = draft?.fileContent ?? fileContent;
+      const nextSaved = draft?.savedContent ?? savedContent;
+      if (nextContent === nextSaved) return;
+      await updateSkillFile(projectPath, skillName, fileName, nextContent);
+      setSavedContent(nextContent);
+      setHasEdits(false);
+      const cached = draftStore.getDraft(fileName);
+      if (cached) {
+        draftStore.setDraft(fileName, {
+          ...cached,
+          savedContent: nextContent,
+          hasEdits: false,
+        });
+      }
+      reportDirty(fileName, false);
+    };
+  }, [projectPath, skillName, fileName, fileContent, savedContent, reportDirty, draftStore]);
 
   useEffect(() => {
     if (!fileName) return;
-    registerSaveHandler(fileName, handleSave);
+    registerSaveHandler(fileName, async () => saveFnRef.current?.());
     // No cleanup — handler must persist when switching tabs.
-  }, [fileName, handleSave, registerSaveHandler]);
+  }, [fileName, registerSaveHandler]);
 
   useEffect(() => {
     if (!projectPath || !skillName || !fileName) return;
