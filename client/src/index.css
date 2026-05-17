@@ -6,31 +6,31 @@
 
 :root {
   /* Surfaces — pure neutral cool gray, NO color tinting */
-  --bg-base:     #141417;
-  --bg-sidebar:  #161618;
-  --bg-surface:  #1c1c1f;
+  --bg-base: #141417;
+  --bg-sidebar: #161618;
+  --bg-surface: #1c1c1f;
   --bg-elevated: #242428;
-  --bg-hover:    #1f1f23;
+  --bg-hover: #1f1f23;
 
   /* Borders — neutral only */
-  --border-faint:   rgba(255, 255, 255, 0.06);
-  --border-subtle:  rgba(255, 255, 255, 0.09);
+  --border-faint: rgba(255, 255, 255, 0.06);
+  --border-subtle: rgba(255, 255, 255, 0.09);
   --border-default: rgba(255, 255, 255, 0.13);
-  --border-strong:  rgba(255, 255, 255, 0.22);
+  --border-strong: rgba(255, 255, 255, 0.22);
 
   /* Accent — used sparingly, only where specified */
-  --accent:        #5dba8a;
-  --accent-hover:  #6fcf9e;
-  --accent-dim:    rgba(93, 186, 138, 0.12);
+  --accent: #5dba8a;
+  --accent-hover: #6fcf9e;
+  --accent-dim: rgba(93, 186, 138, 0.12);
 
   /* Text — solid values, never opacity utilities */
-  --text-primary:   #f0f0f3;
+  --text-primary: #f0f0f3;
   --text-secondary: #9898a6;
-  --text-muted:     #5c5c6e;
-  --text-accent:    #5dba8a;
+  --text-muted: #5c5c6e;
+  --text-accent: #5dba8a;
 
   /* Semantic */
-  --error:   #f87171;
+  --error: #f87171;
   --success: #5dba8a;
   --warning: #fbbf24;
 }
@@ -43,7 +43,7 @@ html {
 }
 
 body {
-  font-family: 'Instrument Sans', sans-serif;
+  font-family: "Instrument Sans", sans-serif;
   background: var(--bg-base);
   color: var(--text-primary);
   font-size: 15px;
@@ -51,23 +51,40 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-.font-mono, code, pre, [class*="mono"] {
-  font-family: 'Fira Code', monospace;
+.font-mono,
+code,
+pre,
+[class*="mono"] {
+  font-family: "Fira Code", monospace;
 }
 
 @keyframes ccs-success-enter {
-  from { opacity: 0; transform: scale(0.75); }
-  to   { opacity: 1; transform: scale(1); }
+  from {
+    opacity: 0;
+    transform: scale(0.75);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 @keyframes ccs-fade-in {
-  from { opacity: 0; }
-  to   { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to   { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* ── Scrollbars ───────────────────────────────────────────────────────────── */
@@ -97,7 +114,9 @@ body {
 
 /* ── Interactive defaults ─────────────────────────────────────────────────── */
 
-button, [role="button"], a {
+button,
+[role="button"],
+a {
   cursor: pointer;
 }
 
@@ -108,16 +127,23 @@ button, [role="button"], a {
 /* ── Animations ───────────────────────────────────────────────────────────── */
 
 @keyframes ping {
-  75%, 100% {
+  75%,
+  100% {
     transform: scale(2);
     opacity: 0;
   }
 }
 
 @keyframes shimmer {
-  0%   { opacity: 0.4; }
-  50%  { opacity: 0.7; }
-  100% { opacity: 0.4; }
+  0% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 0.7;
+  }
+  100% {
+    opacity: 0.4;
+  }
 }
 
 .shimmer {

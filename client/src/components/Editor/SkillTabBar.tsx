@@ -87,7 +87,11 @@ export const SkillTabBar = ({
       return;
     }
 
-    if (tab.id === "identity" || tab.id === "instructions" || tab.id === "settings") {
+    if (
+      tab.id === "identity" ||
+      tab.id === "instructions" ||
+      tab.id === "settings"
+    ) {
       navigate(
         `/${encodeURIComponent(projectId)}/skills/${encodeURIComponent(skillName)}/${tab.id}`,
       );
@@ -162,14 +166,16 @@ export const SkillTabBar = ({
           </span>
           {headerActions.rightSlot}
           <button
-            onClick={headerActions.saveDisabled ? undefined : headerActions.onSave}
+            onClick={
+              headerActions.saveDisabled ? undefined : headerActions.onSave
+            }
             disabled={headerActions.saveDisabled}
             className={[
-              'text-[13px] px-3 py-1 rounded-md border-none transition-colors duration-150',
+              "text-[13px] px-3 py-1 rounded-md border-none transition-colors duration-150",
               headerActions.saveDisabled
-                ? 'bg-(--bg-surface) text-(--text-muted) opacity-50 cursor-not-allowed'
-                : 'bg-(--accent) cursor-pointer text-white hover:bg-(--accent-hover)',
-            ].join(' ')}
+                ? "bg-(--bg-surface) text-(--text-muted) opacity-50 cursor-not-allowed"
+                : "bg-(--accent) cursor-pointer text-white hover:bg-(--accent-hover)",
+            ].join(" ")}
           >
             {headerActions.saveLabel}
           </button>
