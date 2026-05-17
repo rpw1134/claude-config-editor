@@ -22,6 +22,7 @@ export interface SkillFormEditorProps {
   disabled?: boolean;
   activeSection?: Tab;
   previewMode?: boolean;
+  onSetPreviewMode?: (val: boolean) => void;
 }
 
 export const SkillFormEditor = ({
@@ -32,6 +33,7 @@ export const SkillFormEditor = ({
   disabled,
   activeSection,
   previewMode = false,
+  onSetPreviewMode,
 }: SkillFormEditorProps) => {
   const { frontmatter: initialFm, body: initialBody } = useMemo(
     () => parseSkillFrontmatter(content),
@@ -74,7 +76,7 @@ export const SkillFormEditor = ({
   };
 
   return (
-    <div className="h-full flex flex-col bg-(--bg-base)">
+    <div className="flex-1 min-h-0 flex flex-col bg-(--bg-base)">
       {/* Tab content */}
       <div className="flex-1 min-h-0">
         {activeTab === "identity" && (
@@ -90,6 +92,7 @@ export const SkillFormEditor = ({
             onBodyChange={handleBodyChange}
             previewMode={previewMode}
             disabled={disabled}
+            onSetPreviewMode={onSetPreviewMode}
           />
         )}
         {activeTab === "settings" && (

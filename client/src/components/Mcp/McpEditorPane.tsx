@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   fetchMcpServerContent,
   updateMcpServerContent,
@@ -8,7 +8,7 @@ import { Editor } from "../Editor/Editor";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-type TabId = "configure" | "json";
+type TabId = "configure" | "json" | "settings";
 type AuthType = "none" | "bearer" | "api-key";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -153,10 +153,6 @@ interface ConfigureTabProps {
   onAuthTypeChange: (v: AuthType) => void;
   token: string;
   onTokenChange: (v: string) => void;
-  // save
-  onSave: () => void;
-  saving: boolean;
-  saveError: string | null;
 }
 
 const ConfigureTab = ({
@@ -173,12 +169,9 @@ const ConfigureTab = ({
   onAuthTypeChange,
   token,
   onTokenChange,
-  onSave,
-  saving,
-  saveError,
 }: ConfigureTabProps) => (
   <div className="flex-1 overflow-y-auto px-8 py-7">
-    <div className="max-w-xl flex flex-col gap-6">
+    <div className="flex flex-col gap-6">
       {serverType === "stdio" ? (
         <>
           <Field label="Command">
@@ -251,28 +244,6 @@ const ConfigureTab = ({
           )}
         </>
       )}
-
-      {saveError && (
-        <p className="text-[12px] text-(--error) font-['Fira_Code',monospace]">
-          {saveError}
-        </p>
-      )}
-
-      <div>
-        <button
-          type="button"
-          onClick={onSave}
-          disabled={saving}
-          className={[
-            "px-5 py-2.5 rounded-xl text-[14px] font-semibold transition-colors duration-150",
-            !saving
-              ? "bg-(--accent) text-white cursor-pointer hover:bg-(--accent-hover) border-none"
-              : "bg-(--bg-elevated) text-(--text-muted) border border-(--border-subtle) cursor-not-allowed",
-          ].join(" ")}
-        >
-          {saving ? "Saving…" : "Save"}
-        </button>
-      </div>
     </div>
   </div>
 );
@@ -306,6 +277,7 @@ export const McpEditorPane = ({
 
   // Raw JSON state (for JSON tab)
   const [rawJson, setRawJson] = useState("{}");
+  const [savedJson, setSavedJson] = useState("{}");
 
   // Configure tab state
   const [serverType, setServerType] = useState<"stdio" | "http">("stdio");
@@ -315,10 +287,21 @@ export const McpEditorPane = ({
   const [url, setUrl] = useState("");
   const [authType, setAuthType] = useState<AuthType>("none");
   const [token, setToken] = useState("");
+  const [configDirty, setConfigDirty] = useState(false);
+
+  // Dirty-aware configure field setters
+  const setCommandDirty = (v: string) => { setCommand(v); setConfigDirty(true); };
+  const setArgsRawDirty = (v: string) => { setArgsRaw(v); setConfigDirty(true); };
+  const setEnvRawDirty = (v: string) => { setEnvRaw(v); setConfigDirty(true); };
+  const setUrlDirty = (v: string) => { setUrl(v); setConfigDirty(true); };
+  const setAuthTypeDirty = (v: AuthType) => { setAuthType(v); setConfigDirty(true); };
+  const setTokenDirty = (v: string) => { setToken(v); setConfigDirty(true); };
+
+  // Derived dirty state
+  const dirty = configDirty || rawJson !== savedJson;
 
   // Save / delete state
   const [saving, setSaving] = useState(false);
-  const [saveError, setSaveError] = useState<string | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
@@ -331,6 +314,8 @@ export const McpEditorPane = ({
     fetchMcpServerContent(projectPath, name)
       .then((content) => {
         setRawJson(content);
+        setSavedJson(content);
+        setConfigDirty(false);
         try {
           const parsed = JSON.parse(content);
           if ("command" in parsed) {
@@ -389,16 +374,14 @@ export const McpEditorPane = ({
         // Keep configure form as-is if JSON is invalid
       }
     }
-    setSaveError(null);
     setActiveTab(tab);
   };
 
   // ── Save ──────────────────────────────────────────────────────────────────
 
-  const handleConfigureSave = async () => {
+  const handleConfigureSave = useCallback(async () => {
     if (saving) return;
     setSaving(true);
-    setSaveError(null);
     const content =
       serverType === "stdio"
         ? buildStdioJson(command, argsRaw, envRaw)
@@ -406,25 +389,28 @@ export const McpEditorPane = ({
     try {
       await updateMcpServerContent(projectPath, name, content);
       setRawJson(content);
-    } catch (err) {
-      setSaveError(err instanceof Error ? err.message : "Save failed.");
+      setSavedJson(content);
+      setConfigDirty(false);
+    } catch {
+      // save failed — dirty state preserved so user can retry
     } finally {
       setSaving(false);
     }
-  };
+  }, [saving, serverType, command, argsRaw, envRaw, url, authType, token, projectPath, name]);
 
-  const handleJsonSave = async () => {
+  const handleJsonSave = useCallback(async () => {
     if (saving) return;
     setSaving(true);
-    setSaveError(null);
     try {
       await updateMcpServerContent(projectPath, name, rawJson);
-    } catch (err) {
-      setSaveError(err instanceof Error ? err.message : "Save failed.");
+      setSavedJson(rawJson);
+      setConfigDirty(false);
+    } catch {
+      // save failed — dirty state preserved so user can retry
     } finally {
       setSaving(false);
     }
-  };
+  }, [saving, projectPath, name, rawJson]);
 
   // ── Delete ────────────────────────────────────────────────────────────────
 
@@ -442,6 +428,21 @@ export const McpEditorPane = ({
       setDeleteConfirm(false);
     }
   };
+
+  // ── Cmd+S keyboard shortcut ───────────────────────────────────────────────
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "s") {
+        e.preventDefault();
+        if (!dirty || saving || activeTab === "settings") return;
+        if (activeTab === "configure") handleConfigureSave();
+        else handleJsonSave();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [dirty, saving, activeTab, handleConfigureSave, handleJsonSave]);
 
   // ── Render ────────────────────────────────────────────────────────────────
 
@@ -476,39 +477,28 @@ export const McpEditorPane = ({
           </button>
           <TabButton id="configure" label="Configure" active={activeTab} onClick={handleTabChange} />
           <TabButton id="json" label="JSON" active={activeTab} onClick={handleTabChange} />
+          <TabButton id="settings" label="Settings" active={activeTab} onClick={handleTabChange} />
         </div>
 
         <div className="flex items-center gap-3">
           <span className='font-["Fira_Code",monospace] text-[11px] text-(--text-muted) truncate max-w-48 hidden sm:block'>
             ~/.claude/mcpServers/{name}
           </span>
-          <button
-            type="button"
-            onClick={handleDeleteClick}
-            disabled={deleting}
-            onBlur={() => setDeleteConfirm(false)}
-            className={[
-              "text-[13px] px-3 py-1 rounded-lg border transition-colors duration-150 cursor-pointer",
-              deleteConfirm
-                ? "bg-(--error) text-white border-transparent hover:opacity-90"
-                : "bg-transparent text-(--text-muted) border-(--border-subtle) hover:text-(--error) hover:border-(--error)",
-            ].join(" ")}
-          >
-            {deleting ? "Deleting…" : deleteConfirm ? "Are you sure?" : "Delete"}
-          </button>
-          <button
-            type="button"
-            onClick={activeTab === "configure" ? handleConfigureSave : handleJsonSave}
-            disabled={saving}
-            className={[
-              "text-[13px] font-medium px-3 py-1 rounded-lg border-none transition-colors duration-150",
-              saving
-                ? "bg-(--bg-surface) text-(--text-muted) opacity-50 cursor-not-allowed"
-                : "bg-(--accent) text-white cursor-pointer hover:bg-(--accent-hover)",
-            ].join(" ")}
-          >
-            {saving ? "Saving…" : "Save"}
-          </button>
+          {activeTab !== "settings" && (
+            <button
+              type="button"
+              onClick={(!dirty || saving) ? undefined : (activeTab === "configure" ? handleConfigureSave : handleJsonSave)}
+              disabled={!dirty || saving}
+              className={[
+                "text-[13px] font-medium px-3 py-1 rounded-lg border-none transition-colors duration-150",
+                (!dirty || saving)
+                  ? "bg-(--bg-surface) text-(--text-muted) opacity-50 cursor-not-allowed"
+                  : "bg-(--accent) text-white cursor-pointer hover:bg-(--accent-hover)",
+              ].join(" ")}
+            >
+              {saving ? "Saving…" : dirty ? "Save" : "Up to date"}
+            </button>
+          )}
         </div>
       </div>
 
@@ -517,47 +507,65 @@ export const McpEditorPane = ({
         <ConfigureTab
           serverType={serverType}
           command={command}
-          onCommandChange={setCommand}
+          onCommandChange={setCommandDirty}
           argsRaw={argsRaw}
-          onArgsChange={setArgsRaw}
+          onArgsChange={setArgsRawDirty}
           envRaw={envRaw}
-          onEnvChange={setEnvRaw}
+          onEnvChange={setEnvRawDirty}
           url={url}
-          onUrlChange={setUrl}
+          onUrlChange={setUrlDirty}
           authType={authType}
-          onAuthTypeChange={setAuthType}
+          onAuthTypeChange={setAuthTypeDirty}
           token={token}
-          onTokenChange={setToken}
-          onSave={handleConfigureSave}
-          saving={saving}
-          saveError={saveError}
+          onTokenChange={setTokenDirty}
         />
+      )}
+
+      {activeTab === "settings" && (
+        <div className="flex-1 min-h-0 overflow-y-auto px-8 py-8 flex flex-col gap-8">
+          <div>
+            <h2 className='m-0 mb-1 text-2xl font-["Bricolage_Grotesque",sans-serif] font-bold tracking-[-0.015em] text-(--text-primary)'>
+              Settings
+            </h2>
+            <p className="m-0 text-[13px] text-(--text-secondary)">
+              Manage this MCP server configuration.
+            </p>
+          </div>
+          <div className="border border-red-500/30 rounded-xl p-5">
+            <div className="mb-3">
+              <p className="m-0 mb-1 text-[13px] font-semibold text-red-400">
+                &#9888; Danger Zone
+              </p>
+              <p className="m-0 text-[12px] text-(--text-muted)">
+                Permanent actions that cannot be undone.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={handleDeleteClick}
+              disabled={deleting}
+              onBlur={() => setDeleteConfirm(false)}
+              className={[
+                "text-[13px] font-medium px-3 py-1.5 rounded-lg border transition-colors duration-150 cursor-pointer",
+                deleteConfirm
+                  ? "bg-red-500/20 border-red-500/50 text-red-300 hover:bg-red-500/30"
+                  : deleting
+                    ? "bg-transparent border-red-500/20 text-red-500/50 cursor-not-allowed"
+                    : "bg-transparent border-red-500/30 text-red-400 hover:bg-red-500/10",
+              ].join(" ")}
+            >
+              {deleting
+                ? "Deleting…"
+                : deleteConfirm
+                  ? "Are you sure? Click again to confirm."
+                  : "Delete server"}
+            </button>
+          </div>
+        </div>
       )}
 
       {activeTab === "json" && (
         <div className="flex flex-col flex-1 min-h-0">
-          <div className="flex items-center justify-between px-8 pt-5 pb-3 shrink-0">
-            {saveError && (
-              <p className="text-[12px] text-(--error) font-['Fira_Code',monospace]">
-                {saveError}
-              </p>
-            )}
-            <div className="ml-auto">
-              <button
-                type="button"
-                onClick={handleJsonSave}
-                disabled={saving}
-                className={[
-                  "text-[13px] px-3 py-1 rounded-md border-none transition-colors duration-150",
-                  !saving
-                    ? "bg-(--accent) cursor-pointer text-white hover:bg-(--accent-hover)"
-                    : "bg-(--bg-surface) text-(--text-muted) opacity-50 cursor-not-allowed",
-                ].join(" ")}
-              >
-                {saving ? "Saving…" : "Save"}
-              </button>
-            </div>
-          </div>
           <div className="flex-1 min-h-0">
             <Editor
               value={rawJson}

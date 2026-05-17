@@ -6,6 +6,7 @@ interface InstructionsTabProps {
   onBodyChange: (val: string) => void;
   previewMode: boolean;
   disabled?: boolean;
+  onSetPreviewMode?: (val: boolean) => void;
 }
 
 export const InstructionsTab = ({
@@ -13,9 +14,10 @@ export const InstructionsTab = ({
   onBodyChange,
   previewMode,
   disabled,
+  onSetPreviewMode,
 }: InstructionsTabProps) => (
   <div className="flex flex-col h-full min-h-0">
-    <div className="px-7 pt-8 pb-4 shrink-0">
+    <div className="px-7 pt-8 pb-4 shrink-0 flex items-start justify-between gap-4">
       <div>
         <h2 className="m-0 mb-1 text-2xl font-['Bricolage_Grotesque',sans-serif] font-bold tracking-[-0.015em] text-(--text-primary)">
           Instructions
@@ -24,6 +26,26 @@ export const InstructionsTab = ({
           Markdown body sent to Claude when this skill is invoked.
         </p>
       </div>
+      {onSetPreviewMode && (
+        <div className="flex items-center bg-(--bg-surface) border border-(--border-subtle) rounded-md p-0.5 shrink-0 mt-1">
+          <button
+            type="button"
+            onClick={() => onSetPreviewMode(false)}
+            className={[
+              "text-[13px] px-2.5 py-0.5 rounded cursor-pointer border-none transition-colors duration-150",
+              !previewMode ? "bg-(--bg-elevated) text-(--text-primary)" : "bg-transparent text-(--text-muted) hover:text-(--text-secondary)",
+            ].join(" ")}
+          >Edit</button>
+          <button
+            type="button"
+            onClick={() => onSetPreviewMode(true)}
+            className={[
+              "text-[13px] px-2.5 py-0.5 rounded cursor-pointer border-none transition-colors duration-150",
+              previewMode ? "bg-(--bg-elevated) text-(--text-primary)" : "bg-transparent text-(--text-muted) hover:text-(--text-secondary)",
+            ].join(" ")}
+          >Preview</button>
+        </div>
+      )}
     </div>
 
     <div className="mx-7 mb-4 px-4 py-3 rounded-xl bg-(--bg-surface) border border-(--border-subtle) text-[12px] text-(--text-secondary) leading-relaxed shrink-0">

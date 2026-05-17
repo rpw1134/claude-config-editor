@@ -50,18 +50,13 @@ const ExamplesIcon = () => (
 
 // ── File description banner ────────────────────────────────────────────────────
 
-interface FileBannerProps {
-  file: string;
-  inline?: boolean;
-}
-
 const FILE_META: Record<
   string,
   { icon: React.ReactNode; title: string; subtitle: string }
 > = {
   "reference.md": {
     icon: <DocumentIcon />,
-    title: "Reference material",
+    title: "References",
     subtitle:
       "Optional. Background knowledge Claude consults during skill execution.",
   },
@@ -71,42 +66,6 @@ const FILE_META: Record<
     subtitle:
       "Optional. Sample inputs and outputs that shape Claude's behavior.",
   },
-};
-
-const FileBanner = ({ file, inline }: FileBannerProps) => {
-  const meta = FILE_META[file] ?? {
-    icon: <DocumentIcon />,
-    title: "Supporting file",
-    subtitle: "Optional supplementary content for this skill.",
-  };
-
-  if (inline) {
-    return (
-      <div className="flex items-center gap-2">
-        <span className="text-(--text-muted) shrink-0">{meta.icon}</span>
-        <span className="text-(--text-secondary) text-[13px] font-medium shrink-0">
-          {meta.title}
-        </span>
-        <span className="text-(--text-muted) text-[12px] truncate hidden sm:block">
-          {meta.subtitle}
-        </span>
-      </div>
-    );
-  }
-
-  return (
-    <div className="bg-(--bg-surface) border-b border-(--border-faint) px-7 py-3 flex items-center gap-3 shrink-0">
-      <span className="text-(--text-muted) shrink-0">{meta.icon}</span>
-      <div className="flex items-baseline gap-2 min-w-0">
-        <span className="text-(--text-primary) text-[13px] font-medium shrink-0">
-          {meta.title}
-        </span>
-        <span className="text-(--text-secondary) text-[12px] truncate">
-          {meta.subtitle}
-        </span>
-      </div>
-    </div>
-  );
 };
 
 // ── Helper ─────────────────────────────────────────────────────────────────────
@@ -136,6 +95,7 @@ export interface PlainFileEditorProps {
   content: string;
   onChange: (val: string) => void;
   previewMode: boolean;
+  onSetPreviewMode?: (val: boolean) => void;
 }
 
 export const PlainFileEditor = ({
@@ -143,11 +103,39 @@ export const PlainFileEditor = ({
   content,
   onChange,
   previewMode,
+  onSetPreviewMode,
 }: PlainFileEditorProps) => {
   return (
     <div className="flex flex-1 flex-col min-h-0">
-      <div className="px-7 pt-6 pb-3">
-        <FileBanner file={file} />
+      <div className="px-7 pt-8 pb-4 shrink-0 flex items-start justify-between gap-4">
+        <div>
+          <h2 className="m-0 mb-1 text-2xl font-['Bricolage_Grotesque',sans-serif] font-bold tracking-[-0.015em] text-(--text-primary)">
+            {(FILE_META[file] ?? FILE_META["reference.md"]).title}
+          </h2>
+          <p className="m-0 text-[13px] text-(--text-secondary)">
+            {(FILE_META[file] ?? FILE_META["reference.md"]).subtitle}
+          </p>
+        </div>
+        {onSetPreviewMode && (
+          <div className="flex items-center bg-(--bg-surface) border border-(--border-subtle) rounded-md p-0.5 shrink-0">
+            <button
+              type="button"
+              onClick={() => onSetPreviewMode(false)}
+              className={[
+                "text-[13px] px-2.5 py-0.5 rounded cursor-pointer border-none transition-colors duration-150",
+                !previewMode ? "bg-(--bg-elevated) text-(--text-primary)" : "bg-transparent text-(--text-muted) hover:text-(--text-secondary)",
+              ].join(" ")}
+            >Edit</button>
+            <button
+              type="button"
+              onClick={() => onSetPreviewMode(true)}
+              className={[
+                "text-[13px] px-2.5 py-0.5 rounded cursor-pointer border-none transition-colors duration-150",
+                previewMode ? "bg-(--bg-elevated) text-(--text-primary)" : "bg-transparent text-(--text-muted) hover:text-(--text-secondary)",
+              ].join(" ")}
+            >Preview</button>
+          </div>
+        )}
       </div>
 
       {previewMode ? (

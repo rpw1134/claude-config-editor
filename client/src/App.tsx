@@ -143,6 +143,7 @@ interface SkillLayoutContextValue {
   unregisterSaveHandler: (file: string) => void;
   previewMode: boolean;
   isSaving: boolean;
+  setPreviewMode: (val: boolean) => void;
 }
 
 const SkillLayoutContext = createContext<SkillLayoutContextValue | null>(null);
@@ -418,10 +419,6 @@ const SkillLayout = () => {
   const isSkillSection = rawFile ? SKILL_SECTIONS.has(rawFile) : false;
   const activeTab = (rawFile ?? "directory") as SkillTabId;
   const showHeader = activeTab !== "directory" && !(activeTab === "scripts" && !rawSubFile);
-  const showPreviewToggle =
-    activeTab === "instructions" ||
-    activeTab === "reference.md" ||
-    activeTab === "examples.md";
 
   // ── Draft store ──────────────────────────────────────────────────────────────
   const draftStore = useRef<Record<string, SkillDraft>>({});
@@ -464,8 +461,10 @@ const SkillLayout = () => {
     value: false,
   });
   const previewMode = previewState.forTab === activeTab && previewState.value;
-  const setPreviewMode = (val: boolean) =>
-    setPreviewState({ forTab: activeTab, value: val });
+  const setPreviewMode = useCallback(
+    (val: boolean) => setPreviewState({ forTab: activeTab, value: val }),
+    [activeTab],
+  );
 
   useEffect(
     () => () => {
@@ -585,6 +584,7 @@ const SkillLayout = () => {
       unregisterSaveHandler,
       previewMode,
       isSaving: saveStatus === "saving",
+      setPreviewMode,
     }),
     [
       reportDirty,
@@ -592,6 +592,7 @@ const SkillLayout = () => {
       unregisterSaveHandler,
       previewMode,
       saveStatus,
+      setPreviewMode,
     ],
   );
 
@@ -612,9 +613,6 @@ const SkillLayout = () => {
         saveLabel={headerSaveLabel}
         saveDisabled={headerSaveDisabled}
         onSave={showHeader ? handleGlobalSave : undefined}
-        showPreviewToggle={showHeader ? showPreviewToggle : undefined}
-        previewMode={previewMode}
-        onSetPreviewMode={showHeader ? setPreviewMode : undefined}
       />
       <SkillDraftContext.Provider value={draftContextValue}>
         <SkillLayoutContext.Provider value={layoutContextValue}>
@@ -680,7 +678,7 @@ const SkillFormContent = ({
   const navigate = useNavigate();
   const { onBumpSkillsRefresh, removeFromRecents } = useShell();
   const draftStore = useSkillDrafts();
-  const { reportDirty, registerSaveHandler, previewMode, isSaving } =
+  const { reportDirty, registerSaveHandler, previewMode, isSaving, setPreviewMode } =
     useSkillLayout();
   const draftKey = "SKILL.md";
   const cachedDraft = draftStore.getDraft(draftKey);
@@ -862,6 +860,7 @@ const SkillFormContent = ({
       disabled={isSaving}
       activeSection={section}
       previewMode={previewMode}
+      onSetPreviewMode={setPreviewMode}
     />
   );
 };
@@ -874,7 +873,7 @@ const SkillFileContent = () => {
     file: string;
   }>();
   const draftStore = useSkillDrafts();
-  const { reportDirty, registerSaveHandler, previewMode } = useSkillLayout();
+  const { reportDirty, registerSaveHandler, previewMode, setPreviewMode } = useSkillLayout();
 
   const projectPath = projectId ? decodeProject(projectId) : null;
   const skillName = name ? decodeURIComponent(name) : null;
@@ -1019,6 +1018,7 @@ const SkillFileContent = () => {
         setFileContent(next);
       }}
       previewMode={previewMode}
+      onSetPreviewMode={setPreviewMode}
     />
   );
 };
