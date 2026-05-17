@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
-import { fetchMcpServers } from '../../lib/api';
-import { SectionHeader } from '../Shared/SectionHeader';
-import { Pagination } from '../Shared/Pagination';
+import { useEffect, useState } from "react";
+import { fetchMcpServers } from "../../lib/api";
+import { SectionHeader } from "../Shared/SectionHeader";
+import { Pagination } from "../Shared/Pagination";
 
 const PAGE_SIZE = 10;
 
@@ -30,21 +30,33 @@ const McpServerRow = ({ name, selected, onClick }: McpServerRowProps) => (
     ].join(" ")}
   >
     <div className="flex items-center gap-3">
-      <div className={[
-        "shrink-0 w-1.5 h-1.5 rounded-full transition-colors",
-        selected ? "bg-white/50" : "bg-white/20 group-hover:bg-white/35",
-      ].join(" ")} />
-      <span className={[
-        "text-[14px] font-semibold font-mono leading-tight transition-colors",
-        selected ? "text-white/90" : "text-white/70 group-hover:text-white/90",
-      ].join(" ")}>
+      <div
+        className={[
+          "shrink-0 w-1.5 h-1.5 rounded-full transition-colors",
+          selected ? "bg-white/50" : "bg-white/20 group-hover:bg-white/35",
+        ].join(" ")}
+      />
+      <span
+        className={[
+          "text-[14px] font-semibold font-mono leading-tight transition-colors",
+          selected
+            ? "text-white/90"
+            : "text-white/70 group-hover:text-white/90",
+        ].join(" ")}
+      >
         {name}
       </span>
     </div>
   </button>
 );
 
-export const McpServersSection = ({ projectPath, selectedName, onSelect, onNew, refreshKey }: McpServersSectionProps) => {
+export const McpServersSection = ({
+  projectPath,
+  selectedName,
+  onSelect,
+  onNew,
+  refreshKey,
+}: McpServersSectionProps) => {
   const [servers, setServers] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -62,10 +74,14 @@ export const McpServersSection = ({ projectPath, selectedName, onSelect, onNew, 
       })
       .catch((err: unknown) => {
         if (cancelled) return;
-        setError(err instanceof Error ? err.message : 'Failed to load MCP servers');
+        setError(
+          err instanceof Error ? err.message : "Failed to load MCP servers",
+        );
         setLoading(false);
       });
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [projectPath, refreshKey]);
 
   const totalPages = Math.ceil(servers.length / PAGE_SIZE);

@@ -20,7 +20,10 @@ export const TagInput = ({
   const commit = () => {
     const trimmed = draft.trim().replace(/,+$/, "");
     if (!trimmed) return;
-    const parts = trimmed.split(",").map((s) => s.trim()).filter(Boolean);
+    const parts = trimmed
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
     const next = [...value, ...parts.filter((p) => !value.includes(p))];
     onChange(next);
     setDraft("");

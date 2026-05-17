@@ -1,44 +1,117 @@
-import { useEffect, useState } from 'react';
-import { fetchAgents, fetchSkills, fetchMcpServers } from '../../lib/api';
+import { useEffect, useState } from "react";
+import { fetchAgents, fetchSkills, fetchMcpServers } from "../../lib/api";
 
 // ── Icons ─────────────────────────────────────────────────────────────────────
 
 const AgentIcon = ({ size = 18 }: { size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <circle cx="7.5" cy="5" r="3" stroke="currentColor" strokeWidth="1.2" fill="none"/>
-    <path d="M2 13C2 10.24 4.46 8 7.5 8C10.54 8 13 10.24 13 13" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" fill="none"/>
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 15 15"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <circle
+      cx="7.5"
+      cy="5"
+      r="3"
+      stroke="currentColor"
+      strokeWidth="1.2"
+      fill="none"
+    />
+    <path
+      d="M2 13C2 10.24 4.46 8 7.5 8C10.54 8 13 10.24 13 13"
+      stroke="currentColor"
+      strokeWidth="1.2"
+      strokeLinecap="round"
+      fill="none"
+    />
   </svg>
 );
 
 const SkillIcon = ({ size = 18 }: { size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M7.5 1L9.18 5.27L13.5 5.64L10.35 8.38L11.35 12.59L7.5 10.2L3.65 12.59L4.65 8.38L1.5 5.64L5.82 5.27L7.5 1Z" stroke="currentColor" strokeWidth="1.2" fill="none" strokeLinejoin="round"/>
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 15 15"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <path
+      d="M7.5 1L9.18 5.27L13.5 5.64L10.35 8.38L11.35 12.59L7.5 10.2L3.65 12.59L4.65 8.38L1.5 5.64L5.82 5.27L7.5 1Z"
+      stroke="currentColor"
+      strokeWidth="1.2"
+      fill="none"
+      strokeLinejoin="round"
+    />
   </svg>
 );
 
 const McpIcon = ({ size = 18 }: { size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <rect x="1" y="1" width="13" height="13" rx="2" stroke="currentColor" strokeWidth="1.2" fill="none"/>
-    <path d="M4 7.5H11M7.5 4V11" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 15 15"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <rect
+      x="1"
+      y="1"
+      width="13"
+      height="13"
+      rx="2"
+      stroke="currentColor"
+      strokeWidth="1.2"
+      fill="none"
+    />
+    <path
+      d="M4 7.5H11M7.5 4V11"
+      stroke="currentColor"
+      strokeWidth="1.2"
+      strokeLinecap="round"
+    />
   </svg>
 );
 
 const PlusIcon = () => (
-  <svg width="13" height="13" viewBox="0 0 13 13" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M6.5 1.5V11.5M1.5 6.5H11.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+  <svg
+    width="13"
+    height="13"
+    viewBox="0 0 13 13"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <path
+      d="M6.5 1.5V11.5M1.5 6.5H11.5"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+    />
   </svg>
 );
 
 const SearchIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <circle cx="7" cy="7" r="4.5" stroke="currentColor" strokeWidth="1.3"/>
-    <path d="M10.5 10.5L13.5 13.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+  <svg
+    width="16"
+    height="16"
+    viewBox="0 0 16 16"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <circle cx="7" cy="7" r="4.5" stroke="currentColor" strokeWidth="1.3" />
+    <path
+      d="M10.5 10.5L13.5 13.5"
+      stroke="currentColor"
+      strokeWidth="1.3"
+      strokeLinecap="round"
+    />
   </svg>
 );
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-type LandingType = 'agent' | 'skill' | 'mcp-server';
+type LandingType = "agent" | "skill" | "mcp-server";
 
 interface TypeLandingPageProps {
   type: LandingType;
@@ -64,11 +137,11 @@ const ItemRow = ({ name, isLast, onClick }: ItemRowProps) => (
   <button
     onClick={onClick}
     className={[
-      'w-full flex items-center pl-4 pr-1 min-h-16 text-left cursor-pointer',
-      'bg-transparent transition-colors duration-120',
-      'border-none hover:bg-(--bg-hover)',
-      !isLast ? 'border-b border-(--border-faint)' : '',
-    ].join(' ')}
+      "w-full flex items-center pl-4 pr-1 min-h-16 text-left cursor-pointer",
+      "bg-transparent transition-colors duration-120",
+      "border-none hover:bg-(--bg-hover)",
+      !isLast ? "border-b border-(--border-faint)" : "",
+    ].join(" ")}
   >
     <span className="font-['Instrument_Sans',sans-serif] text-[17px] font-medium text-(--text-primary) overflow-hidden text-ellipsis whitespace-nowrap">
       {name}
@@ -84,7 +157,7 @@ export const TypeLandingPage = (props: TypeLandingPageProps) => {
   const [loading, setLoading] = useState(true);
   const [showSkeleton, setShowSkeleton] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState("");
 
   // Only show skeleton after 200ms to avoid flash on fast loads
   useEffect(() => {
@@ -100,11 +173,11 @@ export const TypeLandingPage = (props: TypeLandingPageProps) => {
     let cancelled = false;
 
     const fetcher =
-      type === 'agent'
+      type === "agent"
         ? fetchAgents
-        : type === 'skill'
-        ? fetchSkills
-        : fetchMcpServers;
+        : type === "skill"
+          ? fetchSkills
+          : fetchMcpServers;
 
     fetcher(projectPath)
       .then((data) => {
@@ -115,24 +188,28 @@ export const TypeLandingPage = (props: TypeLandingPageProps) => {
       })
       .catch((err: unknown) => {
         if (cancelled) return;
-        setError(err instanceof Error ? err.message : 'Failed to load');
+        setError(err instanceof Error ? err.message : "Failed to load");
         setLoading(false);
       });
 
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [projectPath, type, refreshKey]);
 
   const filtered = query.trim()
-    ? items.filter((name) => name.toLowerCase().includes(query.trim().toLowerCase()))
+    ? items.filter((name) =>
+        name.toLowerCase().includes(query.trim().toLowerCase()),
+      )
     : items;
 
   // singular label for new button: strip trailing 's', handle 'MCP Servers' edge case
-  const singularType = title === 'MCP Servers' ? 'MCP Server' : title.replace(/s$/, '');
+  const singularType =
+    title === "MCP Servers" ? "MCP Server" : title.replace(/s$/, "");
 
   return (
     <div className="flex-1 flex flex-col min-h-0 overflow-y-auto bg-(--bg-base)">
       <div className="w-full px-14 pt-16 pb-12">
-
         {/* Heading row */}
         <div className="flex items-center justify-between mb-10">
           <h1 className="font-['Bricolage_Grotesque',sans-serif] text-[40px] font-bold text-(--text-primary) tracking-[-0.03em] leading-[1.05] m-0">
@@ -150,9 +227,7 @@ export const TypeLandingPage = (props: TypeLandingPageProps) => {
 
         {/* Search bar */}
         <div className="relative mb-6">
-          <span
-            className="absolute left-3.5 top-1/2 -translate-y-1/2 text-(--text-muted) flex items-center pointer-events-none"
-          >
+          <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-(--text-muted) flex items-center pointer-events-none">
             <SearchIcon />
           </span>
           <input
@@ -170,7 +245,10 @@ export const TypeLandingPage = (props: TypeLandingPageProps) => {
             {[1, 2, 3].map((i) => (
               <div
                 key={i}
-                className={['shimmer h-16 bg-(--bg-surface)', i < 3 ? 'border-b border-(--border-faint)' : ''].join(' ')}
+                className={[
+                  "shimmer h-16 bg-(--bg-surface)",
+                  i < 3 ? "border-b border-(--border-faint)" : "",
+                ].join(" ")}
                 style={{ animationDelay: `${(i - 1) * 0.15}s` }}
               />
             ))}

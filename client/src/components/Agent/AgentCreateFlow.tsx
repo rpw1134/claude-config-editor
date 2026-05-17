@@ -82,10 +82,10 @@ const COLORS: ColorSwatch[] = [
 const NAME_PATTERN = /^[a-zA-Z0-9_-]+$/;
 
 function agentsDirDisplay(projectPath: string): string {
-  const isGlobal = projectPath.endsWith('/.claude');
-  if (isGlobal) return '~/.claude/agents/';
+  const isGlobal = projectPath.endsWith("/.claude");
+  if (isGlobal) return "~/.claude/agents/";
   const home = projectPath.match(/^(\/Users\/[^/]+|\/home\/[^/]+)\//)?.[1];
-  const shortened = home ? projectPath.replace(home, '~') : projectPath;
+  const shortened = home ? projectPath.replace(home, "~") : projectPath;
   return `${shortened}/.claude/agents/`;
 }
 
@@ -213,7 +213,7 @@ const AccordionSection = ({
         ref={buttonRef}
         onClick={onToggle}
         onKeyDown={(e) => {
-          if (e.key === 'Enter' && onEnterAdvance) {
+          if (e.key === "Enter" && onEnterAdvance) {
             e.preventDefault();
             onEnterAdvance();
           }
@@ -1074,7 +1074,9 @@ export const AgentCreateFlow = ({
   // accidentally lose work by clicking a sidebar item or pressing back.
   const blocker = useBlocker(
     ({ currentLocation, nextLocation }) =>
-      currentLocation.pathname !== nextLocation.pathname && hasData && !submitted.current,
+      currentLocation.pathname !== nextLocation.pathname &&
+      hasData &&
+      !submitted.current,
   );
 
   // The modal is shown either when the X/Escape path sets showDiscardModal,
@@ -1273,9 +1275,7 @@ export const AgentCreateFlow = ({
   ];
 
   return (
-    <div
-      className="flex-1 overflow-hidden relative bg-(--bg-base)"
-    >
+    <div className="flex-1 overflow-hidden relative bg-(--bg-base)">
       {discardModalVisible && (
         <DiscardModal
           onConfirm={handleDiscardConfirm}
@@ -1286,29 +1286,47 @@ export const AgentCreateFlow = ({
       {createSuccess && (
         <div
           className="absolute inset-0 z-30 flex items-center justify-center bg-(--bg-base)"
-          style={{ animation: 'ccs-fade-in 0.2s ease-out both' }}
+          style={{ animation: "ccs-fade-in 0.2s ease-out both" }}
         >
           <div
             className="flex flex-col items-center gap-5 text-center"
-            style={{ animation: 'ccs-success-enter 0.35s cubic-bezier(0.34, 1.4, 0.64, 1) both' }}
+            style={{
+              animation:
+                "ccs-success-enter 0.35s cubic-bezier(0.34, 1.4, 0.64, 1) both",
+            }}
           >
             {/* Spinning ring */}
             <div className="relative w-16 h-16">
               <svg className="w-full h-full" viewBox="0 0 64 64" fill="none">
-                <circle cx="32" cy="32" r="26" stroke="var(--border-subtle)" strokeWidth="4"/>
                 <circle
-                  cx="32" cy="32" r="26"
+                  cx="32"
+                  cy="32"
+                  r="26"
+                  stroke="var(--border-subtle)"
+                  strokeWidth="4"
+                />
+                <circle
+                  cx="32"
+                  cy="32"
+                  r="26"
                   stroke="var(--accent)"
                   strokeWidth="4"
                   strokeLinecap="round"
                   strokeDasharray="40 124"
-                  style={{ animation: 'spin 0.9s linear infinite', transformOrigin: '32px 32px' }}
+                  style={{
+                    animation: "spin 0.9s linear infinite",
+                    transformOrigin: "32px 32px",
+                  }}
                 />
               </svg>
             </div>
             <div>
-              <p className="m-0 text-[20px] font-semibold text-(--text-primary)">Creating agent…</p>
-              <p className="m-0 mt-1 text-[13px] text-(--text-muted)">Writing files and configuring {name.trim()}</p>
+              <p className="m-0 text-[20px] font-semibold text-(--text-primary)">
+                Creating agent…
+              </p>
+              <p className="m-0 mt-1 text-[13px] text-(--text-muted)">
+                Writing files and configuring {name.trim()}
+              </p>
             </div>
           </div>
         </div>
@@ -1323,9 +1341,7 @@ export const AgentCreateFlow = ({
       </button>
 
       {/* Dots pinned to top */}
-      <div
-        className="absolute top-8 left-0 right-0 flex justify-center z-10 pointer-events-none"
-      >
+      <div className="absolute top-8 left-0 right-0 flex justify-center z-10 pointer-events-none">
         <div className="pointer-events-auto">
           <StepDots total={TOTAL_STEPS} current={step} onGoTo={goTo} />
         </div>

@@ -129,7 +129,9 @@ export const SkillSettingsTab = ({
           </label>
           <select
             value={fm.effort ?? ""}
-            onChange={(e) => onFieldChange("effort", e.target.value || undefined)}
+            onChange={(e) =>
+              onFieldChange("effort", e.target.value || undefined)
+            }
             disabled={disabled}
             className={fieldInput}
           >

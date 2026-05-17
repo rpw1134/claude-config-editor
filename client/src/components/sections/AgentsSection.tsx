@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
-import { fetchAgents } from '../../lib/api';
-import { SectionHeader } from '../Shared/SectionHeader';
-import { Pagination } from '../Shared/Pagination';
+import { useEffect, useState } from "react";
+import { fetchAgents } from "../../lib/api";
+import { SectionHeader } from "../Shared/SectionHeader";
+import { Pagination } from "../Shared/Pagination";
 
 const PAGE_SIZE = 10;
 
@@ -15,21 +15,27 @@ const AgentCard = ({ name, isSelected, onSelect }: AgentCardProps) => (
   <button
     onClick={() => onSelect(isSelected ? null : name)}
     className={[
-      'group w-full text-left px-4 py-2 rounded-lg border transition-all duration-150 block',
+      "group w-full text-left px-4 py-2 rounded-lg border transition-all duration-150 block",
       isSelected
-        ? 'bg-white/6 border-white/14'
-        : 'bg-white/2.5 border-white/7 hover:bg-white/4.5 hover:border-white/12',
-    ].join(' ')}
+        ? "bg-white/6 border-white/14"
+        : "bg-white/2.5 border-white/7 hover:bg-white/4.5 hover:border-white/12",
+    ].join(" ")}
   >
     <div className="flex items-center gap-3">
-      <div className={[
-        'w-1.5 h-1.5 rounded-full shrink-0 transition-colors',
-        isSelected ? 'bg-orange-400' : 'bg-white/20 group-hover:bg-white/35',
-      ].join(' ')} />
-      <span className={[
-        'text-[14px] font-semibold font-mono transition-colors leading-tight',
-        isSelected ? 'text-white/95' : 'text-white/70 group-hover:text-white/90',
-      ].join(' ')}>
+      <div
+        className={[
+          "w-1.5 h-1.5 rounded-full shrink-0 transition-colors",
+          isSelected ? "bg-orange-400" : "bg-white/20 group-hover:bg-white/35",
+        ].join(" ")}
+      />
+      <span
+        className={[
+          "text-[14px] font-semibold font-mono transition-colors leading-tight",
+          isSelected
+            ? "text-white/95"
+            : "text-white/70 group-hover:text-white/90",
+        ].join(" ")}
+      >
         {name}
       </span>
     </div>
@@ -44,7 +50,13 @@ interface AgentsSectionProps {
   refreshKey: number;
 }
 
-export const AgentsSection = ({ projectPath, selectedName, onSelect, onNew, refreshKey }: AgentsSectionProps) => {
+export const AgentsSection = ({
+  projectPath,
+  selectedName,
+  onSelect,
+  onNew,
+  refreshKey,
+}: AgentsSectionProps) => {
   const [agents, setAgents] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -62,10 +74,12 @@ export const AgentsSection = ({ projectPath, selectedName, onSelect, onNew, refr
       })
       .catch((err: unknown) => {
         if (cancelled) return;
-        setError(err instanceof Error ? err.message : 'Failed to load agents');
+        setError(err instanceof Error ? err.message : "Failed to load agents");
         setLoading(false);
       });
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [projectPath, refreshKey]);
 
   const totalPages = Math.ceil(agents.length / PAGE_SIZE);

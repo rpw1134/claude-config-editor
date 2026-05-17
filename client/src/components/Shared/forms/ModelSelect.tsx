@@ -8,7 +8,11 @@ interface ModelSelectProps {
   disabled?: boolean;
 }
 
-export const ModelSelect = ({ value, onChange, disabled }: ModelSelectProps) => {
+export const ModelSelect = ({
+  value,
+  onChange,
+  disabled,
+}: ModelSelectProps) => {
   const isCustom =
     value !== undefined && value !== "" && !KNOWN_MODELS.includes(value);
   const selectValue = isCustom ? "__custom__" : (value ?? "");

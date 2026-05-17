@@ -81,7 +81,9 @@ export const SettingsTab = ({
           </label>
           <select
             value={fm.effort ?? ""}
-            onChange={(e) => onFieldChange("effort", e.target.value || undefined)}
+            onChange={(e) =>
+              onFieldChange("effort", e.target.value || undefined)
+            }
             disabled={disabled}
             className={fieldInput}
           >
@@ -231,7 +233,9 @@ export const SettingsTab = ({
           </label>
           <select
             value={fm.memory ?? ""}
-            onChange={(e) => onFieldChange("memory", e.target.value || undefined)}
+            onChange={(e) =>
+              onFieldChange("memory", e.target.value || undefined)
+            }
             disabled={disabled}
             className={fieldInput}
           >

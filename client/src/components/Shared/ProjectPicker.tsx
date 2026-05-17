@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from 'react';
-import { fetchProjects } from '../../lib/api';
-import type { ProjectInfo } from '../../lib/api';
+import { useEffect, useRef, useState } from "react";
+import { fetchProjects } from "../../lib/api";
+import type { ProjectInfo } from "../../lib/api";
 
 interface ProjectPickerProps {
   selectedPath: string | null;
@@ -8,14 +8,37 @@ interface ProjectPickerProps {
 }
 
 const ChevronIcon = () => (
-  <svg width="10" height="10" viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M2 3.5L5 6.5L8 3.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
+  <svg
+    width="10"
+    height="10"
+    viewBox="0 0 10 10"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <path
+      d="M2 3.5L5 6.5L8 3.5"
+      stroke="currentColor"
+      strokeWidth="1.3"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
   </svg>
 );
 
 const PlusIcon = () => (
-  <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M6 1.5V10.5M1.5 6H10.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+  <svg
+    width="12"
+    height="12"
+    viewBox="0 0 12 12"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <path
+      d="M6 1.5V10.5M1.5 6H10.5"
+      stroke="currentColor"
+      strokeWidth="1.4"
+      strokeLinecap="round"
+    />
   </svg>
 );
 
@@ -28,16 +51,21 @@ interface ProjectModalProps {
   onClose: () => void;
 }
 
-const ProjectModal = ({ projects, selectedPath, onSelect, onClose }: ProjectModalProps) => {
+const ProjectModal = ({
+  projects,
+  selectedPath,
+  onSelect,
+  onClose,
+}: ProjectModalProps) => {
   const backdropRef = useRef<HTMLDivElement>(null);
 
   // Close on ESC
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === "Escape") onClose();
     };
-    document.addEventListener('keydown', handler);
-    return () => document.removeEventListener('keydown', handler);
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
   }, [onClose]);
 
   const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -52,11 +80,13 @@ const ProjectModal = ({ projects, selectedPath, onSelect, onClose }: ProjectModa
     >
       <div
         className="w-105 max-h-130 flex flex-col rounded-2xl border border-(--border-default) bg-(--bg-elevated) overflow-hidden"
-        style={{ boxShadow: '0 24px 64px rgba(0,0,0,0.6)' }}
+        style={{ boxShadow: "0 24px 64px rgba(0,0,0,0.6)" }}
       >
         {/* Header */}
         <div className="px-5 py-4 border-b border-(--border-faint) shrink-0 flex items-center justify-between">
-          <span className="text-[15px] font-semibold text-(--text-primary)">Switch Project</span>
+          <span className="text-[15px] font-semibold text-(--text-primary)">
+            Switch Project
+          </span>
           <button
             type="button"
             onClick={onClose}
@@ -76,22 +106,28 @@ const ProjectModal = ({ projects, selectedPath, onSelect, onClose }: ProjectModa
           ) : (
             projects.map((project) => {
               const isActive = project.path === selectedPath;
-              const isGlobal = project.name === 'global';
+              const isGlobal = project.name === "global";
               return (
                 <button
                   key={project.path}
                   onClick={() => onSelect(project)}
                   className={[
-                    'w-full text-left px-5 py-3 flex items-start gap-3 border-none cursor-pointer transition-colors duration-100 border-b border-(--border-faint) last:border-b-0',
-                    isActive ? 'bg-(--accent-dim)' : 'bg-transparent hover:bg-(--bg-hover)',
-                  ].join(' ')}
+                    "w-full text-left px-5 py-3 flex items-start gap-3 border-none cursor-pointer transition-colors duration-100 border-b border-(--border-faint) last:border-b-0",
+                    isActive
+                      ? "bg-(--accent-dim)"
+                      : "bg-transparent hover:bg-(--bg-hover)",
+                  ].join(" ")}
                 >
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className={[
-                        'text-[14px] font-medium leading-tight',
-                        isActive ? 'text-(--text-accent)' : 'text-(--text-primary)',
-                      ].join(' ')}>
+                      <span
+                        className={[
+                          "text-[14px] font-medium leading-tight",
+                          isActive
+                            ? "text-(--text-accent)"
+                            : "text-(--text-primary)",
+                        ].join(" ")}
+                      >
                         {project.name}
                       </span>
                       {isGlobal && (
@@ -131,7 +167,10 @@ const ProjectModal = ({ projects, selectedPath, onSelect, onClose }: ProjectModa
 
 // ── ProjectPicker ─────────────────────────────────────────────────────────────
 
-export const ProjectPicker = ({ selectedPath, onSelect }: ProjectPickerProps) => {
+export const ProjectPicker = ({
+  selectedPath,
+  onSelect,
+}: ProjectPickerProps) => {
   const [projects, setProjects] = useState<ProjectInfo[]>([]);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -139,8 +178,10 @@ export const ProjectPicker = ({ selectedPath, onSelect }: ProjectPickerProps) =>
   useEffect(() => {
     fetchProjects()
       .then((data) => {
-        const global = data.filter((p) => p.name === 'global');
-        const rest = data.filter((p) => p.name !== 'global').sort((a, b) => a.name.localeCompare(b.name));
+        const global = data.filter((p) => p.name === "global");
+        const rest = data
+          .filter((p) => p.name !== "global")
+          .sort((a, b) => a.name.localeCompare(b.name));
         setProjects([...global, ...rest]);
         setLoading(false);
       })
@@ -162,16 +203,20 @@ export const ProjectPicker = ({ selectedPath, onSelect }: ProjectPickerProps) =>
       <button
         onClick={() => setOpen(true)}
         className={[
-          'w-full flex items-center justify-between gap-2 px-3 py-2 rounded-md text-left text-[14px] min-h-9 cursor-pointer border border-(--border-subtle) transition-all duration-150',
+          "w-full flex items-center justify-between gap-2 px-3 py-2 rounded-md text-left text-[14px] min-h-9 cursor-pointer border border-(--border-subtle) transition-all duration-150",
           selected
-            ? 'bg-(--bg-surface) text-(--text-secondary) hover:bg-(--bg-elevated) hover:text-(--text-secondary)'
-            : 'bg-(--bg-surface) text-(--text-muted) hover:bg-(--bg-elevated) hover:text-(--text-secondary)',
-        ].join(' ')}
+            ? "bg-(--bg-surface) text-(--text-secondary) hover:bg-(--bg-elevated) hover:text-(--text-secondary)"
+            : "bg-(--bg-surface) text-(--text-muted) hover:bg-(--bg-elevated) hover:text-(--text-secondary)",
+        ].join(" ")}
       >
         {loading ? (
-          <span className='font-["Fira_Code",monospace] text-(--text-muted) text-[13px]'>Loading…</span>
+          <span className='font-["Fira_Code",monospace] text-(--text-muted) text-[13px]'>
+            Loading…
+          </span>
         ) : selected ? (
-          <span className="font-medium overflow-hidden text-ellipsis whitespace-nowrap">{selected.name}</span>
+          <span className="font-medium overflow-hidden text-ellipsis whitespace-nowrap">
+            {selected.name}
+          </span>
         ) : (
           <span className="italic text-(--text-muted)">Select a project…</span>
         )}

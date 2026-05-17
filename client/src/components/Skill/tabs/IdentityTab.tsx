@@ -11,7 +11,11 @@ interface IdentityTabProps {
   disabled?: boolean;
 }
 
-export const IdentityTab = ({ fm, onFieldChange, disabled }: IdentityTabProps) => (
+export const IdentityTab = ({
+  fm,
+  onFieldChange,
+  disabled,
+}: IdentityTabProps) => (
   <div className="px-7 py-8 flex flex-col gap-6 overflow-y-auto h-full">
     <div>
       <h2 className="m-0 mb-1 text-2xl font-['Bricolage_Grotesque',sans-serif] font-bold tracking-[-0.015em] text-(--text-primary)">

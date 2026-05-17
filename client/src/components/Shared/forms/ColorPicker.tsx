@@ -33,7 +33,11 @@ interface ColorPickerProps {
   disabled?: boolean;
 }
 
-export const ColorPicker = ({ value, onChange, disabled }: ColorPickerProps) => (
+export const ColorPicker = ({
+  value,
+  onChange,
+  disabled,
+}: ColorPickerProps) => (
   <div className="flex gap-3 flex-wrap">
     {COLORS.map((c) => {
       const selected = value === c.name;

@@ -1,11 +1,22 @@
-import { useEffect, useState } from 'react';
-import { fetchAgents, fetchSkills, fetchMcpServers } from '../../lib/api';
+import { useEffect, useState } from "react";
+import { fetchAgents, fetchSkills, fetchMcpServers } from "../../lib/api";
 
 // ── Icons ────────────────────────────────────────────────────────────────────
 
 const PlusIcon = () => (
-  <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M6 1.5V10.5M1.5 6H10.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+  <svg
+    width="12"
+    height="12"
+    viewBox="0 0 12 12"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <path
+      d="M6 1.5V10.5M1.5 6H10.5"
+      stroke="currentColor"
+      strokeWidth="1.4"
+      strokeLinecap="round"
+    />
   </svg>
 );
 
@@ -62,7 +73,9 @@ export const SidebarListSection = ({
 
     {!loading && !error && items.length === 0 && (
       <div className="px-4 py-1">
-        <span className="text-[13px] text-(--text-muted) italic">{emptyText}</span>
+        <span className="text-[13px] text-(--text-muted) italic">
+          {emptyText}
+        </span>
       </div>
     )}
 
@@ -76,18 +89,24 @@ export const SidebarListSection = ({
                 onClick={() => onSelect(name)}
                 title={name}
                 className={[
-                  'w-full text-left px-4 flex items-center gap-2.5 min-h-7 border-none cursor-pointer',
-                  'text-[13px] overflow-hidden transition-colors duration-100',
+                  "w-full text-left px-4 flex items-center gap-2.5 min-h-7 border-none cursor-pointer",
+                  "text-[13px] overflow-hidden transition-colors duration-100",
                   isSelected
-                    ? 'bg-(--accent-dim) text-(--text-accent)'
-                    : 'bg-transparent text-(--text-secondary) hover:bg-(--bg-hover) hover:text-(--text-primary)',
-                ].join(' ')}
+                    ? "bg-(--accent-dim) text-(--text-accent)"
+                    : "bg-transparent text-(--text-secondary) hover:bg-(--bg-hover) hover:text-(--text-primary)",
+                ].join(" ")}
               >
-                <span className={[
-                  'shrink-0 w-1.25 h-1.25 rounded-full transition-colors duration-100',
-                  isSelected ? 'bg-(--accent) opacity-100' : 'bg-(--text-muted) opacity-50',
-                ].join(' ')} />
-                <span className="overflow-hidden text-ellipsis whitespace-nowrap">{name}</span>
+                <span
+                  className={[
+                    "shrink-0 w-1.25 h-1.25 rounded-full transition-colors duration-100",
+                    isSelected
+                      ? "bg-(--accent) opacity-100"
+                      : "bg-(--text-muted) opacity-50",
+                  ].join(" ")}
+                />
+                <span className="overflow-hidden text-ellipsis whitespace-nowrap">
+                  {name}
+                </span>
               </button>
             </li>
           );
@@ -130,10 +149,12 @@ export const SidebarAgentsList = ({
       })
       .catch((err: unknown) => {
         if (cancelled) return;
-        setError(err instanceof Error ? err.message : 'Failed');
+        setError(err instanceof Error ? err.message : "Failed");
         setLoading(false);
       });
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [projectPath, refreshKey]);
 
   return (
@@ -173,10 +194,12 @@ export const SidebarSkillsList = ({
       })
       .catch((err: unknown) => {
         if (cancelled) return;
-        setError(err instanceof Error ? err.message : 'Failed');
+        setError(err instanceof Error ? err.message : "Failed");
         setLoading(false);
       });
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [projectPath, refreshKey]);
 
   return (
@@ -216,10 +239,12 @@ export const SidebarMcpList = ({
       })
       .catch((err: unknown) => {
         if (cancelled) return;
-        setError(err instanceof Error ? err.message : 'Failed');
+        setError(err instanceof Error ? err.message : "Failed");
         setLoading(false);
       });
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [projectPath, refreshKey]);
 
   return (
