@@ -157,3 +157,35 @@ export async function deleteSkillFile(projectPath: string, name: string, file: s
     `/api/skills/${encodeURIComponent(name)}/file?projectPath=${encodeURIComponent(projectPath)}&file=${encodeURIComponent(file)}`
   );
 }
+
+export async function fetchSkillScripts(projectPath: string, name: string): Promise<string[]> {
+  const data = await get<{ scripts: string[] }>(
+    `/api/skills/${encodeURIComponent(name)}/scripts?projectPath=${encodeURIComponent(projectPath)}`
+  );
+  return data.scripts;
+}
+
+export async function fetchSkillScript(projectPath: string, name: string, file: string): Promise<string> {
+  const data = await get<{ content: string }>(
+    `/api/skills/${encodeURIComponent(name)}/script?projectPath=${encodeURIComponent(projectPath)}&file=${encodeURIComponent(file)}`
+  );
+  return data.content;
+}
+
+export async function createSkillScript(projectPath: string, name: string, file: string, content: string): Promise<void> {
+  await post(`/api/skills/${encodeURIComponent(name)}/script`, { projectPath, file, content });
+}
+
+export async function updateSkillScript(projectPath: string, name: string, file: string, content: string): Promise<void> {
+  await put(`/api/skills/${encodeURIComponent(name)}/script`, { projectPath, file, content });
+}
+
+export async function deleteSkillScript(projectPath: string, name: string, file: string): Promise<void> {
+  await del(
+    `/api/skills/${encodeURIComponent(name)}/script?projectPath=${encodeURIComponent(projectPath)}&file=${encodeURIComponent(file)}`
+  );
+}
+
+export async function deleteMcpServer(projectPath: string, name: string): Promise<void> {
+  await del(`/api/mcp-servers/${encodeURIComponent(name)}?projectPath=${encodeURIComponent(projectPath)}`);
+}

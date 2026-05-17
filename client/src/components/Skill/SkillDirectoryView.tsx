@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   fetchSkillFiles,
+  fetchSkillScripts,
   createSkillFile,
 } from '../../lib/api';
 
@@ -42,11 +43,15 @@ export const SkillDirectoryView = ({
 
   // Which files actually exist on disk (fetched once on mount)
   const [existingFiles, setExistingFiles] = useState<Set<string>>(new Set(['SKILL.md']));
+  const [scripts, setScripts] = useState<string[]>([]);
 
   useEffect(() => {
     fetchSkillFiles(projectPath, skillName)
       .then((files) => setExistingFiles(new Set(['SKILL.md', ...files])))
-      .catch(() => {/* existingFiles stays as {SKILL.md} */});
+      .catch(() => {});
+    fetchSkillScripts(projectPath, skillName)
+      .then(setScripts)
+      .catch(() => {});
   }, [projectPath, skillName]);
 
   // Open a file — create it first if it doesn't exist yet, then navigate
@@ -97,7 +102,19 @@ export const SkillDirectoryView = ({
               />
             ))}
 
-            <ScriptsRow />
+            <ScriptsRow
+              scripts={scripts}
+              onOpenScript={(file) => {
+                if (projectId) {
+                  navigate(`/${encodeURIComponent(projectId)}/skills/${encodeURIComponent(skillName)}/scripts/${encodeURIComponent(file)}`);
+                }
+              }}
+              onCreateScript={() => {
+                if (projectId) {
+                  navigate(`/${encodeURIComponent(projectId)}/skills/${encodeURIComponent(skillName)}/scripts?create=true`);
+                }
+              }}
+            />
           </div>
         </div>
     </div>
@@ -129,43 +146,52 @@ const FileRow = ({ file, connector, onClick }: FileRowProps) => (
 
 // ── ScriptsRow ─────────────────────────────────────────────────────────────────
 
-const ScriptsRow = () => {
-  const [showTooltip, setShowTooltip] = useState(false);
+interface ScriptsRowProps {
+  scripts: string[];
+  onOpenScript: (file: string) => void;
+  onCreateScript: () => void;
+}
 
-  return (
-    <div className="pb-1">
-      {/* scripts/ folder line */}
-      <div className="w-full flex items-center gap-0 px-6 py-3.5">
-        <span className='font-["Fira_Code",monospace] text-[15px] text-(--text-muted) select-none shrink-0 pr-2 leading-[1.4]'>
-          └──
-        </span>
-        <span className='font-["Fira_Code",monospace] text-[15px] text-(--text-primary) leading-[1.4] flex-1 min-w-0'>
-          scripts/
-        </span>
-      </div>
-
-      {/* Child line: indented + button */}
-      <div className="w-full flex items-center gap-0 px-6 py-1.5">
-        <span className='font-["Fira_Code",monospace] text-[15px] text-(--text-muted) select-none shrink-0' style={{ paddingRight: '0.5rem', paddingLeft: '2.1ch' }}>
-          └──
-        </span>
-        <div className="relative">
-          <button
-            type="button"
-            onMouseEnter={() => setShowTooltip(true)}
-            onMouseLeave={() => setShowTooltip(false)}
-            aria-label="Add script"
-            className="flex items-center justify-center w-6 h-6 rounded-md border-none cursor-pointer transition-colors duration-150 bg-(--accent) text-white hover:bg-(--accent-hover)"
-          >
-            <PlusIcon />
-          </button>
-          {showTooltip && (
-            <div className="absolute left-0 bottom-full mb-2 w-44 px-3 py-2 rounded-lg bg-(--bg-elevated) border border-(--border-subtle) text-[11px] text-(--text-secondary) leading-relaxed shadow-lg z-50 whitespace-normal pointer-events-none">
-              Script support coming soon
-            </div>
-          )}
-        </div>
-      </div>
+const ScriptsRow = ({ scripts, onOpenScript, onCreateScript }: ScriptsRowProps) => (
+  <div className="pb-1">
+    {/* scripts/ folder header — always the last sibling → └── */}
+    <div className="w-full flex items-center gap-0 px-6 py-3.5">
+      <span className='font-["Fira_Code",monospace] text-[15px] text-(--text-muted) select-none shrink-0 pr-2 leading-[1.4]'>
+        └──
+      </span>
+      <span className='font-["Fira_Code",monospace] text-[15px] text-(--text-primary) leading-[1.4] flex-1 min-w-0'>
+        scripts/
+      </span>
     </div>
-  );
-};
+    {/* Script files — each uses ├── since "New script…" always comes after */}
+    {scripts.map((file) => (
+      <button
+        key={file}
+        type="button"
+        onClick={() => onOpenScript(file)}
+        className='group relative w-full flex items-center pl-14 pr-6 py-1 rounded-lg bg-transparent border-none cursor-pointer hover:bg-(--bg-hover) transition-colors duration-100 text-left'
+      >
+        <span className='font-["Fira_Code",monospace] text-[15px] text-(--text-muted) select-none shrink-0 pr-2 leading-[1.4]'>
+          ├──
+        </span>
+        <span className='font-["Fira_Code",monospace] text-[15px] text-(--text-primary) group-hover:text-white transition-colors duration-100 leading-[1.4] flex-1 min-w-0'>
+          {file}
+        </span>
+      </button>
+    ))}
+    {/* New script row — always last child → └── */}
+    <button
+      type="button"
+      onClick={onCreateScript}
+      className='group relative w-full flex items-center pl-14 pr-6 py-1 rounded-lg bg-transparent border-none cursor-pointer hover:bg-(--bg-hover) transition-colors duration-100 text-left'
+    >
+      <span className='font-["Fira_Code",monospace] text-[15px] text-(--text-muted) select-none shrink-0 pr-2 leading-[1.4]'>
+        └──
+      </span>
+      <span className='font-["Fira_Code",monospace] text-[14px] text-(--text-muted) group-hover:text-(--text-secondary) transition-colors duration-100 leading-[1.4] flex items-center gap-2'>
+        <PlusIcon />
+        New script…
+      </span>
+    </button>
+  </div>
+);

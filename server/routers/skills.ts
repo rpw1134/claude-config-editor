@@ -224,4 +224,126 @@ router.delete(
   },
 );
 
+// ── Script routes (files inside the skill's scripts/ subdirectory) ────────────
+
+// GET /:name/scripts?projectPath=X  → { scripts: string[] }
+router.get(
+  "/:name/scripts",
+  async (req: Request, res: Response, next: NextFunction) => {
+    const { name } = req.params;
+    const projectPath = requireProjectPath(req.query.projectPath, res);
+    if (projectPath === null) return;
+    const scriptsDir = `${getConfigDir(projectPath)}/skills/${name}/scripts`;
+    try {
+      const listing = await listDir(scriptsDir);
+      const scripts = listing?.files ?? [];
+      res.json({ scripts });
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+// GET /:name/script?projectPath=X&file=foo.sh  → { content: string }
+router.get(
+  "/:name/script",
+  async (req: Request, res: Response, next: NextFunction) => {
+    const { name } = req.params;
+    const projectPath = requireProjectPath(req.query.projectPath, res);
+    if (projectPath === null) return;
+    const file = validateFileName(req.query.file, res);
+    if (file === null) return;
+    const filePath = `${getConfigDir(projectPath)}/skills/${name}/scripts/${file}`;
+    try {
+      const content = await readFileContent(filePath);
+      res.json({ content });
+    } catch (err) {
+      const error = err as NodeJS.ErrnoException;
+      if (error.code === "ENOENT") {
+        return res.status(404).json({ message: "Script not found" });
+      }
+      next(err);
+    }
+  },
+);
+
+// POST /:name/script  body: { projectPath, file, content }  → 201 (409 if exists)
+router.post(
+  "/:name/script",
+  async (req: Request, res: Response, next: NextFunction) => {
+    const { name } = req.params;
+    const { projectPath: rawPath, file: rawFile, content } = req.body as {
+      projectPath?: unknown;
+      file?: unknown;
+      content?: unknown;
+    };
+    const projectPath = requireProjectPath(rawPath, res);
+    if (projectPath === null) return;
+    const file = validateFileName(rawFile, res);
+    if (file === null) return;
+    if (typeof content !== "string") {
+      return res.status(400).json({ message: "content must be a string" });
+    }
+    const filePath = `${getConfigDir(projectPath)}/skills/${name}/scripts/${file}`;
+    try {
+      if (await fileExists(filePath)) {
+        return res.status(409).json({ message: "Script already exists" });
+      }
+      await writeFileEnsureDir(filePath, content);
+      res.status(201).json({ message: "Script created" });
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+// PUT /:name/script  body: { projectPath, file, content }  → 200
+router.put(
+  "/:name/script",
+  async (req: Request, res: Response, next: NextFunction) => {
+    const { name } = req.params;
+    const { projectPath: rawPath, file: rawFile, content } = req.body as {
+      projectPath?: unknown;
+      file?: unknown;
+      content?: unknown;
+    };
+    const projectPath = requireProjectPath(rawPath, res);
+    if (projectPath === null) return;
+    const file = validateFileName(rawFile, res);
+    if (file === null) return;
+    if (typeof content !== "string") {
+      return res.status(400).json({ message: "content must be a string" });
+    }
+    const filePath = `${getConfigDir(projectPath)}/skills/${name}/scripts/${file}`;
+    try {
+      await writeFileContent(filePath, content);
+      res.status(200).json({ message: "Script saved" });
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+// DELETE /:name/script?projectPath=X&file=foo.sh  → 200 (404 if not found)
+router.delete(
+  "/:name/script",
+  async (req: Request, res: Response, next: NextFunction) => {
+    const { name } = req.params;
+    const projectPath = requireProjectPath(req.query.projectPath, res);
+    if (projectPath === null) return;
+    const file = validateFileName(req.query.file, res);
+    if (file === null) return;
+    const filePath = `${getConfigDir(projectPath)}/skills/${name}/scripts/${file}`;
+    try {
+      if (!(await fileExists(filePath))) {
+        return res.status(404).json({ message: "Script not found" });
+      }
+      await deleteFile(filePath);
+      res.status(200).json({ message: "Script deleted" });
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
 export default router;

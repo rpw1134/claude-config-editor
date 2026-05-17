@@ -1,7 +1,5 @@
 import { useState } from "react";
-import type { ReactNode } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { createSkillFile } from "../../lib/api";
 
 // ── Icons ─────────────────────────────────────────────────────────────────────
 
@@ -33,13 +31,6 @@ export interface SkillTabBarProps {
   skillName: string;
   projectPath: string;
   onBack: () => void;
-  headerActions?: {
-    filePath: string;
-    saveLabel: string;
-    saveDisabled: boolean;
-    onSave: () => void;
-    rightSlot?: ReactNode;
-  } | null;
 }
 
 interface TabDef {
@@ -56,12 +47,7 @@ const TABS: TabDef[] = [
   { id: "settings", label: "Settings" },
   { id: "reference.md", label: "References" },
   { id: "examples.md", label: "Examples" },
-  {
-    id: "scripts",
-    label: "Scripts",
-    disabled: true,
-    tooltipText: "Script support coming soon",
-  },
+  { id: "scripts", label: "Scripts" },
 ];
 
 // ── SkillTabBar ───────────────────────────────────────────────────────────────
@@ -69,20 +55,25 @@ const TABS: TabDef[] = [
 export const SkillTabBar = ({
   activeTab,
   skillName,
-  projectPath,
   onBack,
-  headerActions,
 }: SkillTabBarProps) => {
   const navigate = useNavigate();
   const { projectId } = useParams<{ projectId: string }>();
   const [tooltipTab, setTooltipTab] = useState<SkillTabId | null>(null);
 
-  const handleTabClick = async (tab: TabDef) => {
+  const handleTabClick = (tab: TabDef) => {
     if (tab.disabled || tab.id === activeTab || !projectId) return;
 
     if (tab.id === "directory") {
       navigate(
         `/${encodeURIComponent(projectId)}/skills/${encodeURIComponent(skillName)}`,
+      );
+      return;
+    }
+
+    if (tab.id === "scripts") {
+      navigate(
+        `/${encodeURIComponent(projectId)}/skills/${encodeURIComponent(skillName)}/scripts`,
       );
       return;
     }
@@ -98,12 +89,7 @@ export const SkillTabBar = ({
       return;
     }
 
-    // For file tabs: create the file if it doesn't exist yet, then navigate
-    try {
-      await createSkillFile(projectPath, skillName, tab.id);
-    } catch {
-      // Already exists — fine
-    }
+    // File tabs — navigate directly; SkillFileContent handles creation on load
     navigate(
       `/${encodeURIComponent(projectId)}/skills/${encodeURIComponent(skillName)}/${encodeURIComponent(tab.id)}`,
     );
@@ -159,28 +145,6 @@ export const SkillTabBar = ({
           );
         })}
       </div>
-      {headerActions && (
-        <div className="flex items-center gap-3">
-          <span className='font-["Fira_Code",monospace] text-[11px] text-(--text-muted) truncate max-w-72 hidden sm:block'>
-            {headerActions.filePath}
-          </span>
-          {headerActions.rightSlot}
-          <button
-            onClick={
-              headerActions.saveDisabled ? undefined : headerActions.onSave
-            }
-            disabled={headerActions.saveDisabled}
-            className={[
-              "text-[13px] px-3 py-1 rounded-md border-none transition-colors duration-150",
-              headerActions.saveDisabled
-                ? "bg-(--bg-surface) text-(--text-muted) opacity-50 cursor-not-allowed"
-                : "bg-(--accent) cursor-pointer text-white hover:bg-(--accent-hover)",
-            ].join(" ")}
-          >
-            {headerActions.saveLabel}
-          </button>
-        </div>
-      )}
     </div>
   );
 };

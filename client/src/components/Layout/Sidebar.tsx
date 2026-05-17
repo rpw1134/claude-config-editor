@@ -343,10 +343,8 @@ const NavButton = ({
     disabled={disabled}
     title={collapsed ? label : undefined}
     className={[
-      "w-full flex items-center rounded-md text-left text-[14px] font-medium min-h-10 py-2 border-none transition-all duration-150",
-      collapsed
-        ? "justify-center px-0 border-l-0"
-        : "gap-2.5 px-2 border-l-[3px]",
+      "w-full flex items-center gap-2.5 px-2 rounded-md text-left text-[14px] font-medium min-h-10 py-2 border-none transition-all duration-150",
+      collapsed ? "border-l-0" : "border-l-[3px]",
       active
         ? "bg-(--bg-elevated) text-(--text-primary) border-l-(--accent)"
         : disabled
@@ -371,7 +369,7 @@ const NavButton = ({
       style={{
         opacity: collapsed ? 0 : 1,
         maxWidth: collapsed ? 0 : 200,
-        transition: "opacity 150ms ease, max-width 200ms ease 50ms",
+        transition: "opacity 100ms ease, max-width 200ms ease 100ms",
       }}
     >
       {label}
@@ -459,7 +457,7 @@ export const Sidebar = ({
           style={{
             opacity: collapsed ? 0 : 1,
             maxWidth: collapsed ? 0 : 300,
-            transition: "opacity 150ms ease, max-width 200ms ease 50ms",
+            transition: "opacity 100ms ease, max-width 200ms ease 100ms",
           }}
         >
           <p className="text-[14px] font-semibold text-(--text-primary) leading-[1.2] whitespace-nowrap">
@@ -477,7 +475,7 @@ export const Sidebar = ({
             opacity: collapsed ? 0 : 1,
             pointerEvents: collapsed ? "none" : "auto",
             width: collapsed ? 0 : undefined,
-            transition: "opacity 150ms ease, width 200ms ease 50ms",
+            transition: "opacity 100ms ease, width 200ms ease 100ms",
           }}
         >
           <ChevronIcon direction="left" />
@@ -491,7 +489,7 @@ export const Sidebar = ({
           opacity: collapsed ? 0 : 1,
           maxHeight: collapsed ? 0 : 80,
           pointerEvents: collapsed ? "none" : "auto",
-          transition: "opacity 150ms ease, max-height 200ms ease 50ms",
+          transition: "opacity 100ms ease, max-height 200ms ease 100ms",
         }}
       >
         <ProjectPicker
@@ -543,7 +541,7 @@ export const Sidebar = ({
             title="Create New"
             className={[
               "w-full flex items-center py-1.75 rounded-lg text-left text-[14px] font-medium min-h-8.5 border-none transition-colors duration-150 group",
-              collapsed ? "justify-center px-0" : "gap-2.5 px-2",
+              "gap-2.5 px-2",
               hasProject
                 ? "bg-transparent text-(--text-secondary) cursor-pointer hover:bg-(--bg-hover) hover:text-(--text-primary)"
                 : "bg-(--bg-surface) text-(--text-muted) cursor-not-allowed border border-(--border-faint) opacity-50",
@@ -557,7 +555,7 @@ export const Sidebar = ({
               style={{
                 opacity: collapsed ? 0 : 1,
                 maxWidth: collapsed ? 0 : 200,
-                transition: "opacity 150ms ease, max-width 200ms ease 50ms",
+                transition: "opacity 100ms ease, max-width 200ms ease 100ms",
               }}
             >
               Create New
