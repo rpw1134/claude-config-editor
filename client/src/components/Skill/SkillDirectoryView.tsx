@@ -17,11 +17,6 @@ const FolderIcon = () => (
   </svg>
 );
 
-const PlusIcon = () => (
-  <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-    <path d="M6 1V11M1 6H11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-  </svg>
-);
 
 // ── Static file manifest ───────────────────────────────────────────────────────
 
@@ -180,18 +175,17 @@ const ScriptsRow = ({ scripts, onOpenScript, onCreateScript }: ScriptsRowProps) 
       </button>
     ))}
     {/* New script row — always last child → └── */}
-    <button
-      type="button"
-      onClick={onCreateScript}
-      className='group relative w-full flex items-center pl-14 pr-6 py-1 rounded-lg bg-transparent border-none cursor-pointer hover:bg-(--bg-hover) transition-colors duration-100 text-left'
-    >
+    <div className='flex items-center pl-14 pr-6 py-1'>
       <span className='font-["Fira_Code",monospace] text-[15px] text-(--text-muted) select-none shrink-0 pr-2 leading-[1.4]'>
         └──
       </span>
-      <span className='font-["Fira_Code",monospace] text-[14px] text-(--text-muted) group-hover:text-(--text-secondary) transition-colors duration-100 leading-[1.4] flex items-center gap-2'>
-        <PlusIcon />
-        New script…
-      </span>
-    </button>
+      <button
+        type="button"
+        onClick={onCreateScript}
+        className="flex items-center justify-center w-5 h-5 rounded bg-(--accent) hover:bg-(--accent-hover) border-none cursor-pointer transition-colors duration-100 text-white text-[14px] leading-none"
+      >
+        +
+      </button>
+    </div>
   </div>
 );
