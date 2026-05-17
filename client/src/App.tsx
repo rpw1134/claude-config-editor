@@ -608,54 +608,14 @@ const SkillLayout = () => {
         skillName={skillName}
         projectPath={projectPath}
         onBack={() => navigate(`/${encodeProject(projectPath)}/skills`)}
+        filePath={showHeader ? headerFilePath : undefined}
+        saveLabel={headerSaveLabel}
+        saveDisabled={headerSaveDisabled}
+        onSave={showHeader ? handleGlobalSave : undefined}
+        showPreviewToggle={showHeader ? showPreviewToggle : undefined}
+        previewMode={previewMode}
+        onSetPreviewMode={showHeader ? setPreviewMode : undefined}
       />
-      {showHeader && (
-        <div className="shrink-0 flex items-center gap-3 px-4 py-2.5 border-b border-(--border-faint) bg-(--bg-base)">
-          <span className='font-["Fira_Code",monospace] text-[11px] text-(--text-muted) truncate flex-1 hidden sm:block'>
-            {headerFilePath}
-          </span>
-          {showPreviewToggle && (
-            <div className="flex items-center bg-(--bg-surface) border border-(--border-subtle) rounded-md p-0.5 shrink-0">
-              <button
-                type="button"
-                onClick={() => setPreviewMode(false)}
-                className={[
-                  "text-[13px] px-2.5 py-0.5 rounded cursor-pointer border-none transition-colors duration-150",
-                  !previewMode
-                    ? "bg-(--bg-elevated) text-(--text-primary)"
-                    : "bg-transparent text-(--text-muted) hover:text-(--text-secondary)",
-                ].join(" ")}
-              >
-                Edit
-              </button>
-              <button
-                type="button"
-                onClick={() => setPreviewMode(true)}
-                className={[
-                  "text-[13px] px-2.5 py-0.5 rounded cursor-pointer border-none transition-colors duration-150",
-                  previewMode
-                    ? "bg-(--bg-elevated) text-(--text-primary)"
-                    : "bg-transparent text-(--text-muted) hover:text-(--text-secondary)",
-                ].join(" ")}
-              >
-                Preview
-              </button>
-            </div>
-          )}
-          <button
-            onClick={headerSaveDisabled ? undefined : handleGlobalSave}
-            disabled={headerSaveDisabled}
-            className={[
-              "text-[13px] px-3 py-1 rounded-md border-none transition-colors duration-150 shrink-0",
-              headerSaveDisabled
-                ? "bg-(--bg-surface) text-(--text-muted) opacity-50 cursor-not-allowed"
-                : "bg-(--accent) cursor-pointer text-white hover:bg-(--accent-hover)",
-            ].join(" ")}
-          >
-            {headerSaveLabel}
-          </button>
-        </div>
-      )}
       <SkillDraftContext.Provider value={draftContextValue}>
         <SkillLayoutContext.Provider value={layoutContextValue}>
           {isSkillSection ? (

@@ -465,74 +465,50 @@ export const McpEditorPane = ({
 
   return (
     <div className="flex flex-col flex-1 min-h-0 bg-(--bg-base)">
-      {/* Header bar: back + file path + save */}
-      <div className="shrink-0 flex items-center gap-2 px-4 py-2.5 border-b border-(--border-faint) bg-(--bg-base)">
-        <button
-          type="button"
-          onClick={onBack}
-          className="shrink-0 w-7 h-7 flex items-center justify-center rounded-md text-(--text-muted) hover:text-(--text-primary) hover:bg-(--bg-elevated) transition-colors duration-150 border-none bg-transparent cursor-pointer"
-          aria-label="Back"
-        >
-          <ChevronLeftIcon />
-        </button>
-        <span className='font-["Fira_Code",monospace] text-[11px] text-(--text-muted) truncate flex-1 hidden sm:block'>
-          ~/.claude/mcpServers/{name}
-        </span>
-        <button
-          type="button"
-          onClick={activeTab === "configure" ? handleConfigureSave : handleJsonSave}
-          disabled={saving}
-          className={[
-            "text-[13px] px-3 py-1 rounded-md border-none transition-colors duration-150 shrink-0",
-            saving
-              ? "bg-(--bg-surface) text-(--text-muted) opacity-50 cursor-not-allowed"
-              : "bg-(--accent) cursor-pointer text-white hover:bg-(--accent-hover)",
-          ].join(" ")}
-        >
-          {saving ? "Saving…" : "Save"}
-        </button>
-      </div>
+      <div className="shrink-0 flex items-stretch justify-between border-b border-(--border-faint) px-4">
+        <div className="flex items-stretch gap-1">
+          <button
+            type="button"
+            onClick={onBack}
+            className="flex items-center gap-1.5 pt-6 pb-5 text-[14px] text-(--text-secondary) hover:text-(--text-primary) bg-transparent border-none cursor-pointer transition-colors duration-150 pr-3 mr-2 border-r border-(--border-subtle)"
+          >
+            <ChevronLeftIcon /> Back
+          </button>
+          <TabButton id="configure" label="Configure" active={activeTab} onClick={handleTabChange} />
+          <TabButton id="json" label="JSON" active={activeTab} onClick={handleTabChange} />
+        </div>
 
-      {/* Name + Delete */}
-      <div className="px-8 pt-6 pb-0 shrink-0">
-        <div className="flex items-start justify-between">
-          <h1 className='font-["Bricolage_Grotesque",sans-serif] text-[22px] font-bold text-(--text-primary) leading-tight m-0'>
-            {name}
-          </h1>
+        <div className="flex items-center gap-3">
+          <span className='font-["Fira_Code",monospace] text-[11px] text-(--text-muted) truncate max-w-48 hidden sm:block'>
+            ~/.claude/mcpServers/{name}
+          </span>
           <button
             type="button"
             onClick={handleDeleteClick}
             disabled={deleting}
             onBlur={() => setDeleteConfirm(false)}
             className={[
-              "text-[13px] px-3 py-1.5 rounded-lg border transition-colors duration-150 cursor-pointer",
+              "text-[13px] px-3 py-1 rounded-lg border transition-colors duration-150 cursor-pointer",
               deleteConfirm
                 ? "bg-(--error) text-white border-transparent hover:opacity-90"
                 : "bg-transparent text-(--text-muted) border-(--border-subtle) hover:text-(--error) hover:border-(--error)",
             ].join(" ")}
           >
-            {deleting
-              ? "Deleting…"
-              : deleteConfirm
-                ? "Are you sure?"
-                : "Delete"}
+            {deleting ? "Deleting…" : deleteConfirm ? "Are you sure?" : "Delete"}
           </button>
-        </div>
-
-        {/* Tab bar */}
-        <div className="flex items-stretch gap-1 mt-4 border-b border-(--border-faint)">
-          <TabButton
-            id="configure"
-            label="Configure"
-            active={activeTab}
-            onClick={handleTabChange}
-          />
-          <TabButton
-            id="json"
-            label="JSON"
-            active={activeTab}
-            onClick={handleTabChange}
-          />
+          <button
+            type="button"
+            onClick={activeTab === "configure" ? handleConfigureSave : handleJsonSave}
+            disabled={saving}
+            className={[
+              "text-[13px] font-medium px-3 py-1 rounded-lg border-none transition-colors duration-150",
+              saving
+                ? "bg-(--bg-surface) text-(--text-muted) opacity-50 cursor-not-allowed"
+                : "bg-(--accent) text-white cursor-pointer hover:bg-(--accent-hover)",
+            ].join(" ")}
+          >
+            {saving ? "Saving…" : "Save"}
+          </button>
         </div>
       </div>
 

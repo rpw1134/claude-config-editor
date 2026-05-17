@@ -31,6 +31,13 @@ export interface SkillTabBarProps {
   skillName: string;
   projectPath: string;
   onBack: () => void;
+  filePath?: string;
+  saveLabel?: string;
+  saveDisabled?: boolean;
+  onSave?: () => void;
+  showPreviewToggle?: boolean;
+  previewMode?: boolean;
+  onSetPreviewMode?: (val: boolean) => void;
 }
 
 interface TabDef {
@@ -56,6 +63,13 @@ export const SkillTabBar = ({
   activeTab,
   skillName,
   onBack,
+  filePath,
+  saveLabel,
+  saveDisabled,
+  onSave,
+  showPreviewToggle,
+  previewMode,
+  onSetPreviewMode,
 }: SkillTabBarProps) => {
   const navigate = useNavigate();
   const { projectId } = useParams<{ projectId: string }>();
@@ -145,6 +159,54 @@ export const SkillTabBar = ({
           );
         })}
       </div>
+      {filePath && (
+        <div className="flex items-center gap-3">
+          <span className='font-["Fira_Code",monospace] text-[11px] text-(--text-muted) truncate max-w-48 hidden sm:block'>
+            {filePath}
+          </span>
+          {showPreviewToggle && (
+            <div className="flex items-center bg-(--bg-surface) border border-(--border-subtle) rounded-md p-0.5 shrink-0">
+              <button
+                type="button"
+                onClick={() => onSetPreviewMode?.(false)}
+                className={[
+                  "text-[13px] px-2.5 py-0.5 rounded cursor-pointer border-none transition-colors duration-150",
+                  !previewMode
+                    ? "bg-(--bg-elevated) text-(--text-primary)"
+                    : "bg-transparent text-(--text-muted) hover:text-(--text-secondary)",
+                ].join(" ")}
+              >Edit</button>
+              <button
+                type="button"
+                onClick={() => onSetPreviewMode?.(true)}
+                className={[
+                  "text-[13px] px-2.5 py-0.5 rounded cursor-pointer border-none transition-colors duration-150",
+                  previewMode
+                    ? "bg-(--bg-elevated) text-(--text-primary)"
+                    : "bg-transparent text-(--text-muted) hover:text-(--text-secondary)",
+                ].join(" ")}
+              >Preview</button>
+            </div>
+          )}
+          {onSave && (() => {
+            const isDisabled = !!saveDisabled;
+            return (
+              <button
+                onClick={isDisabled ? undefined : onSave}
+                disabled={isDisabled}
+                className={[
+                  "text-[13px] font-medium px-3 py-1 rounded-lg border-none transition-colors duration-150",
+                  isDisabled
+                    ? "bg-(--bg-surface) text-(--text-muted) opacity-50 cursor-not-allowed"
+                    : "bg-(--accent) text-white cursor-pointer hover:bg-(--accent-hover)",
+                ].join(" ")}
+              >
+                {saveLabel ?? "Save"}
+              </button>
+            );
+          })()}
+        </div>
+      )}
     </div>
   );
 };
