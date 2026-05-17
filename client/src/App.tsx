@@ -445,6 +445,14 @@ const SkillLayout = () => {
     [],
   );
 
+  // Clear stale handlers and drafts when the skill changes
+  useEffect(() => {
+    saveHandlerRefs.current = {};
+    clearDrafts();
+    setDirtyFiles({});
+    setSaveStatus("idle");
+  }, [clearDrafts, projectPath, skillName]);
+
   // ── Child callbacks ───────────────────────────────────────────────────────────
   const reportDirty = useCallback((file: string, isDirty: boolean) => {
     setDirtyFiles((prev) => {
@@ -673,7 +681,7 @@ const SkillFormContent = ({
   const navigate = useNavigate();
   const { onBumpSkillsRefresh, removeFromRecents } = useShell();
   const draftStore = useSkillDrafts();
-  const { reportDirty, registerSaveHandler, unregisterSaveHandler, previewMode, isSaving } =
+  const { reportDirty, registerSaveHandler, previewMode, isSaving } =
     useSkillLayout();
   const draftKey = "SKILL.md";
   const cachedDraft = draftStore.getDraft(draftKey);
@@ -712,19 +720,24 @@ const SkillFormContent = ({
     reportDirty("SKILL.md", dirty);
   }, [dirty, reportDirty]);
 
-  // Register save handler with SkillLayout — re-registers whenever deps change
+  // Register save handler — stays registered across tab switches so cross-tab Cmd+S works.
+  // Handler updates both local state (no-op if unmounted) and the draft store
+  // so the component sees the correct savedContent when it remounts.
   const handleSave = useCallback(async () => {
     if (!dirty) return;
     await updateSkillContent(projectPath, skillName, fileContent);
     setSavedContent(fileContent);
     setHasEdits(false);
+    const cached = draftStore.getDraft("SKILL.md");
+    if (cached) draftStore.setDraft("SKILL.md", { ...cached, savedContent: fileContent, hasEdits: false });
     reportDirty("SKILL.md", false);
-  }, [dirty, projectPath, skillName, fileContent, reportDirty]);
+  }, [dirty, projectPath, skillName, fileContent, reportDirty, draftStore]);
 
   useEffect(() => {
     registerSaveHandler("SKILL.md", handleSave);
-    return () => unregisterSaveHandler("SKILL.md");
-  }, [handleSave, registerSaveHandler, unregisterSaveHandler]);
+    // No cleanup — handler must persist when switching tabs so SkillLayout can
+    // save this file even when this component is not mounted.
+  }, [handleSave, registerSaveHandler]);
 
   // Load SKILL.md once — the key on SkillLayout ensures remount only when skill changes
   useEffect(() => {
@@ -836,8 +849,7 @@ const SkillFileContent = () => {
     file: string;
   }>();
   const draftStore = useSkillDrafts();
-  const { reportDirty, registerSaveHandler, unregisterSaveHandler, previewMode } =
-    useSkillLayout();
+  const { reportDirty, registerSaveHandler, previewMode } = useSkillLayout();
 
   const projectPath = projectId ? decodeProject(projectId) : null;
   const skillName = name ? decodeURIComponent(name) : null;
@@ -868,20 +880,22 @@ const SkillFileContent = () => {
     reportDirty(fileName, dirty);
   }, [dirty, fileName, reportDirty]);
 
-  // Register save handler with SkillLayout — re-registers whenever deps change
+  // Register save handler — stays registered across tab switches so cross-tab Cmd+S works.
   const handleSave = useCallback(async () => {
     if (!dirty || !projectPath || !skillName || !fileName) return;
     await updateSkillFile(projectPath, skillName, fileName, fileContent);
     setSavedContent(fileContent);
     setHasEdits(false);
+    const cached = draftStore.getDraft(fileName);
+    if (cached) draftStore.setDraft(fileName, { ...cached, savedContent: fileContent, hasEdits: false });
     reportDirty(fileName, false);
-  }, [dirty, projectPath, skillName, fileName, fileContent, reportDirty]);
+  }, [dirty, projectPath, skillName, fileName, fileContent, reportDirty, draftStore]);
 
   useEffect(() => {
     if (!fileName) return;
     registerSaveHandler(fileName, handleSave);
-    return () => unregisterSaveHandler(fileName);
-  }, [fileName, handleSave, registerSaveHandler, unregisterSaveHandler]);
+    // No cleanup — handler must persist when switching tabs.
+  }, [fileName, handleSave, registerSaveHandler]);
 
   useEffect(() => {
     if (!projectPath || !skillName || !fileName) return;
