@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { fetchProjects } from '../lib/api';
-import type { ProjectInfo } from '../lib/api';
+import { fetchProjects } from '../../lib/api';
+import type { ProjectInfo } from '../../lib/api';
 
 interface ProjectPickerProps {
   selectedPath: string | null;

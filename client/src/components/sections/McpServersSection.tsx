@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { fetchMcpServers } from '../../lib/api';
-import { SectionHeader } from '../SectionHeader';
-import { Pagination } from '../Pagination';
+import { SectionHeader } from '../Shared/SectionHeader';
+import { Pagination } from '../Shared/Pagination';
 
 const PAGE_SIZE = 10;
 

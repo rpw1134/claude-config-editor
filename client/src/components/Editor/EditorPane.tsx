@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useBlocker } from "react-router-dom";
-import ReactMarkdown from "react-markdown";
 import {
   fetchAgentContent,
   fetchSkillContent,
@@ -17,9 +16,11 @@ import {
   updateProjectContent,
 } from "../../lib/api";
 import { Editor } from "./Editor";
-import { AgentFormEditor } from "./AgentFormEditor";
-
-type ViewMode = "form" | "raw";
+import { AgentFormEditor } from "../Agent/AgentFormEditor";
+import type { ViewMode } from "./parts/types";
+import { CreateHeader } from "./parts/CreateHeader";
+import { EditHeader } from "./parts/EditHeader";
+import { MarkdownEditorView } from "./parts/MarkdownEditorView";
 
 interface EditorPaneProps {
   name: string | null;
@@ -33,21 +34,23 @@ type SaveStatus = "idle" | "saving" | "saved" | "error";
 type CreateStatus = "idle" | "creating" | "error";
 type DeleteStatus = "idle" | "confirm" | "deleting" | "error";
 
+type EditorType = "agent" | "skill" | "mcp-server" | "project";
+
 function shortenHome(p: string): string {
-  return p.replace(/^(\/Users\/[^/]+|\/home\/[^/]+)/, '~');
+  return p.replace(/^(\/Users\/[^/]+|\/home\/[^/]+)/, "~");
 }
 
 function filePath(
   name: string,
-  type: "agent" | "skill" | "mcp-server" | "project",
+  type: EditorType,
   projectPath: string | null,
 ): string {
-  const isGlobal = projectPath?.endsWith('/.claude') ?? true;
+  const isGlobal = projectPath?.endsWith("/.claude") ?? true;
   const configDir = isGlobal
-    ? '~/.claude'
+    ? "~/.claude"
     : projectPath
-    ? shortenHome(projectPath) + '/.claude'
-    : '~/.claude';
+      ? shortenHome(projectPath) + "/.claude"
+      : "~/.claude";
 
   if (type === "agent") return `${configDir}/agents/${name}.md`;
   if (type === "skill") return `${configDir}/skills/${name}/SKILL.md`;
@@ -58,366 +61,13 @@ function filePath(
   return `~/.claude.json → mcpServers → ${name}`;
 }
 
-// ── View mode toggle ──────────────────────────────────────────────────────────
-
-interface ViewModeToggleProps {
-  viewMode: ViewMode;
-  onToggle: (mode: ViewMode) => void;
-}
-
-const ViewModeToggle = ({ viewMode, onToggle }: ViewModeToggleProps) => (
-  <div className="flex items-center bg-(--bg-surface) border border-(--border-subtle) rounded-md p-0.5">
-    <button
-      type="button"
-      onClick={() => onToggle("form")}
-      className={[
-        'text-[13px] px-2.5 py-0.5 rounded cursor-pointer border-none transition-colors duration-150',
-        viewMode === "form"
-          ? "bg-(--bg-elevated) text-(--text-primary)"
-          : "bg-transparent text-(--text-muted) hover:text-(--text-secondary)",
-      ].join(' ')}
-    >
-      Form
-    </button>
-    <button
-      type="button"
-      onClick={() => onToggle("raw")}
-      className={[
-        'text-[13px] px-2.5 py-0.5 rounded cursor-pointer border-none transition-colors duration-150',
-        viewMode === "raw"
-          ? "bg-(--bg-elevated) text-(--text-primary)"
-          : "bg-transparent text-(--text-muted) hover:text-(--text-secondary)",
-      ].join(' ')}
-    >
-      Raw
-    </button>
-  </div>
-);
-
-// ── Back arrow icon ───────────────────────────────────────────────────────────
-
-const BackArrowIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M8.5 2.5L4 7L8.5 11.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-  </svg>
-);
-
-// ── Create header ─────────────────────────────────────────────────────────────
-
-interface CreateHeaderProps {
-  type: "agent" | "skill" | "mcp-server" | "project";
-  projectPath: string | null;
-  draftName: string;
-  onDraftNameChange: (val: string) => void;
-  createStatus: CreateStatus;
-  onCreate: () => void;
-  viewMode: ViewMode;
-  onViewModeToggle: (mode: ViewMode) => void;
-  contentEmpty?: boolean;
-}
-
-const CreateHeader = ({
-  type,
-  projectPath,
-  draftName,
-  onDraftNameChange,
-  createStatus,
-  onCreate,
-  viewMode,
-  onViewModeToggle,
-  contentEmpty = false,
-}: CreateHeaderProps) => {
-  const creating = createStatus === "creating";
-  const isError = createStatus === "error";
-  const needsBody = type === "mcp-server" && contentEmpty;
-  const disabled = draftName.trim() === "" || creating || needsBody;
-
-  const label = creating ? "Creating…" : isError ? "Error" : "Create";
-
-  const isGlobal = projectPath?.endsWith('/.claude') ?? true;
-  const configDir = isGlobal
-    ? '~/.claude'
-    : projectPath
-    ? shortenHome(projectPath) + '/.claude'
-    : '~/.claude';
-  const pathPrefix =
-    type === "agent"
-      ? `${configDir}/agents/`
-      : type === "skill"
-      ? `${configDir}/skills/`
-      : "~/.claude.json → mcpServers → ";
-
-  return (
-    <div className="px-5 border-b border-(--border-faint) flex items-center justify-between shrink-0 min-h-12 bg-(--bg-sidebar)">
-      <div className="flex items-center gap-1.5">
-        <span className='font-["Fira_Code",monospace] text-[12px] text-(--text-secondary)'>
-          {pathPrefix}
-        </span>
-        <input
-          type="text"
-          value={draftName}
-          onChange={(e) => onDraftNameChange(e.target.value)}
-          onKeyDown={(e) => { if (e.key === "Enter" && !disabled) onCreate(); }}
-          placeholder="name"
-          className='bg-transparent font-["Fira_Code",monospace] text-[12px] text-(--text-secondary) outline-none border-none border-b border-(--border-subtle) w-48 transition-colors duration-150 focus:border-b-(--border-strong)'
-          autoFocus
-          spellCheck={false}
-        />
-      </div>
-      <div className="flex items-center gap-3">
-        {type === "agent" && (
-          <ViewModeToggle viewMode={viewMode} onToggle={onViewModeToggle} />
-        )}
-        {needsBody && (
-          <span className='font-["Fira_Code",monospace] text-[11px] text-(--text-muted) opacity-60'>
-            add JSON body below first
-          </span>
-        )}
-        <button
-          onClick={onCreate}
-          disabled={disabled}
-          aria-label="Create file"
-          className={[
-            'text-[13px] px-3 py-1 rounded-md border-none transition-colors duration-150',
-            isError
-              ? "text-(--error) bg-transparent cursor-pointer"
-              : !disabled
-              ? "bg-(--accent) text-white cursor-pointer hover:bg-(--accent-hover)"
-              : "bg-transparent text-(--text-muted) cursor-not-allowed opacity-40",
-          ].join(' ')}
-        >
-          {label}
-        </button>
-      </div>
-    </div>
-  );
-};
-
-// ── Markdown editor view (claude.md / skills) ────────────────────────────────
-
-interface MarkdownEditorViewProps {
-  title: string;
-  description: string;
-  resolvedFilePath: string;
-  content: string;
-  onChange: (val: string) => void;
-  saveStatus: SaveStatus;
-  saveDisabled: boolean;
-  onSave: () => void;
-  onBack: () => void;
-}
-
-const MarkdownEditorView = ({
-  title,
-  description,
-  resolvedFilePath,
-  content,
-  onChange,
-  saveStatus,
-  saveDisabled,
-  onSave,
-  onBack,
-}: MarkdownEditorViewProps) => {
-  const [previewMode, setPreviewMode] = useState(false);
-  const isSaved = saveStatus === "saved";
-  const saveLabel =
-    saveStatus === "saving" ? "Saving…" : isSaved ? "Saved ✓" : saveDisabled ? "Up to date" : "Save";
-  const isDisabled = saveDisabled && !isSaved;
-
-  return (
-    <div className="flex flex-col h-full bg-(--bg-base)">
-      {/* Thin top bar */}
-      <div className="px-5 border-b border-(--border-faint) flex items-center justify-between shrink-0 min-h-14 bg-(--bg-sidebar)">
-        <button
-          type="button"
-          onClick={onBack}
-          className="flex items-center gap-1.5 text-[14px] text-(--text-secondary) hover:text-(--text-primary) bg-transparent border-none cursor-pointer transition-colors duration-150 p-0"
-        >
-          <BackArrowIcon /> Back
-        </button>
-        <div className="flex items-center gap-3">
-          <span className='font-["Fira_Code",monospace] text-[11px] text-(--text-secondary) truncate max-w-64 hidden sm:block'>
-            {resolvedFilePath}
-          </span>
-          <button
-            onClick={isDisabled ? undefined : onSave}
-            disabled={isDisabled}
-            className={[
-              'text-[13px] px-3 py-1 rounded-md border-none transition-colors duration-150',
-              isDisabled
-                ? 'bg-(--bg-surface) text-(--text-muted) opacity-50 cursor-not-allowed'
-                : 'bg-(--accent) cursor-pointer text-white hover:bg-(--accent-hover)',
-            ].join(' ')}
-          >
-            {saveLabel}
-          </button>
-        </div>
-      </div>
-
-      {/* Rich content header */}
-      <div className="px-7 pt-8 pb-4 shrink-0 flex items-start justify-between">
-        <div>
-          <h2 className="m-0 mb-1 text-2xl font-['Bricolage_Grotesque',sans-serif] font-bold tracking-[-0.015em] text-(--text-primary)">
-            {title}
-          </h2>
-          <p className="m-0 text-[13px] text-(--text-secondary)">{description}</p>
-        </div>
-        <div className="flex items-center bg-(--bg-surface) border border-(--border-subtle) rounded-md p-0.5 shrink-0 mt-1">
-          <button
-            type="button"
-            onClick={() => setPreviewMode(false)}
-            className={[
-              'text-[13px] px-2.5 py-0.5 rounded cursor-pointer border-none transition-colors duration-150',
-              !previewMode ? 'bg-(--bg-elevated) text-(--text-primary)' : 'bg-transparent text-(--text-muted) hover:text-(--text-secondary)',
-            ].join(' ')}
-          >
-            Edit
-          </button>
-          <button
-            type="button"
-            onClick={() => setPreviewMode(true)}
-            className={[
-              'text-[13px] px-2.5 py-0.5 rounded cursor-pointer border-none transition-colors duration-150',
-              previewMode ? 'bg-(--bg-elevated) text-(--text-primary)' : 'bg-transparent text-(--text-muted) hover:text-(--text-secondary)',
-            ].join(' ')}
-          >
-            Preview
-          </button>
-        </div>
-      </div>
-
-      {/* Editor or preview */}
-      {previewMode ? (
-        <div className="flex-1 min-h-0 overflow-y-auto px-7 py-6 prose prose-invert prose-sm max-w-none">
-          <ReactMarkdown>{content}</ReactMarkdown>
-        </div>
-      ) : (
-        <div className="flex-1 min-h-0">
-          <Editor value={content} onChange={(val) => onChange(val ?? "")} language="markdown" />
-        </div>
-      )}
-    </div>
-  );
-};
-
-// ── Edit header ───────────────────────────────────────────────────────────────
-
-interface EditHeaderProps {
-  name: string;
-  type: "agent" | "skill" | "mcp-server" | "project";
-  projectPath: string | null;
-  saveStatus: SaveStatus;
-  saveDisabled: boolean;
-  onSave: () => void;
-  viewMode: ViewMode;
-  onViewModeToggle: (mode: ViewMode) => void;
-  showViewToggle?: boolean;
-  onBack?: () => void;
-  previewMode?: boolean;
-  onTogglePreview?: () => void;
-}
-
-const EditHeader = ({
+export const EditorPane = ({
   name,
   type,
   projectPath,
-  saveStatus,
-  saveDisabled,
-  onSave,
-  viewMode,
-  onViewModeToggle,
-  showViewToggle = true,
-  onBack,
-  previewMode,
-  onTogglePreview,
-}: EditHeaderProps) => {
-  const isSaved = saveStatus === "saved";
-  const saveLabel =
-    saveStatus === "saving"
-      ? "Saving…"
-      : isSaved
-      ? "Saved ✓"
-      : saveDisabled
-      ? "Up to date"
-      : "Save";
-
-  const isDisabled = saveDisabled && !isSaved;
-
-  return (
-    <div className="px-5 border-b border-(--border-faint) flex items-center justify-between shrink-0 min-h-14 bg-(--bg-sidebar)">
-      {/* Left: optional Back button + file path */}
-      <div className="flex items-center gap-0 min-w-0">
-        {onBack && (
-          <>
-            <button
-              type="button"
-              onClick={onBack}
-              className="flex items-center gap-1.5 text-[14px] text-(--text-secondary) hover:text-(--text-primary) bg-transparent border-none cursor-pointer transition-colors duration-150 p-0 pr-3 shrink-0"
-            >
-              <BackArrowIcon /> Back
-            </button>
-            <span className="w-px h-4 bg-(--border-subtle) mx-3 shrink-0" />
-          </>
-        )}
-        <span className='font-["Fira_Code",monospace] text-[12px] text-(--text-secondary) truncate'>
-          {filePath(name, type, projectPath)}
-        </span>
-      </div>
-
-      {/* Right: view toggle + preview toggle + save */}
-      <div className="flex items-center gap-3 shrink-0 ml-3">
-        {type === "agent" && showViewToggle && (
-          <ViewModeToggle viewMode={viewMode} onToggle={onViewModeToggle} />
-        )}
-        {onTogglePreview && (
-          <div className="flex items-center bg-(--bg-surface) border border-(--border-subtle) rounded-md p-0.5">
-            <button
-              type="button"
-              onClick={() => previewMode && onTogglePreview()}
-              className={[
-                'text-[13px] px-2.5 py-0.5 rounded cursor-pointer border-none transition-colors duration-150',
-                !previewMode
-                  ? 'bg-(--bg-elevated) text-(--text-primary)'
-                  : 'bg-transparent text-(--text-muted) hover:text-(--text-secondary)',
-              ].join(' ')}
-            >
-              Edit
-            </button>
-            <button
-              type="button"
-              onClick={() => !previewMode && onTogglePreview()}
-              className={[
-                'text-[13px] px-2.5 py-0.5 rounded cursor-pointer border-none transition-colors duration-150',
-                previewMode
-                  ? 'bg-(--bg-elevated) text-(--text-primary)'
-                  : 'bg-transparent text-(--text-muted) hover:text-(--text-secondary)',
-              ].join(' ')}
-            >
-              Preview
-            </button>
-          </div>
-        )}
-        <button
-          onClick={isDisabled ? undefined : onSave}
-          disabled={isDisabled}
-          aria-label="Save file"
-          className={[
-            'text-[13px] px-3 py-1 rounded-md border-none transition-colors duration-150',
-            isDisabled
-              ? 'bg-(--bg-surface) text-(--text-muted) opacity-50 cursor-not-allowed'
-              : 'bg-(--accent) cursor-pointer text-white hover:bg-(--accent-hover)',
-          ].join(' ')}
-        >
-          {saveLabel}
-        </button>
-      </div>
-    </div>
-  );
-};
-
-// ── EditorPane ────────────────────────────────────────────────────────────────
-
-export const EditorPane = ({ name, type, projectPath, onCreated, onDeleted }: EditorPaneProps) => {
+  onCreated,
+  onDeleted,
+}: EditorPaneProps) => {
   const navigate = useNavigate();
   const [content, setContent] = useState("");
   const [savedContent, setSavedContent] = useState("");
@@ -434,7 +84,10 @@ export const EditorPane = ({ name, type, projectPath, onCreated, onDeleted }: Ed
   const currentKey = `${type}:${projectPath}:${name}`;
 
   const defaultMode: ViewMode = type === "agent" ? "form" : "raw";
-  const [storedViewMode, setStoredViewMode] = useState<{ key: string; mode: ViewMode }>({
+  const [storedViewMode, setStoredViewMode] = useState<{
+    key: string;
+    mode: ViewMode;
+  }>({
     key: currentKey,
     mode: defaultMode,
   });
@@ -519,7 +172,8 @@ export const EditorPane = ({ name, type, projectPath, onCreated, onDeleted }: Ed
     setDeleteStatus("deleting");
     try {
       if (type === "agent" && projectPath) await deleteAgent(projectPath, name);
-      else if (type === "skill" && projectPath) await deleteSkill(projectPath, name);
+      else if (type === "skill" && projectPath)
+        await deleteSkill(projectPath, name);
       onDeleted?.();
     } catch {
       setDeleteStatus("error");
@@ -563,6 +217,18 @@ export const EditorPane = ({ name, type, projectPath, onCreated, onDeleted }: Ed
   const editorLanguage = type === "mcp-server" ? "json" : "markdown";
   const showFormView = type === "agent" && viewMode === "form";
   const isMarkdown = type === "project" || type === "skill";
+  const isGlobal = projectPath?.endsWith("/.claude") ?? true;
+  const configDir = isGlobal
+    ? "~/.claude"
+    : projectPath
+      ? shortenHome(projectPath) + "/.claude"
+      : "~/.claude";
+  const createPathPrefix =
+    type === "agent"
+      ? `${configDir}/agents/`
+      : type === "skill"
+        ? `${configDir}/skills/`
+        : "~/.claude.json → mcpServers → ";
 
   // Block router navigation when there are unsaved changes.
   const blocker = useBlocker(
@@ -614,7 +280,7 @@ export const EditorPane = ({ name, type, projectPath, onCreated, onDeleted }: Ed
       {isCreateMode ? (
         <CreateHeader
           type={type}
-          projectPath={projectPath}
+          pathPrefix={createPathPrefix}
           draftName={draftName}
           onDraftNameChange={setDraftName}
           createStatus={createStatus}
@@ -625,9 +291,8 @@ export const EditorPane = ({ name, type, projectPath, onCreated, onDeleted }: Ed
         />
       ) : !showFormView && !isMarkdown ? (
         <EditHeader
-          name={name}
+          filePath={filePath(name, type, projectPath)}
           type={type}
-          projectPath={projectPath}
           saveStatus={saveStatus}
           saveDisabled={loading || !dirty || saving}
           onSave={handleSave}
@@ -651,7 +316,7 @@ export const EditorPane = ({ name, type, projectPath, onCreated, onDeleted }: Ed
             saveDisabled={loading || !dirty || saving}
             disabled={saving}
             onBack={() => navigate(-1)}
-            filePath={name ? filePath(name, 'agent', projectPath) : undefined}
+            filePath={name ? filePath(name, "agent", projectPath) : undefined}
           />
         ) : isMarkdown && !isCreateMode ? (
           <MarkdownEditorView

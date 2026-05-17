@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useBlocker } from "react-router-dom";
-import { createAgent } from "../lib/api";
+import { createAgent } from "../../lib/api";
 
 export interface AgentCreateFlowProps {
   projectPath: string;

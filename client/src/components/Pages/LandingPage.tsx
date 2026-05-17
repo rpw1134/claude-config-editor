@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { fetchAgents, fetchSkills, fetchMcpServers } from '../lib/api';
+import { fetchAgents, fetchSkills, fetchMcpServers } from '../../lib/api';
 
 // ── Icons ─────────────────────────────────────────────────────────────────────
 

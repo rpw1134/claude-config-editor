@@ -1,5 +1,5 @@
 import ReactMarkdown from "react-markdown";
-import { Editor } from "./Editor";
+import { Editor } from "../Editor/Editor";
 
 const DocumentIcon = () => (
   <svg width="15" height="15" viewBox="0 0 15 15" fill="none">

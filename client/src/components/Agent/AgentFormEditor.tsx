@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { parseFrontmatter, serializeFrontmatter, type AgentFrontmatter } from '../../lib/frontmatter';
-import { Editor } from './Editor';
+import { Editor } from '../Editor/Editor';
 
 // ── Shared style tokens ───────────────────────────────────────────────────────
 

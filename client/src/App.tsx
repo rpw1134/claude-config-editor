@@ -17,24 +17,24 @@ import {
   useLocation,
   useBlocker,
 } from "react-router-dom";
-import { SkillTabBar } from "./components/Editor/SkillTabBar";
-import type { SkillTabId } from "./components/Editor/SkillTabBar";
-import { Sidebar } from "./components/Sidebar";
-import { EditorPane } from "./components/Editor/EditorPane";
-import { SkillDirectoryView } from "./components/Editor/SkillDirectoryView";
-import { SkillFormEditor } from "./components/Editor/SkillFormEditor";
+import { SkillTabBar } from "./components/Skill/SkillTabBar";
+import type { SkillTabId } from "./components/Skill/SkillTabBar";
+import { Sidebar } from "./components/Layout/Sidebar";
+import { EditorPane } from "./components/Editor/EditorPane.tsx";
+import { SkillDirectoryView } from "./components/Skill/SkillDirectoryView";
+import { SkillFormEditor } from "./components/Skill/SkillFormEditor";
 import {
   PlainFileEditor,
   resolvedFilePath,
-} from "./components/Editor/PlainFileEditor";
-import { WelcomePane, NoProjectPane } from "./components/WelcomePane";
+} from "./components/Skill/PlainFileEditor";
+import { WelcomePane, NoProjectPane } from "./components/Pages/WelcomePane";
 import {
   AgentsLandingPage,
   SkillsLandingPage,
   McpLandingPage,
-} from "./components/LandingPage";
-import { CreateNewModal } from "./components/CreateNewModal";
-import { AgentCreateFlow } from "./components/AgentCreateFlow";
+} from "./components/Pages/LandingPage";
+import { CreateNewModal } from "./components/Modals/CreateNewModal";
+import { AgentCreateFlow } from "./components/Agent/AgentCreateFlow";
 import {
   fetchProjects,
   fetchSkillContent,
@@ -433,7 +433,10 @@ const SkillLayout = () => {
 
   // ── Preview mode — stored with the tab it belongs to so switching tabs
   // automatically resets it without needing an effect ──────────────────────────
-  const [previewState, setPreviewState] = useState({ forTab: activeTab, value: false });
+  const [previewState, setPreviewState] = useState({
+    forTab: activeTab,
+    value: false,
+  });
   const previewMode = previewState.forTab === activeTab && previewState.value;
   const setPreviewMode = (val: boolean) =>
     setPreviewState({ forTab: activeTab, value: val });
@@ -476,10 +479,11 @@ const SkillLayout = () => {
   const handleGlobalSave = useCallback(async () => {
     if (saveStatus === "saving") return;
     const drafts = draftStore.current;
-    const pending = Object.entries(drafts).filter(([, draft]) =>
-      draft.initialized &&
-      !draft.contentLoading &&
-      draft.fileContent !== draft.savedContent
+    const pending = Object.entries(drafts).filter(
+      ([, draft]) =>
+        draft.initialized &&
+        !draft.contentLoading &&
+        draft.fileContent !== draft.savedContent,
     );
     if (pending.length === 0) return;
     setSaveStatus("saving");
@@ -488,11 +492,15 @@ const SkillLayout = () => {
         pending.map(([file, draft]) =>
           file === "SKILL.md"
             ? updateSkillContent(projectPath, skillName, draft.fileContent)
-            : updateSkillFile(projectPath, skillName, file, draft.fileContent)
+            : updateSkillFile(projectPath, skillName, file, draft.fileContent),
         ),
       );
       pending.forEach(([file, draft]) => {
-        drafts[file] = { ...draft, savedContent: draft.fileContent, hasEdits: false };
+        drafts[file] = {
+          ...draft,
+          savedContent: draft.fileContent,
+          hasEdits: false,
+        };
       });
       setDirtyFiles((prev) => {
         const next = { ...prev };
@@ -759,7 +767,14 @@ const SkillFormContent = ({
       }
       reportDirty("SKILL.md", false);
     };
-  }, [projectPath, skillName, fileContent, savedContent, reportDirty, draftStore]);
+  }, [
+    projectPath,
+    skillName,
+    fileContent,
+    savedContent,
+    reportDirty,
+    draftStore,
+  ]);
 
   useEffect(() => {
     registerSaveHandler("SKILL.md", async () => saveFnRef.current?.());
@@ -829,7 +844,14 @@ const SkillFormContent = ({
       deleteStatus,
       hasEdits,
     });
-  }, [draftStore, fileContent, savedContent, contentLoading, deleteStatus, hasEdits]);
+  }, [
+    draftStore,
+    fileContent,
+    savedContent,
+    contentLoading,
+    deleteStatus,
+    hasEdits,
+  ]);
 
   async function handleDeleteSkill() {
     if (deleteStatus === "deleting") return;
@@ -932,7 +954,15 @@ const SkillFileContent = () => {
       }
       reportDirty(fileName, false);
     };
-  }, [projectPath, skillName, fileName, fileContent, savedContent, reportDirty, draftStore]);
+  }, [
+    projectPath,
+    skillName,
+    fileName,
+    fileContent,
+    savedContent,
+    reportDirty,
+    draftStore,
+  ]);
 
   useEffect(() => {
     if (!fileName) return;
@@ -994,7 +1024,14 @@ const SkillFileContent = () => {
       saveStatus: "idle",
       hasEdits,
     });
-  }, [draftStore, fileName, fileContent, savedContent, contentLoading, hasEdits]);
+  }, [
+    draftStore,
+    fileName,
+    fileContent,
+    savedContent,
+    contentLoading,
+    hasEdits,
+  ]);
 
   if (!projectPath || !skillName || !fileName)
     return <Navigate to="/" replace />;

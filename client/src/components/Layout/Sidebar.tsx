@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { ProjectPicker } from "./ProjectPicker";
-import type { RecentItem } from "../hooks/useRecents";
+import { ProjectPicker } from "../Shared/ProjectPicker";
+import type { RecentItem } from "../../hooks/useRecents";
 
 // ── Collapsed create menu ─────────────────────────────────────────────────────
 

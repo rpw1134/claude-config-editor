@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { createAgent, createSkill, createMcpServer } from '../lib/api';
+import { createAgent, createSkill, createMcpServer } from '../../lib/api';
 
 type CreateType = 'agent' | 'skill' | 'mcp-server';
 
