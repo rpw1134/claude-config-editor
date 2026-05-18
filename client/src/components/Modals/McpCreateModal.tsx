@@ -330,10 +330,17 @@ export const McpCreateModal = ({
   // ── Render ───────────────────────────────────────────────────────────────────
 
   return (
+    <>
+      {showDiscardConfirm && (
+        <DiscardModal
+          onConfirm={onClose}
+          onCancel={() => setShowDiscardConfirm(false)}
+        />
+      )}
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
       onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
+        if (e.target === e.currentTarget) handleClose();
       }}
     >
       <div className="w-full max-w-md mx-4 bg-(--bg-surface) border border-(--border-subtle) rounded-2xl p-8 shadow-2xl">
@@ -361,7 +368,7 @@ export const McpCreateModal = ({
           </div>
           <button
             type="button"
-            onClick={onClose}
+            onClick={handleClose}
             className="shrink-0 w-8 h-8 flex items-center justify-center rounded-lg text-(--text-muted) hover:text-(--text-primary) hover:bg-(--bg-elevated) transition-colors duration-150 cursor-pointer border-none bg-transparent"
             aria-label="Close"
           >
@@ -683,5 +690,6 @@ export const McpCreateModal = ({
         )}
       </div>
     </div>
+    </>
   );
 };
