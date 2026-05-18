@@ -197,9 +197,9 @@ const PlusIcon = () => (
 );
 
 const SettingsIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <circle cx="7.5" cy="7.5" r="2" stroke="currentColor" strokeWidth="1.2" fill="none"/>
-    <path d="M7.5 1.5V3M7.5 12V13.5M13.5 7.5H12M3 7.5H1.5M11.7 3.3L10.6 4.4M4.4 10.6L3.3 11.7M11.7 11.7L10.6 10.6M4.4 4.4L3.3 3.3" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+    <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.5" fill="none"/>
   </svg>
 );
 
@@ -320,7 +320,7 @@ const NavButton = ({
     disabled={disabled}
     title={collapsed ? label : undefined}
     className={[
-      "w-full flex items-center gap-2.5 px-2 rounded-md text-left text-[14px] font-medium min-h-10 py-2 border-none transition-all duration-150",
+      "group w-full flex items-center gap-2.5 px-2 rounded-md text-left text-[14px] font-medium min-h-10 py-2 border-none transition-all duration-150",
       collapsed ? "border-l-0" : "border-l-[3px]",
       active
         ? "bg-(--bg-elevated) text-(--text-primary) border-l-(--accent)"
@@ -336,7 +336,7 @@ const NavButton = ({
           ? "text-(--text-muted)"
           : active
             ? "text-(--accent)"
-            : "text-(--text-secondary)",
+            : "text-(--text-secondary) group-hover:text-(--text-primary)",
       ].join(" ")}
     >
       {icon}

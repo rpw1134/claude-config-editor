@@ -1,5 +1,5 @@
 import { basename } from "path";
-import { deleteDir, ensureDir, fileExists, listDir, readFileContent, writeFileContent } from "../utils/fileIO.js";
+import { deleteDir, deleteFile, ensureDir, fileExists, listDir, readFileContent, writeFileContent } from "../utils/fileIO.js";
 import { resolveHome, validateProjectPath } from "../utils/parsing.js";
 import type { ClaudeConfig } from "../types/claudeConfig.js";
 
@@ -65,6 +65,13 @@ export async function deleteProject(rawPath: string): Promise<void> {
 
   try {
     await deleteDir(`${absolutePath}/.claude`);
+  } catch (e) {
+    const error = e as NodeJS.ErrnoException;
+    if (error.code !== "ENOENT") throw error;
+  }
+
+  try {
+    await deleteFile(`${absolutePath}/CLAUDE.md`);
   } catch (e) {
     const error = e as NodeJS.ErrnoException;
     if (error.code !== "ENOENT") throw error;
