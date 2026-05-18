@@ -33,6 +33,7 @@ import {
 } from "./components/Pages/LandingPage";
 import { CreateNewModal } from "./components/Modals/CreateNewModal";
 import { McpCreateModal } from "./components/Modals/McpCreateModal";
+import { CreateProjectModal } from "./components/Modals/CreateProjectModal";
 import { McpEditorPane } from "./components/Mcp/McpEditorPane";
 import { Toast } from "./components/Shared/Toast";
 import { ScriptsTab } from "./components/Skill/ScriptsTab";
@@ -82,15 +83,17 @@ interface ShellContextValue {
   onRecentClick: (item: RecentItem) => void;
   addToRecents: (type: RecentItem["type"], name: string) => void;
   removeFromRecents: (type: RecentItem["type"], name: string) => void;
-  onCreateNew: (type: "agent" | "skill" | "mcp-server") => void;
+  onCreateNew: (type: "agent" | "skill" | "mcp-server" | "project") => void;
   sidebarCollapsed: boolean;
   onToggleCollapsed: () => void;
   agentsRefreshKey: number;
   skillsRefreshKey: number;
   mcpRefreshKey: number;
+  projectsRefreshKey: number;
   onBumpAgentsRefresh: () => void;
   onBumpSkillsRefresh: () => void;
   onBumpMcpRefresh: () => void;
+  onBumpProjectsRefresh: () => void;
   showToast: (message: string) => void;
 }
 
@@ -164,9 +167,10 @@ interface ShellProps {
   onProjectSelect: (path: string) => void;
   recents: RecentItem[];
   onRecentClick: (item: RecentItem) => void;
-  onCreateNew: (type: "agent" | "skill" | "mcp-server") => void;
+  onCreateNew: (type: "agent" | "skill" | "mcp-server" | "project") => void;
   sidebarCollapsed: boolean;
   onToggleCollapsed: () => void;
+  projectsRefreshKey: number;
   children: React.ReactNode;
 }
 
@@ -178,6 +182,7 @@ const Shell = ({
   onCreateNew,
   sidebarCollapsed,
   onToggleCollapsed,
+  projectsRefreshKey,
   children,
 }: ShellProps) => (
   <div className="flex h-screen bg-[#0a0a0c] text-white overflow-hidden">
@@ -189,6 +194,7 @@ const Shell = ({
       recents={recents}
       onRecentClick={onRecentClick}
       onCreateNew={onCreateNew}
+      projectsRefreshKey={projectsRefreshKey}
     />
     <main className="flex flex-1 overflow-hidden">{children}</main>
   </div>
@@ -207,6 +213,7 @@ const LayoutRoute = () => {
       onCreateNew={ctx.onCreateNew}
       sidebarCollapsed={ctx.sidebarCollapsed}
       onToggleCollapsed={ctx.onToggleCollapsed}
+      projectsRefreshKey={ctx.projectsRefreshKey}
     >
       <Outlet />
     </Shell>
@@ -1224,10 +1231,12 @@ export default function App() {
   const [agentsRefreshKey, setAgentsRefreshKey] = useState(0);
   const [skillsRefreshKey, setSkillsRefreshKey] = useState(0);
   const [mcpRefreshKey, setMcpRefreshKey] = useState(0);
+  const [projectsRefreshKey, setProjectsRefreshKey] = useState(0);
+  const onBumpProjectsRefresh = useCallback(() => setProjectsRefreshKey((k) => k + 1), []);
 
   // Modal for skill / mcp-server create
   const [modalType, setModalType] = useState<
-    "agent" | "skill" | "mcp-server" | null
+    "agent" | "skill" | "mcp-server" | "project" | null
   >(null);
 
   // Toast
@@ -1298,7 +1307,11 @@ export default function App() {
     }
   };
 
-  const handleCreateNew = (type: "agent" | "skill" | "mcp-server") => {
+  const handleCreateNew = (type: "agent" | "skill" | "mcp-server" | "project") => {
+    if (type === "project") {
+      setModalType("project");
+      return;
+    }
     if (!selectedProjectPath) return;
     if (type === "agent") {
       navigate(`/${encodeProject(selectedProjectPath)}/agents/new`);
@@ -1310,7 +1323,7 @@ export default function App() {
   const handleModalSuccess = (name: string) => {
     const type = modalType!;
     setModalType(null);
-    addToRecents(type, name);
+    if (type !== "project") addToRecents(type, name);
     if (!selectedProjectPath) return;
     if (type === "skill") {
       setSkillsRefreshKey((k) => k + 1);
@@ -1338,9 +1351,11 @@ export default function App() {
     agentsRefreshKey,
     skillsRefreshKey,
     mcpRefreshKey,
+    projectsRefreshKey,
     onBumpAgentsRefresh: () => setAgentsRefreshKey((k) => k + 1),
     onBumpSkillsRefresh: () => setSkillsRefreshKey((k) => k + 1),
     onBumpMcpRefresh: () => setMcpRefreshKey((k) => k + 1),
+    onBumpProjectsRefresh,
     showToast,
   };
 
@@ -1403,6 +1418,17 @@ export default function App() {
             navigate(
               `/${encodeProject(selectedProjectPath)}/mcp/${encodeURIComponent(name)}`,
             );
+          }}
+          onClose={() => setModalType(null)}
+        />
+      )}
+      {modalType === "project" && (
+        <CreateProjectModal
+          onSuccess={(absolutePath) => {
+            setModalType(null);
+            onBumpProjectsRefresh();
+            handleProjectSelect(absolutePath);
+            showToast(`Project created`);
           }}
           onClose={() => setModalType(null)}
         />

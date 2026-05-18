@@ -1,11 +1,46 @@
 import { basename } from "path";
-import { fileExists, listDir, readFileContent, writeFileContent } from "../utils/fileIO.js";
-import { resolveHome } from "../utils/parsing.js";
+import { ensureDir, fileExists, listDir, readFileContent, writeFileContent } from "../utils/fileIO.js";
+import { resolveHome, validateProjectPath } from "../utils/parsing.js";
 import type { ClaudeConfig } from "../types/claudeConfig.js";
 
 export interface ProjectInfo {
   path: string;
   name: string;
+}
+
+export async function createProject(
+  rawPath: string,
+): Promise<{ absolutePath: string; name: string }> {
+  const resolved = resolveHome(rawPath);
+  const absolutePath = validateProjectPath(resolved);
+
+  if (await fileExists(`${absolutePath}/CLAUDE.md`)) {
+    throw Object.assign(
+      new Error("This directory is already a Claude Code project."),
+      { code: "already_project" },
+    );
+  }
+
+  await ensureDir(absolutePath);
+  await writeFileContent(
+    `${absolutePath}/CLAUDE.md`,
+    "# Project Notes\n\nAdd project-specific instructions for Claude here.\n",
+  );
+
+  let config: ClaudeConfig = {};
+  try {
+    const raw = await readFileContent(resolveHome("~/.claude.json"));
+    config = JSON.parse(raw) as ClaudeConfig;
+  } catch (e) {
+    const error = e as NodeJS.ErrnoException;
+    if (error.code !== "ENOENT") throw error;
+  }
+
+  config.projects ??= {};
+  config.projects[absolutePath] ??= {};
+  await writeFileContent(resolveHome("~/.claude.json"), JSON.stringify(config, null, 2));
+
+  return { absolutePath, name: basename(absolutePath) };
 }
 
 // Global config lives directly in ~/.claude; project config lives in <project>/.claude.

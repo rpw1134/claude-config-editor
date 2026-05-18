@@ -1,6 +1,6 @@
 import express from "express";
 import type { NextFunction, Request, Response, Router } from "express";
-import { getProjectContent, listProjects, setProjectContent } from "../services/claudeConfig.js";
+import { createProject, getProjectContent, listProjects, setProjectContent } from "../services/claudeConfig.js";
 
 const router: Router = express.Router();
 
@@ -49,6 +49,26 @@ router.put("/file", async (req: Request, res: Response, next: NextFunction) => {
     const error = err as Error;
     if (error.message === "Project not found") {
       return res.status(403).json({ message: error.message });
+    }
+    next(err);
+  }
+});
+
+router.post("/create", async (req: Request, res: Response, next: NextFunction) => {
+  const { path } = req.body as { path?: unknown };
+  if (typeof path !== "string" || !path.trim()) {
+    return res.status(400).json({ code: "invalid_path", message: "path is required" });
+  }
+  try {
+    const result = await createProject(path);
+    res.status(201).json(result);
+  } catch (err) {
+    const e = err as NodeJS.ErrnoException & { code?: string };
+    if (e.code === "already_project") {
+      return res.status(400).json({ code: "already_project", message: e.message });
+    }
+    if (e.code === "ERR_INVALID_PATH" || e.message?.includes("projectPath")) {
+      return res.status(400).json({ code: "invalid_path", message: e.message });
     }
     next(err);
   }

@@ -8,7 +8,7 @@ import type { RecentItem } from "../../hooks/useRecents";
 interface CollapsedCreateMenuProps {
   x: number;
   y: number;
-  onSelect: (type: "agent" | "skill" | "mcp-server") => void;
+  onSelect: (type: "agent" | "skill" | "mcp-server" | "project") => void;
   onClose: () => void;
 }
 
@@ -266,7 +266,7 @@ function recentTypeIcon(type: RecentItem["type"]) {
 // ── Create New dropdown ───────────────────────────────────────────────────────
 
 interface CreateNewDropdownProps {
-  onSelect: (type: "agent" | "skill" | "mcp-server") => void;
+  onSelect: (type: "agent" | "skill" | "mcp-server" | "project") => void;
   onClose: () => void;
 }
 
@@ -386,7 +386,8 @@ interface SidebarProps {
   onToggleCollapsed: () => void;
   recents: RecentItem[];
   onRecentClick: (item: RecentItem) => void;
-  onCreateNew: (type: "agent" | "skill" | "mcp-server") => void;
+  onCreateNew: (type: "agent" | "skill" | "mcp-server" | "project") => void;
+  projectsRefreshKey?: number;
 }
 
 export const Sidebar = ({
@@ -397,6 +398,7 @@ export const Sidebar = ({
   recents,
   onRecentClick,
   onCreateNew,
+  projectsRefreshKey,
 }: SidebarProps) => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -495,6 +497,8 @@ export const Sidebar = ({
         <ProjectPicker
           selectedPath={selectedProjectPath}
           onSelect={onProjectSelect}
+          onNew={() => onCreateNew("project")}
+          refreshKey={projectsRefreshKey}
         />
       </div>
 

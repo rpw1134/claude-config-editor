@@ -189,3 +189,16 @@ export async function deleteSkillScript(projectPath: string, name: string, file:
 export async function deleteMcpServer(projectPath: string, name: string): Promise<void> {
   await del(`/api/mcp-servers/${encodeURIComponent(name)}?projectPath=${encodeURIComponent(projectPath)}`);
 }
+
+export async function createProject(path: string): Promise<{ absolutePath: string; name: string }> {
+  const res = await fetch(`${BASE_URL}/api/projects/create`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ path }),
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({})) as { message?: string; code?: string };
+    throw Object.assign(new Error(body.message ?? `${res.status} ${res.statusText}`), { code: body.code });
+  }
+  return res.json() as Promise<{ absolutePath: string; name: string }>;
+}

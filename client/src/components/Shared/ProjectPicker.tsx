@@ -5,25 +5,10 @@ import type { ProjectInfo } from "../../lib/api";
 interface ProjectPickerProps {
   selectedPath: string | null;
   onSelect: (path: string) => void;
+  onNew?: () => void;
+  refreshKey?: number;
 }
 
-const ChevronIcon = () => (
-  <svg
-    width="10"
-    height="10"
-    viewBox="0 0 10 10"
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
-  >
-    <path
-      d="M2 3.5L5 6.5L8 3.5"
-      stroke="currentColor"
-      strokeWidth="1.3"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-  </svg>
-);
 
 const PlusIcon = () => (
   <svg
@@ -49,6 +34,7 @@ interface ProjectModalProps {
   selectedPath: string | null;
   onSelect: (project: ProjectInfo) => void;
   onClose: () => void;
+  onNew?: () => void;
 }
 
 const ProjectModal = ({
@@ -56,6 +42,7 @@ const ProjectModal = ({
   selectedPath,
   onSelect,
   onClose,
+  onNew,
 }: ProjectModalProps) => {
   const backdropRef = useRef<HTMLDivElement>(null);
 
@@ -151,14 +138,25 @@ const ProjectModal = ({
 
         {/* Footer */}
         <div className="px-5 py-3 border-t border-(--border-faint) shrink-0">
-          <button
-            type="button"
-            disabled
-            className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg border border-(--border-subtle) bg-transparent text-(--text-muted) text-[13px] font-medium cursor-not-allowed opacity-50 transition-colors"
-          >
-            <PlusIcon />
-            Add project
-          </button>
+          {onNew ? (
+            <button
+              type="button"
+              onClick={() => { onNew(); onClose(); }}
+              className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg border border-(--border-subtle) bg-transparent text-(--text-secondary) text-[13px] font-medium cursor-pointer hover:bg-(--bg-elevated) hover:text-(--text-primary) transition-colors"
+            >
+              <PlusIcon />
+              Add project
+            </button>
+          ) : (
+            <button
+              type="button"
+              disabled
+              className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg border border-(--border-subtle) bg-transparent text-(--text-muted) text-[13px] font-medium cursor-not-allowed opacity-50 transition-colors"
+            >
+              <PlusIcon />
+              Add project
+            </button>
+          )}
         </div>
       </div>
     </div>
@@ -170,6 +168,8 @@ const ProjectModal = ({
 export const ProjectPicker = ({
   selectedPath,
   onSelect,
+  onNew,
+  refreshKey,
 }: ProjectPickerProps) => {
   const [projects, setProjects] = useState<ProjectInfo[]>([]);
   const [open, setOpen] = useState(false);
@@ -186,7 +186,7 @@ export const ProjectPicker = ({
         setLoading(false);
       })
       .catch(() => setLoading(false));
-  }, []);
+  }, [refreshKey]);
 
   const selected = projects.find((p) => p.path === selectedPath) ?? null;
 
@@ -220,9 +220,6 @@ export const ProjectPicker = ({
         ) : (
           <span className="italic text-(--text-muted)">Select a project…</span>
         )}
-        <span className="shrink-0 text-(--text-muted)">
-          <ChevronIcon />
-        </span>
       </button>
 
       {open && (
@@ -231,6 +228,7 @@ export const ProjectPicker = ({
           selectedPath={selectedPath}
           onSelect={handleSelect}
           onClose={() => setOpen(false)}
+          onNew={onNew}
         />
       )}
     </div>
