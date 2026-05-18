@@ -54,7 +54,10 @@ export const AddHookModal = ({ onConfirm, onClose, fixedEvent, initialGroup }: A
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="bg-(--bg-elevated) border border-(--border-default) rounded-2xl p-6 w-full max-w-md mx-4 shadow-2xl">
+      <form
+        className="bg-(--bg-elevated) border border-(--border-default) rounded-2xl p-6 w-full max-w-md mx-4 shadow-2xl"
+        onSubmit={(e) => { e.preventDefault(); handleConfirm(); }}
+      >
         <h2 className='m-0 mb-5 text-lg font-["Bricolage_Grotesque",sans-serif] font-bold text-(--text-primary)'>
           {isEditing ? "Edit Hook" : "Add Hook"}
         </h2>
@@ -177,8 +180,7 @@ export const AddHookModal = ({ onConfirm, onClose, fixedEvent, initialGroup }: A
             Cancel
           </button>
           <button
-            type="button"
-            onClick={handleConfirm}
+            type="submit"
             disabled={!canConfirm}
             className={[
               "text-[13px] font-medium px-4 py-2 rounded-lg border-none transition-colors",
@@ -190,7 +192,7 @@ export const AddHookModal = ({ onConfirm, onClose, fixedEvent, initialGroup }: A
             {isEditing ? "Save Changes" : "Add Hook"}
           </button>
         </div>
-      </div>
+      </form>
     </div>
   );
 };

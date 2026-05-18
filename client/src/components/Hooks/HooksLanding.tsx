@@ -1,12 +1,13 @@
+import { useState } from "react";
 import { type HooksConfig } from "../../lib/api";
-import { PlusIcon, ChevronRightIcon } from "../Icons";
+import { HOOK_EVENTS } from "../../lib/hooksConstants";
+import { ChevronRightIcon, SearchIcon } from "../Icons";
 
 interface HooksLandingProps {
   hooks: HooksConfig;
   dirty: boolean;
   saving: boolean;
   onSelectEvent: (event: string) => void;
-  onAddHook: () => void;
   onSave: () => void;
 }
 
@@ -15,80 +16,99 @@ export const HooksLanding = ({
   dirty,
   saving,
   onSelectEvent,
-  onAddHook,
   onSave,
 }: HooksLandingProps) => {
-  const eventEntries = Object.entries(hooks);
+  const [query, setQuery] = useState("");
+
+  const filtered = query.trim()
+    ? HOOK_EVENTS.filter((ev) =>
+        ev.toLowerCase().includes(query.trim().toLowerCase())
+      )
+    : HOOK_EVENTS;
 
   return (
-    <div className="flex-1 min-h-0 overflow-y-auto px-8 py-8">
-      {/* Header */}
-      <div className="flex items-start justify-between mb-8">
-        <div>
-          <h1 className='m-0 mb-1 text-[28px] font-["Bricolage_Grotesque",sans-serif] font-semibold text-(--text-primary) tracking-tight'>
+    <div className="flex-1 flex flex-col min-h-0 overflow-y-auto bg-(--bg-base)">
+      <div className="w-full px-14 pt-16 pb-12">
+        {/* Heading row */}
+        <div className="flex items-center justify-between mb-10">
+          <h1 className="font-['Bricolage_Grotesque',sans-serif] text-[40px] font-bold text-(--text-primary) tracking-[-0.03em] leading-[1.05] m-0">
             Hooks
           </h1>
-          <p className="m-0 text-[14px] text-(--text-muted)">
-            Lifecycle commands triggered by Claude Code events.
-          </p>
+          {dirty && (
+            <button
+              type="button"
+              onClick={saving ? undefined : onSave}
+              disabled={saving}
+              className={[
+                "text-[14px] font-medium px-4 py-2 rounded-lg border-none transition-colors duration-150 shrink-0",
+                saving
+                  ? "bg-(--bg-surface) text-(--text-muted) cursor-not-allowed opacity-50"
+                  : "bg-(--accent) text-white cursor-pointer hover:bg-(--accent-hover)",
+              ].join(" ")}
+            >
+              {saving ? "Saving…" : "Save"}
+            </button>
+          )}
         </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <button
-            type="button"
-            onClick={dirty && !saving ? onSave : undefined}
-            disabled={!dirty || saving}
-            className={[
-              "text-[13px] font-medium px-3 py-1.5 rounded-lg border-none transition-colors duration-150",
-              !dirty || saving
-                ? "bg-(--bg-surface) text-(--text-muted) opacity-50 cursor-not-allowed"
-                : "bg-(--accent) text-white cursor-pointer hover:bg-(--accent-hover)",
-            ].join(" ")}
-          >
-            {saving ? "Saving…" : dirty ? "Save" : "Up to date"}
-          </button>
-          <button
-            type="button"
-            onClick={onAddHook}
-            className="flex items-center gap-1.5 text-[13px] font-medium px-3 py-1.5 rounded-lg border border-(--border-subtle) bg-(--bg-surface) text-(--text-secondary) hover:text-(--text-primary) hover:bg-(--bg-hover) cursor-pointer transition-colors"
-          >
-            <PlusIcon /> Add Hook
-          </button>
-        </div>
-      </div>
 
-      {/* Event list or empty state */}
-      {eventEntries.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 gap-3">
-          <p className="m-0 text-[14px] text-(--text-muted)">No hooks configured.</p>
-          <button
-            type="button"
-            onClick={onAddHook}
-            className="flex items-center gap-2 text-[13px] font-medium px-4 py-2 rounded-lg bg-(--accent) text-white border-none cursor-pointer hover:bg-(--accent-hover) transition-colors"
-          >
-            <PlusIcon /> Add your first hook
-          </button>
+        {/* Search bar */}
+        <div className="relative mb-6">
+          <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-(--text-muted) flex items-center pointer-events-none">
+            <SearchIcon />
+          </span>
+          <input
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search events…"
+            className="w-full h-11 pl-10 pr-3.5 bg-(--bg-surface) border border-(--border-subtle) rounded-2.5 text-[15px] text-(--text-primary) outline-none box-border transition-colors duration-120 focus:border-(--border-default)"
+          />
         </div>
-      ) : (
-        <ul className="list-none m-0 p-0 flex flex-col gap-0 border border-(--border-subtle) rounded-xl overflow-hidden">
-          {eventEntries.map(([event, groups], i) => (
-            <li key={event} className={i > 0 ? "border-t border-(--border-subtle)" : ""}>
-              <button
-                type="button"
-                onClick={() => onSelectEvent(event)}
-                className="w-full flex items-center justify-between px-5 py-3.5 bg-(--bg-surface) hover:bg-(--bg-hover) transition-colors cursor-pointer border-none text-left"
-              >
-                <span className="text-[14px] font-medium text-(--text-primary)">{event}</span>
-                <div className="flex items-center gap-3">
-                  <span className="text-[12px] text-(--text-muted)">
-                    {groups.length} {groups.length === 1 ? "group" : "groups"}
+
+        {/* No search results */}
+        {filtered.length === 0 && (
+          <div className="pt-16 text-center">
+            <p className="text-[15px] text-(--text-muted) m-0">
+              No results for "{query.trim()}"
+            </p>
+          </div>
+        )}
+
+        {/* Event list */}
+        {filtered.length > 0 && (
+          <div>
+            {filtered.map((event, idx) => {
+              const count = (hooks[event] ?? []).length;
+              const isLast = idx === filtered.length - 1;
+              return (
+                <button
+                  key={event}
+                  type="button"
+                  onClick={() => onSelectEvent(event)}
+                  className={[
+                    "w-full flex items-center pl-4 pr-4 min-h-16 text-left cursor-pointer",
+                    "bg-transparent transition-colors duration-120 border-none hover:bg-(--bg-hover)",
+                    !isLast ? "border-b border-(--border-faint)" : "",
+                  ].join(" ")}
+                >
+                  <span className="font-['Instrument_Sans',sans-serif] text-[17px] font-medium text-(--text-primary) overflow-hidden text-ellipsis whitespace-nowrap flex-1">
+                    {event}
                   </span>
-                  <ChevronRightIcon />
-                </div>
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
+                  <div className="flex items-center gap-2.5 shrink-0 text-(--text-muted)">
+                    <span className={[
+                      "text-[13px]",
+                      count > 0 ? "text-(--accent) font-medium" : "text-(--text-muted)",
+                    ].join(" ")}>
+                      {count} {count === 1 ? "hook" : "hooks"}
+                    </span>
+                    <ChevronRightIcon />
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
     </div>
   );
 };

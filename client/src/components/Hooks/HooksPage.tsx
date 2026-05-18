@@ -4,7 +4,6 @@ import { useHooksEditor } from "../../hooks/useHooksEditor";
 import { UnsavedModal } from "../Shared/UnsavedModal";
 import { HooksLanding } from "./HooksLanding";
 import { HooksEventDetail } from "./HooksEventDetail";
-import { AddHookModal } from "./AddHookModal";
 
 interface HooksPageProps {
   projectPath: string;
@@ -13,7 +12,6 @@ interface HooksPageProps {
 export const HooksPage = ({ projectPath }: HooksPageProps) => {
   const hooksEditor = useHooksEditor(projectPath);
   const [selectedEvent, setSelectedEvent] = useState<string | null>(null);
-  const [showAddModal, setShowAddModal] = useState(false);
 
   const blocker = useBlocker(
     ({ currentLocation, nextLocation }) =>
@@ -55,25 +53,13 @@ export const HooksPage = ({ projectPath }: HooksPageProps) => {
           {...hooksEditor}
         />
       ) : (
-        <>
-          <HooksLanding
-            hooks={hooksEditor.hooks}
-            dirty={hooksEditor.dirty}
-            saving={hooksEditor.saving}
-            onSelectEvent={setSelectedEvent}
-            onAddHook={() => setShowAddModal(true)}
-            onSave={hooksEditor.handleSave}
-          />
-          {showAddModal && (
-            <AddHookModal
-              onConfirm={(event, group) => {
-                hooksEditor.addHookGroup(event, group);
-                setShowAddModal(false);
-              }}
-              onClose={() => setShowAddModal(false)}
-            />
-          )}
-        </>
+        <HooksLanding
+          hooks={hooksEditor.hooks}
+          dirty={hooksEditor.dirty}
+          saving={hooksEditor.saving}
+          onSelectEvent={setSelectedEvent}
+          onSave={hooksEditor.handleSave}
+        />
       )}
     </div>
   );

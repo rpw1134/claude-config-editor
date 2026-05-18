@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { type HooksConfig } from "../../lib/api";
 import { type HookTabId } from "../../hooks/useHooksEditor";
 import { Editor } from "../Editor/Editor";
@@ -80,6 +80,52 @@ export const HooksEventDetail = ({
 }: HooksEventDetailProps) => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingGroup, setEditingGroup] = useState<{ index: number; group: HookGroup } | null>(null);
+  const [showFullJson, setShowFullJson] = useState(false);
+  const [localEventJson, setLocalEventJson] = useState(() =>
+    JSON.stringify(hooks[event] ?? [], null, 2)
+  );
+
+  // Re-sync localEventJson when switching to the JSON tab
+  const prevTabRef = useRef(activeTab);
+  useEffect(() => {
+    if (activeTab === "json" && prevTabRef.current !== "json" && !showFullJson) {
+      setLocalEventJson(JSON.stringify(hooks[event] ?? [], null, 2));
+    }
+    prevTabRef.current = activeTab;
+  }, [activeTab, event, hooks, showFullJson]);
+
+  const handleEventJsonChange = (val: string) => {
+    setLocalEventJson(val);
+    try {
+      const parsed = JSON.parse(val) as unknown;
+      if (Array.isArray(parsed)) {
+        const allHooks = (() => {
+          try { return JSON.parse(rawJson) as Record<string, unknown>; }
+          catch { return {} as Record<string, unknown>; }
+        })();
+        if (parsed.length === 0) {
+          delete allHooks[event];
+        } else {
+          allHooks[event] = parsed;
+        }
+        setRawJson(JSON.stringify(allHooks, null, 2));
+      }
+    } catch {
+      // invalid JSON — leave rawJson unchanged
+    }
+  };
+
+  const handleToggleFullJson = (full: boolean) => {
+    setShowFullJson(full);
+    if (!full) {
+      try {
+        const allHooks = JSON.parse(rawJson) as Record<string, unknown>;
+        setLocalEventJson(JSON.stringify(allHooks[event] ?? [], null, 2));
+      } catch {
+        setLocalEventJson("[]");
+      }
+    }
+  };
 
   const groups = hooks[event] ?? [];
   const isGlobal = projectPath.endsWith("/.claude");
@@ -128,7 +174,7 @@ export const HooksEventDetail = ({
                 {event}
               </h2>
               <p className="m-0 text-[13px] text-(--text-muted)">
-                {groups.length} hook {groups.length === 1 ? "group" : "groups"}
+                {groups.length} {groups.length === 1 ? "hook" : "hooks"}
               </p>
             </div>
             <button
@@ -136,19 +182,19 @@ export const HooksEventDetail = ({
               onClick={() => setShowAddModal(true)}
               className="flex items-center gap-1.5 text-[13px] font-medium px-3 py-1.5 rounded-lg border border-(--border-subtle) bg-(--bg-surface) text-(--text-secondary) hover:text-(--text-primary) hover:bg-(--bg-hover) cursor-pointer transition-colors"
             >
-              <PlusIcon /> Add group
+              <PlusIcon /> Add hook
             </button>
           </div>
 
           {groups.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 gap-3">
-              <p className="m-0 text-[14px] text-(--text-muted)">No hook groups for this event.</p>
+              <p className="m-0 text-[14px] text-(--text-muted)">No hooks for this event.</p>
               <button
                 type="button"
                 onClick={() => setShowAddModal(true)}
                 className="flex items-center gap-2 text-[13px] font-medium px-4 py-2 rounded-lg bg-(--accent) text-white border-none cursor-pointer hover:bg-(--accent-hover) transition-colors"
               >
-                <PlusIcon /> Add group
+                <PlusIcon /> Add hook
               </button>
             </div>
           ) : (
@@ -166,11 +212,26 @@ export const HooksEventDetail = ({
         </div>
       )}
 
-      {/* JSON tab — full config */}
+      {/* JSON tab */}
       {activeTab === "json" && (
         <div className="flex flex-col flex-1 min-h-0">
+          <div className="shrink-0 flex items-center justify-end px-4 py-2 border-b border-(--border-faint)">
+            <label className="flex items-center gap-2 cursor-pointer select-none text-[12px] text-(--text-muted) hover:text-(--text-secondary) transition-colors">
+              <input
+                type="checkbox"
+                checked={showFullJson}
+                onChange={(e) => handleToggleFullJson(e.target.checked)}
+                className="w-3.5 h-3.5 accent-(--accent) cursor-pointer"
+              />
+              Show full hooks config
+            </label>
+          </div>
           <div className="flex-1 min-h-0">
-            <Editor value={rawJson} onChange={(val) => setRawJson(val)} language="json" />
+            {showFullJson ? (
+              <Editor value={rawJson} onChange={(val) => setRawJson(val)} language="json" />
+            ) : (
+              <Editor value={localEventJson} onChange={handleEventJsonChange} language="json" />
+            )}
           </div>
         </div>
       )}
