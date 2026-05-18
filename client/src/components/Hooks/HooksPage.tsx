@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useBlocker } from "react-router-dom";
 import { useHooksEditor } from "../../hooks/useHooksEditor";
 import { UnsavedModal } from "../Shared/UnsavedModal";
@@ -11,11 +11,24 @@ interface HooksPageProps {
 
 export const HooksPage = ({ projectPath }: HooksPageProps) => {
   const hooksEditor = useHooksEditor(projectPath);
+  const { dirty, saving, handleSave } = hooksEditor;
   const [selectedEvent, setSelectedEvent] = useState<string | null>(null);
+
+  // Cmd+S / Ctrl+S — works on both landing and event detail
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "s") {
+        e.preventDefault();
+        if (dirty && !saving) handleSave();
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [dirty, saving, handleSave]);
 
   const blocker = useBlocker(
     ({ currentLocation, nextLocation }) =>
-      hooksEditor.dirty && currentLocation.pathname !== nextLocation.pathname
+      dirty && currentLocation.pathname !== nextLocation.pathname
   );
 
   if (hooksEditor.loading) {
@@ -55,10 +68,10 @@ export const HooksPage = ({ projectPath }: HooksPageProps) => {
       ) : (
         <HooksLanding
           hooks={hooksEditor.hooks}
-          dirty={hooksEditor.dirty}
-          saving={hooksEditor.saving}
+          dirty={dirty}
+          saving={saving}
           onSelectEvent={setSelectedEvent}
-          onSave={hooksEditor.handleSave}
+          onSave={handleSave}
         />
       )}
     </div>

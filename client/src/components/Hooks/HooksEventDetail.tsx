@@ -221,8 +221,20 @@ export const HooksEventDetail = ({
                 type="checkbox"
                 checked={showFullJson}
                 onChange={(e) => handleToggleFullJson(e.target.checked)}
-                className="w-3.5 h-3.5 accent-(--accent) cursor-pointer"
+                className="sr-only"
               />
+              <div className={[
+                "w-3.5 h-3.5 rounded border transition-colors duration-150 flex items-center justify-center shrink-0",
+                showFullJson
+                  ? "bg-(--accent) border-(--accent)"
+                  : "bg-transparent border-(--border-default)",
+              ].join(" ")}>
+                {showFullJson && (
+                  <svg viewBox="0 0 10 10" fill="none" className="w-full h-full p-0.5">
+                    <path d="M1.5 5L4 7.5L8.5 2.5" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                )}
+              </div>
               Show full hooks config
             </label>
           </div>
