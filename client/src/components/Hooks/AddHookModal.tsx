@@ -1,26 +1,40 @@
 import { useState } from "react";
 import { HOOK_EVENTS } from "../../lib/hooksConstants";
 
+interface HookGroupData {
+  matcher: string;
+  hooks: Array<{ type?: string; command?: string; url?: string; timeout?: number }>;
+}
+
 interface AddHookModalProps {
-  onAdd: (event: string, group: { matcher: string; hooks: Array<Record<string, unknown>> }) => void;
+  onConfirm: (event: string, group: HookGroupData) => void;
   onClose: () => void;
+  fixedEvent?: string;
+  initialGroup?: HookGroupData;
 }
 
 const INPUT_CLASS =
   "w-full bg-(--bg-base) border border-(--border-subtle) rounded-lg px-3 py-2 text-[13px] text-(--text-primary) placeholder:text-(--text-muted) focus:outline-none focus:border-(--accent) transition-colors";
 
-export const AddHookModal = ({ onAdd, onClose }: AddHookModalProps) => {
-  const [event, setEvent] = useState<string>(HOOK_EVENTS[0]);
-  const [matcher, setMatcher] = useState("");
-  const [hookType, setHookType] = useState<"command" | "http">("command");
-  const [command, setCommand] = useState("");
-  const [url, setUrl] = useState("");
-  const [timeoutVal, setTimeoutVal] = useState("");
+export const AddHookModal = ({ onConfirm, onClose, fixedEvent, initialGroup }: AddHookModalProps) => {
+  const firstHook = initialGroup?.hooks[0];
+  const isEditing = initialGroup != null;
 
-  const canAdd = hookType === "command" ? command.trim() !== "" : url.trim() !== "";
+  const [event, setEvent] = useState<string>(fixedEvent ?? HOOK_EVENTS[0]);
+  const [matcher, setMatcher] = useState(initialGroup?.matcher ?? "");
+  const [hookType, setHookType] = useState<"command" | "http">(
+    (firstHook?.type === "http" ? "http" : "command") as "command" | "http"
+  );
+  const [command, setCommand] = useState(firstHook?.command ?? "");
+  const [url, setUrl] = useState(firstHook?.url ?? "");
+  const [timeoutVal, setTimeoutVal] = useState(
+    firstHook?.timeout != null ? String(firstHook.timeout) : ""
+  );
 
-  const handleAdd = () => {
-    if (!canAdd) return;
+  const canConfirm = hookType === "command" ? command.trim() !== "" : url.trim() !== "";
+
+  const handleConfirm = () => {
+    if (!canConfirm) return;
     const hookEntry: Record<string, unknown> = { type: hookType };
     if (hookType === "command") hookEntry.command = command.trim();
     else hookEntry.url = url.trim();
@@ -28,7 +42,8 @@ export const AddHookModal = ({ onAdd, onClose }: AddHookModalProps) => {
       const t = parseInt(timeoutVal, 10);
       if (!isNaN(t)) hookEntry.timeout = t;
     }
-    onAdd(event, { matcher, hooks: [hookEntry] });
+    const resolvedEvent = fixedEvent ?? event;
+    onConfirm(resolvedEvent, { matcher, hooks: [hookEntry] });
     onClose();
   };
 
@@ -41,26 +56,32 @@ export const AddHookModal = ({ onAdd, onClose }: AddHookModalProps) => {
     >
       <div className="bg-(--bg-elevated) border border-(--border-default) rounded-2xl p-6 w-full max-w-md mx-4 shadow-2xl">
         <h2 className='m-0 mb-5 text-lg font-["Bricolage_Grotesque",sans-serif] font-bold text-(--text-primary)'>
-          Add Hook
+          {isEditing ? "Edit Hook" : "Add Hook"}
         </h2>
 
         <div className="flex flex-col gap-4">
-          {/* Event */}
+          {/* Event — selector or read-only label */}
           <div>
             <label className="block text-[11px] font-medium text-(--text-muted) tracking-widest uppercase mb-2">
               Event
             </label>
-            <select
-              value={event}
-              onChange={(e) => setEvent(e.target.value)}
-              className={INPUT_CLASS}
-            >
-              {HOOK_EVENTS.map((ev) => (
-                <option key={ev} value={ev}>
-                  {ev}
-                </option>
-              ))}
-            </select>
+            {fixedEvent ? (
+              <p className="m-0 text-[13px] text-(--text-secondary) font-['Fira_Code',monospace]">
+                {fixedEvent}
+              </p>
+            ) : (
+              <select
+                value={event}
+                onChange={(e) => setEvent(e.target.value)}
+                className={INPUT_CLASS}
+              >
+                {HOOK_EVENTS.map((ev) => (
+                  <option key={ev} value={ev}>
+                    {ev}
+                  </option>
+                ))}
+              </select>
+            )}
           </div>
 
           {/* Matcher */}
@@ -157,16 +178,16 @@ export const AddHookModal = ({ onAdd, onClose }: AddHookModalProps) => {
           </button>
           <button
             type="button"
-            onClick={handleAdd}
-            disabled={!canAdd}
+            onClick={handleConfirm}
+            disabled={!canConfirm}
             className={[
               "text-[13px] font-medium px-4 py-2 rounded-lg border-none transition-colors",
-              canAdd
+              canConfirm
                 ? "bg-(--accent) text-white cursor-pointer hover:bg-(--accent-hover)"
                 : "bg-(--bg-surface) text-(--text-muted) cursor-not-allowed opacity-50",
             ].join(" ")}
           >
-            Add Hook
+            {isEditing ? "Save Changes" : "Add Hook"}
           </button>
         </div>
       </div>

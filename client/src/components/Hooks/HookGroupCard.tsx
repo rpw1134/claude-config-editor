@@ -9,10 +9,11 @@ interface HookEntry {
 
 interface HookGroupCardProps {
   group: { matcher: string; hooks: HookEntry[] };
+  onEdit: () => void;
   onDelete: () => void;
 }
 
-export const HookGroupCard = ({ group, onDelete }: HookGroupCardProps) => {
+export const HookGroupCard = ({ group, onEdit, onDelete }: HookGroupCardProps) => {
   const [deleteConfirm, setDeleteConfirm] = useState(false);
 
   return (
@@ -65,13 +66,22 @@ export const HookGroupCard = ({ group, onDelete }: HookGroupCardProps) => {
             </button>
           </>
         ) : (
-          <button
-            type="button"
-            onClick={() => setDeleteConfirm(true)}
-            className="text-[12px] text-(--text-muted) bg-transparent border-none cursor-pointer px-2 py-1 rounded hover:text-(--text-secondary) transition-colors opacity-0 group-hover:opacity-100"
-          >
-            Delete
-          </button>
+          <>
+            <button
+              type="button"
+              onClick={onEdit}
+              className="text-[12px] text-(--text-muted) bg-transparent border-none cursor-pointer px-2 py-1 rounded hover:text-(--text-secondary) transition-colors opacity-0 group-hover:opacity-100"
+            >
+              Edit
+            </button>
+            <button
+              type="button"
+              onClick={() => setDeleteConfirm(true)}
+              className="text-[12px] text-(--text-muted) bg-transparent border-none cursor-pointer px-2 py-1 rounded hover:text-(--text-secondary) transition-colors opacity-0 group-hover:opacity-100"
+            >
+              Delete
+            </button>
+          </>
         )}
       </div>
     </div>

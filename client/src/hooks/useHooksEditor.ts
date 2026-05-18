@@ -73,6 +73,20 @@ export function useHooksEditor(projectPath: string) {
     });
   }, []);
 
+  const editHookGroup = useCallback(
+    (event: string, index: number, group: { matcher: string; hooks: Array<Record<string, unknown>> }) => {
+      setHooks((prev) => {
+        const updated = { ...prev };
+        const eventGroups = [...(prev[event] ?? [])];
+        eventGroups[index] = group;
+        updated[event] = eventGroups;
+        setRawJson(JSON.stringify(updated, null, 2));
+        return updated;
+      });
+    },
+    []
+  );
+
   const handleSave = useCallback(async () => {
     if (saving) return;
     setSaving(true);
@@ -107,6 +121,7 @@ export function useHooksEditor(projectPath: string) {
     saving,
     addHookGroup,
     deleteHookGroup,
+    editHookGroup,
     handleSave,
   };
 }
