@@ -1,7 +1,7 @@
 import { useState } from "react";
 import ReactMarkdown from "react-markdown";
 import { Editor } from "../Editor";
-import { BackArrowIcon } from "./BackArrowIcon";
+import { BackArrowIcon } from "../../Icons";
 
 type SaveStatus = "idle" | "saving" | "saved" | "error";
 

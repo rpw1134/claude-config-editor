@@ -139,7 +139,6 @@ export const SidebarAgentsList = ({
 
   useEffect(() => {
     let cancelled = false;
-    setLoading(true);
     fetchAgents(projectPath)
       .then((data) => {
         if (cancelled) return;
@@ -184,7 +183,6 @@ export const SidebarSkillsList = ({
 
   useEffect(() => {
     let cancelled = false;
-    setLoading(true);
     fetchSkills(projectPath)
       .then((data) => {
         if (cancelled) return;
@@ -229,7 +227,6 @@ export const SidebarMcpList = ({
 
   useEffect(() => {
     let cancelled = false;
-    setLoading(true);
     fetchMcpServers(projectPath)
       .then((data) => {
         if (cancelled) return;

@@ -4,7 +4,7 @@ import {
   serializeFrontmatter,
   type AgentFrontmatter,
 } from "../../lib/frontmatter";
-import { BackArrowIcon } from "./parts/BackArrowIcon";
+import { BackArrowIcon } from "../Icons";
 import { IdentityTab } from "./tabs/IdentityTab";
 import { PromptTab } from "./tabs/PromptTab";
 import { SettingsTab } from "./tabs/SettingsTab";

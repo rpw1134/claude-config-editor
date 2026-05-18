@@ -47,6 +47,7 @@ export const ProjectSettingsPage = ({
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const projectName = projectPath.split("/").pop() ?? projectPath;
+  const isGlobal = projectPath.endsWith("/.claude");
 
   return (
     <div className="flex flex-col flex-1 min-h-0 bg-(--bg-base)">
@@ -83,13 +84,28 @@ export const ProjectSettingsPage = ({
                 Permanent actions that cannot be undone.
               </p>
             </div>
-            <button
-              type="button"
-              onClick={() => setShowDeleteModal(true)}
-              className="text-[13px] font-medium px-3 py-1.5 rounded-lg border transition-colors duration-150 cursor-pointer bg-transparent border-red-500/30 text-red-400 hover:bg-red-500/10"
-            >
-              Delete project
-            </button>
+            {isGlobal ? (
+              <div>
+                <button
+                  type="button"
+                  disabled
+                  className="text-[13px] font-medium px-3 py-1.5 rounded-lg border cursor-not-allowed bg-transparent border-red-500/20 text-red-500/40"
+                >
+                  Delete project
+                </button>
+                <p className="mt-2 text-[12px] text-(--text-muted)">
+                  The global project (~/.claude) cannot be deleted.
+                </p>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setShowDeleteModal(true)}
+                className="text-[13px] font-medium px-3 py-1.5 rounded-lg border transition-colors duration-150 cursor-pointer bg-transparent border-red-500/30 text-red-400 hover:bg-red-500/10"
+              >
+                Delete project
+              </button>
+            )}
           </div>
         </div>
       )}

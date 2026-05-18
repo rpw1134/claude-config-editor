@@ -1,5 +1,5 @@
 import type { ViewMode } from "./types";
-import { BackArrowIcon } from "./BackArrowIcon";
+import { BackArrowIcon } from "../../Icons";
 import { ViewModeToggle } from "./ViewModeToggle";
 
 type SaveStatus = "idle" | "saving" | "saved" | "error";

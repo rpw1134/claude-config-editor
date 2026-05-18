@@ -20,7 +20,7 @@ export const Toast = ({ message }: ToastProps) => {
   return (
     <div
       className={[
-        "fixed bottom-6 right-6 z-[100]",
+        "fixed bottom-6 right-6 z-100",
         "flex items-center gap-2.5",
         "bg-(--bg-elevated) border border-(--border-default) rounded-xl shadow-2xl px-4 py-3",
         "toast-in",

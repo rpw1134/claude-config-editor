@@ -70,3 +70,88 @@ TBD. Expect roughly:
 - Project name (placeholder: "Claude Config Studio")
 - License confirmation (leaning MIT)
 - Phase 2 platform priority: macOS-only initially or cross-platform from day 1
+
+## Frontend Architecture
+
+### Directory structure
+
+```
+client/src/
+  contexts/          # App-wide React contexts (ShellContext, SkillDraftContext, SkillLayoutContext)
+  routes/            # Route content components (AgentRoutes, McpRoutes, ProjectRoutes, SkillRoutes)
+    skill/           # SkillLayout (with draft store + nav blocker), SkillFormContent, SkillFileContent, ScriptEditorContent
+  lib/               # Pure functions with no React: api, frontmatter, markdown, mcp, navigation, validation
+  components/
+    Icons/           # All SVG icons — index.tsx exports every icon in the app
+    Layout/          # Sidebar, NavButton, CreateNewDropdown, CollapsedCreateMenu, Shell, LayoutRoute
+    Shared/          # Cross-cutting UI: UnsavedModal, DiscardModal, Accordion, StepDots, Toast, ProjectPicker, forms/
+    Agent/           # AgentCreateFlow, AgentFormEditor, constants.ts, steps/, tabs/
+    Mcp/             # McpEditorPane, tabs/ConfigureTab, tabs/McpSettingsTab
+    Modals/          # McpCreateModal (thin orchestrator), CreateNewModal, CreateProjectModal, DeleteProjectModal
+      mcp/           # Step components for McpCreateModal: StepName, StepType, StepJsonMode, StepConfigure, StepReview, shared.tsx
+    Skill/           # Skill* components
+    Editor/          # Editor, EditorPane, parts/
+    Pages/           # LandingPage, WelcomePane, ProjectSettingsPage
+    sections/        # Sidebar list sections
+```
+
+### One component per file
+
+Never define components inline inside another component file. If a component grows large enough to extract, it goes in its own file. Helper sub-components that are 5-10 lines and used exclusively by one parent can live in the same file.
+
+### Shared components
+
+Key reusable components in `components/Shared/`:
+
+- `UnsavedModal` — "Leave without saving?" blocker dialog, used in SkillLayout and McpEditorPane
+- `DiscardModal` — Configurable "discard changes?" dialog with `title`, `message`, `confirmLabel` props
+- `Accordion` — Collapsible section used in agent create flow (AccordionSection)
+- `StepDots` — Step indicator dots for multi-step flows
+- `Toast` — Bottom-right notification
+- `forms/Toggle` — Boolean toggle switch with `{checked, onChange, disabled}` API
+
+### Icons
+
+All SVG icon components live in `components/Icons/index.tsx`. Never define icons inline inside component files. If a new icon is needed, add it to Icons/index.tsx and import from there.
+
+### Lib functions
+
+Pure functions (no React hooks or JSX) live in `lib/`:
+
+- `navigation.ts` — `encodeProject`, `decodeProject` for URL path encoding
+- `validation.ts` — `validateName`, `NAME_PATTERN` for form validation
+- `markdown.ts` — `renderMarkdown`, `inlineMarkdown` for system prompt preview
+- `mcp.ts` — `detectAuthType`, `extractToken`, `buildStdioJson`, `buildHttpJson`, `parseEnv`, `envToRaw`, `buildMcpJson`
+- `api.ts` — All HTTP calls to the Express backend
+- `frontmatter.ts` — Parse and serialize SKILL.md frontmatter
+
+### Contexts
+
+App-wide state lives in `contexts/`:
+
+- `ShellContext` — `useShell()`: project selection, recents, refresh keys, toast, create-new handler
+- `SkillDraftContext` — `useSkillDrafts()`: draft cache that persists across tab switches within a skill
+- `SkillLayoutContext` — `useSkillLayout()`: unified dirty/save/preview state for the skill layout
+
+### Routes
+
+Route content components (the actual page contents rendered by `<Route element={...}>`) live in `routes/`. They import from contexts, components, and lib. They should not contain shared UI — only wiring.
+
+- `AgentRoutes.tsx` — AgentsLandingContent, AgentCreateContent, AgentEditorContent
+- `McpRoutes.tsx` — McpLandingContent, McpEditorContent
+- `ProjectRoutes.tsx` — ProjectWelcomeContent, ClaudeMdContent, ProjectSettingsContent, HooksContent
+- `SkillRoutes.tsx` — thin re-export hub: SkillsLandingContent, SkillEditorContent, ScriptsTabContent (inline); re-exports SkillLayout, SkillFileContent, ScriptEditorContent from `routes/skill/`
+- `routes/skill/` — extracted pieces of SkillRoutes: SkillLayout, SkillFormContent, SkillFileContent, ScriptEditorContent
+
+### File size guideline
+
+Aim for under 200 lines per file. Files over 300 lines are a sign of mixed concerns — extract sub-components or helpers. Files over 500 lines are always wrong.
+
+### No god files
+
+If a file grows large, extract immediately:
+1. Pure helper functions → `lib/`
+2. Shared UI → `components/Shared/`
+3. Icons → `components/Icons/`
+4. Route content → `routes/`
+5. Sub-components → own file in the same directory
