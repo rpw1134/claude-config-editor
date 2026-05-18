@@ -99,3 +99,36 @@ ${CLAUDE_SKILL_DIR} The directory containing the skill’s SKILL.md file. For pl
 ### Claude.md:
 
 1. Add an opinionated creator. Can see raw, or add links and references. Research what makes a good agent system
+
+---
+
+## Implemented: Hooks Tab (2026-05-18)
+
+Full UI for managing Claude Code lifecycle hooks — shell commands and HTTP requests that fire at specific points in Claude's lifecycle (PreToolUse, PostToolUse, Notification, SessionStart, etc.).
+
+### What was built
+
+**Server** (endpoints to implement server-side)
+- `GET /api/hooks?projectPath=X` — reads the `hooks` key from `settings.json`
+- `PUT /api/hooks` body `{ projectPath, hooks }` — writes the `hooks` key back to `settings.json`
+
+**Client**
+- `client/src/hooks/useHooksEditor.ts` — state management: load, dirty tracking, tab sync, save
+- `client/src/lib/hooksConstants.ts` — all 29 hook event names and hook types
+- `client/src/components/Hooks/HooksPage.tsx` — main page with Visual/JSON tabs
+- `client/src/components/Hooks/EventSection.tsx` — groups hook cards under an event name
+- `client/src/components/Hooks/HookGroupCard.tsx` — individual hook group card with inline delete confirm
+- `client/src/components/Hooks/AddHookModal.tsx` — compact single-step modal to add hooks
+
+### Design
+
+Unlike other tabs (list → detail for named items), the Hooks tab is a single-page editor — hooks aren't named entities, they're event-organized config. The Visual tab shows hook groups organized by event type with inline cards. The JSON tab gives raw access to the full hooks config in Monaco editor.
+
+Hooks are stored in `~/.claude/settings.json` (global) or `.claude/settings.json` (project-specific).
+
+### Supported hook types (via modal)
+
+- **command** — shell command with optional timeout
+- **http** — HTTP endpoint with optional timeout
+
+All 29 Claude Code hook events are available in the event picker dropdown. Additional fields (headers, prompt, model, agent) are editable via the JSON tab.

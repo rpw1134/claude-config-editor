@@ -13,6 +13,7 @@ import agentsRouter from "./routers/agents.js";
 import skillsRouter from "./routers/skills.js";
 import mcpServersRouter from "./routers/mcpServers.js";
 import projectsRouter from "./routers/projects.js";
+import hooksRouter from "./routers/hooks.js";
 
 const app = express();
 const PORT = 3000;
@@ -30,6 +31,7 @@ app.use("/api/agents", agentsRouter);
 app.use("/api/skills", skillsRouter);
 app.use("/api/mcp-servers", mcpServersRouter);
 app.use("/api/projects", projectsRouter);
+app.use("/api/hooks", hooksRouter);
 
 // Dummy routes so I remember how express works 💀
 app.get("/api/health", (req, res) => {
