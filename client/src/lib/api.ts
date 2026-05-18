@@ -190,6 +190,16 @@ export async function deleteMcpServer(projectPath: string, name: string): Promis
   await del(`/api/mcp-servers/${encodeURIComponent(name)}?projectPath=${encodeURIComponent(projectPath)}`);
 }
 
+export async function deleteProject(projectPath: string): Promise<void> {
+  const res = await fetch(`${BASE_URL}/api/projects?projectPath=${encodeURIComponent(projectPath)}`, {
+    method: "DELETE",
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({})) as { message?: string; code?: string };
+    throw Object.assign(new Error(body.message ?? `${res.status} ${res.statusText}`), { code: body.code });
+  }
+}
+
 export async function createProject(path: string): Promise<{ absolutePath: string; name: string }> {
   const res = await fetch(`${BASE_URL}/api/projects/create`, {
     method: "POST",

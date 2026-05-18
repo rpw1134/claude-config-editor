@@ -171,41 +171,11 @@ const McpIcon = () => (
   </svg>
 );
 
-const PluginIcon = () => (
-  <svg
-    width="20"
-    height="20"
-    viewBox="0 0 15 15"
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
-  >
-    {/* body */}
-    <rect
-      x="2"
-      y="5"
-      width="8"
-      height="8"
-      rx="1.5"
-      stroke="currentColor"
-      strokeWidth="1.2"
-      fill="none"
-    />
-    {/* top tab */}
-    <path
-      d="M5.5 5V3.5C5.5 2.67 6.17 2 7 2C7.83 2 8.5 2.67 8.5 3.5V5"
-      stroke="currentColor"
-      strokeWidth="1.2"
-      strokeLinecap="round"
-      fill="none"
-    />
-    {/* right tab */}
-    <path
-      d="M10 8.5H11.5C12.33 8.5 13 7.83 13 7C13 6.17 12.33 5.5 11.5 5.5H10"
-      stroke="currentColor"
-      strokeWidth="1.2"
-      strokeLinecap="round"
-      fill="none"
-    />
+const HooksIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M5 2.5V8.5C5 10.43 6.57 12 8.5 12C10.43 12 12 10.43 12 8.5V7" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" fill="none"/>
+    <path d="M10 5L12 7L14 5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+    <path d="M3 2.5H7" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
   </svg>
 );
 
@@ -223,6 +193,13 @@ const PlusIcon = () => (
       strokeWidth="1.6"
       strokeLinecap="round"
     />
+  </svg>
+);
+
+const SettingsIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="7.5" cy="7.5" r="2" stroke="currentColor" strokeWidth="1.2" fill="none"/>
+    <path d="M7.5 1.5V3M7.5 12V13.5M13.5 7.5H12M3 7.5H1.5M11.7 3.3L10.6 4.4M4.4 10.6L3.3 11.7M11.7 11.7L10.6 10.6M4.4 4.4L3.3 3.3" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
   </svg>
 );
 
@@ -422,8 +399,9 @@ export const Sidebar = ({
     if (pathname.startsWith(`${base}/agents`)) return "agents";
     if (pathname.startsWith(`${base}/skills`)) return "skills";
     if (pathname.startsWith(`${base}/mcp`)) return "mcp-servers";
-    if (pathname.startsWith(`${base}/plugins`)) return "plugins";
+    if (pathname.startsWith(`${base}/hooks`)) return "hooks";
     if (pathname.startsWith(`${base}/claude-md`)) return "claude-md";
+    if (pathname.startsWith(`${base}/settings`)) return "settings";
     return "welcome";
   })();
 
@@ -434,7 +412,8 @@ export const Sidebar = ({
     else if (tab === "agents") navigate(`${base}/agents`);
     else if (tab === "skills") navigate(`${base}/skills`);
     else if (tab === "mcp-servers") navigate(`${base}/mcp`);
-    else if (tab === "plugins") navigate(`${base}/plugins`);
+    else if (tab === "hooks") navigate(`${base}/hooks`);
+    else if (tab === "settings") navigate(`${base}/settings`);
     else navigate(base);
   };
 
@@ -636,19 +615,19 @@ export const Sidebar = ({
           onClick={() => navigateTo("mcp-servers")}
         />
         <NavButton
-          icon={<PluginIcon />}
-          label="Plugins"
-          active={activeTab === "plugins"}
+          icon={<HooksIcon />}
+          label="Hooks"
+          active={activeTab === "hooks"}
           disabled={!hasProject}
           collapsed={collapsed}
-          onClick={() => navigateTo("plugins")}
+          onClick={() => navigateTo("hooks")}
         />
       </div>
 
       {/* Recents — hidden when collapsed */}
       {hasProject && recents.length > 0 && (
         <div
-          className="flex-1 min-h-0 overflow-hidden"
+          className="flex-1 min-h-0 flex flex-col overflow-hidden"
           style={{
             opacity: collapsed ? 0 : 1,
             pointerEvents: collapsed ? "none" : "auto",
@@ -656,7 +635,7 @@ export const Sidebar = ({
           }}
         >
           <div className="mx-3 my-4 border-t border-(--border-faint) shrink-0" />
-          <div className="overflow-y-auto h-full pb-2">
+          <div className="overflow-y-auto flex-1 min-h-0 pb-2">
             <div className="px-4 mb-1.5 min-h-6 flex items-center">
               <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-(--text-muted)">
                 Recents
@@ -689,17 +668,16 @@ export const Sidebar = ({
 
       {(!hasProject || recents.length === 0) && <div className="flex-1" />}
 
-      {/* Bottom */}
-      <div className="px-3 pt-3 pb-4 border-t border-(--border-faint) shrink-0">
-        <p
-          className="px-2 text-[11px] font-['Fira_Code',monospace] text-(--text-muted) overflow-hidden whitespace-nowrap"
-          style={{
-            opacity: collapsed ? 0 : 0.6,
-            transition: "opacity 150ms ease",
-          }}
-        >
-          v0.1.0-pre
-        </p>
+      {/* Bottom — settings */}
+      <div className="px-2 pt-2 pb-3 border-t border-(--border-faint) shrink-0">
+        <NavButton
+          icon={<SettingsIcon />}
+          label="Settings"
+          active={activeTab === "settings"}
+          disabled={!hasProject}
+          collapsed={collapsed}
+          onClick={() => navigateTo("settings")}
+        />
       </div>
     </aside>
   );

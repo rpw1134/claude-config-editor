@@ -35,6 +35,7 @@ import { CreateNewModal } from "./components/Modals/CreateNewModal";
 import { McpCreateModal } from "./components/Modals/McpCreateModal";
 import { CreateProjectModal } from "./components/Modals/CreateProjectModal";
 import { McpEditorPane } from "./components/Mcp/McpEditorPane";
+import { ProjectSettingsPage } from "./components/Pages/ProjectSettingsPage";
 import { Toast } from "./components/Shared/Toast";
 import { ScriptsTab } from "./components/Skill/ScriptsTab";
 import { ScriptFileEditor } from "./components/Skill/ScriptFileEditor";
@@ -1206,11 +1207,30 @@ const McpEditorContent = () => {
   );
 };
 
-// /:projectId/plugins
-const PluginsContent = () => (
+// /:projectId/settings
+const ProjectSettingsContent = () => {
+  const { projectId } = useParams<{ projectId: string }>();
+  const navigate = useNavigate();
+  const { onBumpProjectsRefresh } = useShell();
+  const projectPath = projectId ? decodeProject(projectId) : null;
+  if (!projectPath) return <Navigate to="/" replace />;
+
+  return (
+    <ProjectSettingsPage
+      projectPath={projectPath}
+      onDeleted={() => {
+        onBumpProjectsRefresh();
+        navigate("/", { replace: true });
+      }}
+    />
+  );
+};
+
+// /:projectId/hooks
+const HooksContent = () => (
   <div className="flex flex-1 flex-col items-center justify-center bg-[#0a0a0c] gap-3">
     <h1 className="font-['Bricolage_Grotesque',sans-serif] text-[28px] font-semibold text-(--text-primary) tracking-tight">
-      Plugins
+      Hooks
     </h1>
     <p className="text-[15px] text-(--text-muted) font-medium">Coming soon</p>
   </div>
@@ -1394,8 +1414,11 @@ export default function App() {
           <Route path="/:projectId/mcp" element={<McpLandingContent />} />
           <Route path="/:projectId/mcp/:name" element={<McpEditorContent />} />
 
-          {/* Plugins */}
-          <Route path="/:projectId/plugins" element={<PluginsContent />} />
+          {/* Settings */}
+          <Route path="/:projectId/settings" element={<ProjectSettingsContent />} />
+
+          {/* Hooks */}
+          <Route path="/:projectId/hooks" element={<HooksContent />} />
         </Route>
       </Routes>
 

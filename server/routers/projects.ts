@@ -1,6 +1,7 @@
 import express from "express";
 import type { NextFunction, Request, Response, Router } from "express";
-import { createProject, getProjectContent, listProjects, setProjectContent } from "../services/claudeConfig.js";
+import { createProject, deleteProject, getProjectContent, listProjects, setProjectContent } from "../services/claudeConfig.js";
+import { requireProjectPath } from "../utils/parsing.js";
 
 const router: Router = express.Router();
 
@@ -70,6 +71,20 @@ router.post("/create", async (req: Request, res: Response, next: NextFunction) =
     if (e.code === "ERR_INVALID_PATH" || e.message?.includes("projectPath")) {
       return res.status(400).json({ code: "invalid_path", message: e.message });
     }
+    next(err);
+  }
+});
+
+router.delete("/", async (req: Request, res: Response, next: NextFunction) => {
+  const raw = req.query.projectPath;
+  const projectPath = requireProjectPath(raw, res);
+  if (!projectPath) return;
+  try {
+    await deleteProject(projectPath);
+    res.json({ message: "Project deleted" });
+  } catch (err) {
+    const e = err as Error & { code?: string };
+    if (e.code === "not_found") return res.status(404).json({ message: e.message });
     next(err);
   }
 });

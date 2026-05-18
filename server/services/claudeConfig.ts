@@ -1,5 +1,5 @@
 import { basename } from "path";
-import { ensureDir, fileExists, listDir, readFileContent, writeFileContent } from "../utils/fileIO.js";
+import { deleteDir, ensureDir, fileExists, listDir, readFileContent, writeFileContent } from "../utils/fileIO.js";
 import { resolveHome, validateProjectPath } from "../utils/parsing.js";
 import type { ClaudeConfig } from "../types/claudeConfig.js";
 
@@ -41,6 +41,37 @@ export async function createProject(
   await writeFileContent(resolveHome("~/.claude.json"), JSON.stringify(config, null, 2));
 
   return { absolutePath, name: basename(absolutePath) };
+}
+
+export async function deleteProject(rawPath: string): Promise<void> {
+  const resolved = resolveHome(rawPath);
+  const absolutePath = validateProjectPath(resolved);
+
+  let raw: string;
+  try {
+    raw = await readFileContent(resolveHome("~/.claude.json"));
+  } catch (e) {
+    const error = e as NodeJS.ErrnoException;
+    if (error.code === "ENOENT") {
+      throw Object.assign(new Error("Project not found"), { code: "not_found" });
+    }
+    throw error;
+  }
+
+  const config = JSON.parse(raw) as ClaudeConfig;
+  if (!(absolutePath in (config.projects ?? {}))) {
+    throw Object.assign(new Error("Project not found"), { code: "not_found" });
+  }
+
+  try {
+    await deleteDir(`${absolutePath}/.claude`);
+  } catch (e) {
+    const error = e as NodeJS.ErrnoException;
+    if (error.code !== "ENOENT") throw error;
+  }
+
+  delete config.projects![absolutePath];
+  await writeFileContent(resolveHome("~/.claude.json"), JSON.stringify(config, null, 2));
 }
 
 // Global config lives directly in ~/.claude; project config lives in <project>/.claude.
