@@ -6,6 +6,7 @@ import { createMcpServer } from "../../lib/api";
 type ServerType = "stdio" | "http";
 type AuthType = "none" | "bearer" | "api-key";
 type Step = 1 | 2 | 3 | 4;
+type Mode = "guided" | "json";
 
 // ── Icons ─────────────────────────────────────────────────────────────────────
 
@@ -163,9 +164,11 @@ export const McpCreateModal = ({
   onClose,
 }: McpCreateModalProps) => {
   const [step, setStep] = useState<Step>(1);
+  const [mode, setMode] = useState<Mode>("guided");
   const [name, setName] = useState("");
   const [nameError, setNameError] = useState<string | null>(null);
   const [serverType, setServerType] = useState<ServerType>("stdio");
+  const [rawJson, setRawJson] = useState("{\n  \n}");
 
   // stdio fields
   const [command, setCommand] = useState("");
@@ -196,7 +199,7 @@ export const McpCreateModal = ({
 
   // ── Step navigation ──────────────────────────────────────────────────────────
 
-  const handleStep1Continue = () => {
+  const handleStep1Continue = (nextMode?: Mode) => {
     const trimmed = name.trim();
     if (!trimmed) {
       setNameError("Name is required.");
@@ -207,13 +210,21 @@ export const McpCreateModal = ({
       return;
     }
     setNameError(null);
+    if (nextMode) setMode(nextMode);
     setStep(2);
   };
 
   const handleStep2Continue = () => setStep(3);
   const handleStep3Continue = () => setStep(4);
 
-  const handleBack = () => setStep((s) => (s - 1) as Step);
+  const handleBack = () => {
+    if (step === 2 && mode === "json") {
+      setMode("guided");
+      setStep(1);
+    } else {
+      setStep((s) => (s - 1) as Step);
+    }
+  };
 
   // ── Submit ───────────────────────────────────────────────────────────────────
 
@@ -222,16 +233,13 @@ export const McpCreateModal = ({
     setSubmitting(true);
     setSubmitError(null);
 
-    const json = buildJson(
-      serverType,
-      command,
-      argsRaw,
-      envRaw,
-      url,
-      authType,
-      token,
-    );
-    const content = JSON.stringify(json, null, 2);
+    const content = mode === "json"
+      ? rawJson
+      : JSON.stringify(
+          buildJson(serverType, command, argsRaw, envRaw, url, authType, token),
+          null,
+          2,
+        );
 
     try {
       await createMcpServer(projectPath, name.trim(), content);
@@ -269,25 +277,21 @@ export const McpCreateModal = ({
         <div className="flex items-start justify-between mb-1">
           <div className="flex-1 min-w-0 pr-4">
             <span className="block text-[11px] font-medium text-(--text-muted) tracking-widest uppercase mb-2">
-              {step} / 4
+              {mode === "json" ? `${step === 1 ? 1 : 2} / 2` : `${step} / 4`}
             </span>
             <h2 className='text-[22px] font-semibold text-(--text-primary) leading-tight font-["Bricolage_Grotesque",sans-serif] m-0'>
               {step === 1 && "New MCP Server"}
-              {step === 2 && "Server Type"}
-              {step === 3 && serverType === "stdio"
-                ? "Command"
-                : "Connection"}
+              {step === 2 && mode === "json" && "JSON Configuration"}
+              {step === 2 && mode === "guided" && "Server Type"}
+              {step === 3 && (serverType === "stdio" ? "Command" : "Connection")}
               {step === 4 && "Review"}
             </h2>
             <p className="mt-2 text-[13px] text-(--text-muted) leading-relaxed">
               {step === 1 && "Give your server a name — you can rename it later."}
-              {step === 2 && "How does Claude connect to this server?"}
-              {step === 3 &&
-                serverType === "stdio" &&
-                "Configure the command that starts your server."}
-              {step === 3 &&
-                serverType === "http" &&
-                "Configure the remote server connection."}
+              {step === 2 && mode === "json" && "Paste or type the server configuration JSON directly."}
+              {step === 2 && mode === "guided" && "How does Claude connect to this server?"}
+              {step === 3 && serverType === "stdio" && "Configure the command that starts your server."}
+              {step === 3 && serverType === "http" && "Configure the remote server connection."}
               {step === 4 && "Review the generated configuration before saving."}
             </p>
           </div>
@@ -332,7 +336,7 @@ export const McpCreateModal = ({
             )}
             <button
               type="button"
-              onClick={handleStep1Continue}
+              onClick={() => handleStep1Continue()}
               disabled={!name.trim()}
               className={[
                 "w-full mt-6 py-3 rounded-xl text-[14px] font-semibold transition-colors duration-150",
@@ -343,11 +347,64 @@ export const McpCreateModal = ({
             >
               Continue →
             </button>
+            {NAME_PATTERN.test(name.trim()) && (
+              <button
+                type="button"
+                onClick={() => handleStep1Continue("json")}
+                className="w-full mt-3 text-[13px] text-(--text-muted) hover:text-(--text-secondary) bg-transparent border-none cursor-pointer transition-colors duration-150"
+              >
+                Or work directly with JSON →
+              </button>
+            )}
           </div>
         )}
 
-        {/* Step 2: Type */}
-        {step === 2 && (
+        {/* Step 2 (JSON mode): raw JSON editor */}
+        {step === 2 && mode === "json" && (
+          <div className="flex flex-col gap-5">
+            <Field label="Configuration JSON">
+              <textarea
+                rows={10}
+                value={rawJson}
+                onChange={(e) => setRawJson(e.target.value)}
+                placeholder={'{\n  "command": "npx",\n  "args": ["-y", "@modelcontextprotocol/server-filesystem", "/"]\n}'}
+                className={textareaClass}
+                autoFocus
+                spellCheck={false}
+              />
+            </Field>
+            {submitError && (
+              <p className="text-[12px] text-(--error) font-['Fira_Code',monospace]">
+                {submitError}
+              </p>
+            )}
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={handleBack}
+                className="px-5 py-3 rounded-xl text-[14px] font-medium text-(--text-muted) bg-(--bg-elevated) border border-(--border-subtle) cursor-pointer hover:text-(--text-secondary) hover:border-(--border-default) transition-colors duration-150"
+              >
+                ← Back
+              </button>
+              <button
+                type="button"
+                onClick={handleCreate}
+                disabled={!rawJson.trim() || submitting}
+                className={[
+                  "flex-1 py-3 rounded-xl text-[14px] font-semibold transition-colors duration-150",
+                  rawJson.trim() && !submitting
+                    ? "bg-(--accent) text-white cursor-pointer hover:bg-(--accent-hover) border-none"
+                    : "bg-(--bg-elevated) text-(--text-muted) border border-(--border-subtle) cursor-not-allowed",
+                ].join(" ")}
+              >
+                {submitting ? "Creating…" : "Create Server"}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Step 2 (guided mode): Type */}
+        {step === 2 && mode === "guided" && (
           <div>
             <div className="flex flex-col gap-3">
               <TypeOption
