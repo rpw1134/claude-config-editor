@@ -109,11 +109,11 @@ export const Sidebar = ({
 
   return (
     <aside
-      className="shrink-0 flex flex-col bg-(--bg-sidebar) border-r border-(--border-faint) h-full overflow-hidden transition-[width] duration-250 ease-in-out"
+      className={`shrink-0 flex flex-col h-full overflow-hidden transition-[width,background-color] duration-250 ease-in-out ${collapsed ? "bg-(--bg-base)" : "bg-(--bg-sidebar) border-r border-(--border-faint)"}`}
       style={{ width: collapsed ? 52 : 260 }}
     >
       {/* App header */}
-      <div className={`pt-4 pb-3 border-b border-(--border-faint) shrink-0 flex items-center min-h-17 pl-2 ${collapsed ? "gap-0" : "pr-3 gap-2.5"}`}>
+      <div className={`pt-4 pb-3 min-h-17 shrink-0 flex items-center pl-2 ${collapsed ? "gap-0" : "gap-2.5 pr-3 border-b border-(--border-faint)"}`}>
         <div
           ref={logoWrapperRef}
           className="shrink-0"
@@ -176,7 +176,7 @@ export const Sidebar = ({
       </div>
 
       {/* Nav area */}
-      <div className="px-2 pt-3 shrink-0 flex flex-col gap-0.5">
+      <div className={`px-2 shrink-0 flex flex-col gap-0.5 ${collapsed ? "pt-1" : "pt-3"}`}>
         {/* Create New button */}
         <div className="relative mb-1.5">
           <button
@@ -363,7 +363,7 @@ export const Sidebar = ({
       {(!hasProject || recents.length === 0) && <div className="flex-1" />}
 
       {/* Bottom — settings */}
-      <div className="px-2 pt-2 pb-3 border-t border-(--border-faint) shrink-0">
+      <div className={`px-2 pt-2 pb-3 shrink-0 ${collapsed ? "" : "border-t border-(--border-faint)"}`}>
         <NavButton
           icon={<SettingsIcon />}
           label="Settings"
