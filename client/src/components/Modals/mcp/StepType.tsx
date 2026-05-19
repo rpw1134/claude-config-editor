@@ -95,7 +95,7 @@ export const StepType = ({
       <button
         type="button"
         onClick={onContinue}
-        className="flex-1 py-3 rounded-xl text-[14px] font-semibold bg-(--accent) text-(--bg-base) cursor-pointer hover:bg-(--accent-hover) border-none transition-colors duration-150"
+        className="flex-1 py-3 rounded-xl text-[14px] font-semibold border border-(--accent) text-(--accent) cursor-pointer hover:bg-(--accent)/10 transition-colors duration-150"
       >
         Continue →
       </button>

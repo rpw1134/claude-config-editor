@@ -43,7 +43,7 @@ export const HooksLanding = ({
                 "text-[14px] font-medium px-4 py-2 rounded-lg border-none transition-colors duration-150 shrink-0",
                 saving
                   ? "bg-(--bg-surface) text-(--text-muted) cursor-not-allowed opacity-50"
-                  : "bg-(--accent) text-(--bg-base) font-semibold cursor-pointer hover:bg-(--accent-hover)",
+                  : "border border-(--accent) text-(--accent) font-semibold cursor-pointer hover:bg-(--accent)/10 bg-transparent",
               ].join(" ")}
             >
               {saving ? "Saving…" : "Save"}

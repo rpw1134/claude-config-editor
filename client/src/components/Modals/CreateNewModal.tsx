@@ -137,7 +137,7 @@ export const CreateNewModal = ({
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="w-full max-w-md mx-4 bg-(--bg-surface) border border-(--border-subtle) rounded-2xl p-8 shadow-2xl">
+      <div className="w-full max-w-md mx-4 bg-(--bg-surface) border border-(--border-subtle) rounded-2xl p-8 shadow-2xl animate-[modalFadeIn_200ms_ease-out_both]">
         {/* Header */}
         <div className="flex items-start justify-between mb-1">
           <div className="flex-1 min-w-0 pr-4">
@@ -220,7 +220,7 @@ export const CreateNewModal = ({
               className={[
                 "w-full mt-6 py-3 rounded-xl text-[14px] font-semibold transition-colors duration-150",
                 canSubmitName
-                  ? "bg-(--accent) text-(--bg-base) font-semibold cursor-pointer hover:bg-(--accent-hover) border-none"
+                  ? "border border-(--accent) text-(--accent) font-semibold cursor-pointer hover:bg-(--accent)/10"
                   : "bg-(--bg-elevated) text-(--text-muted) border border-(--border-subtle) cursor-not-allowed",
               ].join(" ")}
             >
@@ -289,7 +289,7 @@ export const CreateNewModal = ({
                 className={[
                   "flex-1 py-3 rounded-xl text-[14px] font-semibold transition-colors duration-150",
                   canSubmitBody
-                    ? "bg-(--accent) text-(--bg-base) font-semibold cursor-pointer hover:bg-(--accent-hover) border-none"
+                    ? "border border-(--accent) text-(--accent) font-semibold cursor-pointer hover:bg-(--accent)/10"
                     : "bg-(--bg-elevated) text-(--text-muted) border border-(--border-subtle) cursor-not-allowed",
                 ].join(" ")}
               >

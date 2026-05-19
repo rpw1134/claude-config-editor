@@ -16,10 +16,46 @@ const beforeMount: BeforeMount = (monaco) => {
     inherit: true,
     rules: [],
     colors: {
-      'editor.background': '#0d0d10',
-      'editor.lineHighlightBackground': '#00000000',
-      'editorLineNumber.foreground': '#ffffff18',
-      'editorLineNumber.activeForeground': '#ffffff35',
+      // Surfaces — match --bg-surface / --bg-elevated
+      'editor.background': '#181D28',
+      'editorGutter.background': '#181D28',
+      'editorWidget.background': '#1F2430',
+      'editorWidget.border': '#ffffff1c',
+      'editorSuggestWidget.background': '#1F2430',
+      'editorSuggestWidget.border': '#ffffff1c',
+      'editorSuggestWidget.selectedBackground': '#ffffff12',
+
+      // Line highlight — subtle, matches --bg-elevated
+      'editor.lineHighlightBackground': '#1F243040',
+      'editor.lineHighlightBorder': '#00000000',
+
+      // Line numbers — --text-muted (#6B7D96) at reduced opacity
+      'editorLineNumber.foreground': '#6B7D9660',
+      'editorLineNumber.activeForeground': '#A8B8CC',
+
+      // Text — --text-primary
+      'editor.foreground': '#F5F7FA',
+
+      // Cursor — --accent
+      'editorCursor.foreground': '#00E5FF',
+
+      // Selection — --accent-dim tinted
+      'editor.selectionBackground': '#00E5FF26',
+      'editor.inactiveSelectionBackground': '#00E5FF14',
+      'editor.selectionHighlightBackground': '#00E5FF14',
+
+      // Find matches
+      'editor.findMatchBackground': '#00E5FF40',
+      'editor.findMatchHighlightBackground': '#00E5FF20',
+
+      // Indent guides
+      'editorIndentGuide.background1': '#ffffff0d',
+      'editorIndentGuide.activeBackground1': '#ffffff1a',
+
+      // Scrollbar — matches app scrollbar tokens
+      'scrollbarSlider.background': '#ffffff14',
+      'scrollbarSlider.hoverBackground': '#ffffff24',
+      'scrollbarSlider.activeBackground': '#ffffff30',
     },
   });
 };
@@ -42,7 +78,7 @@ const EDITOR_OPTIONS = {
 };
 
 const LoadingPlaceholder = () => (
-  <div className="w-full h-full flex items-center justify-center bg-[#0d0d10]">
+  <div className="w-full h-full flex items-center justify-center bg-[#181D28]">
     <span className="text-[12px] font-mono text-white/25">Loading editor…</span>
   </div>
 );

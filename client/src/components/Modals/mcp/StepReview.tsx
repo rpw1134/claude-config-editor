@@ -56,7 +56,7 @@ export const StepReview = ({
         className={[
           "flex-1 py-3 rounded-xl text-[14px] font-semibold transition-colors duration-150",
           !submitting
-            ? "bg-(--accent) text-(--bg-base) font-semibold cursor-pointer hover:bg-(--accent-hover) border-none"
+            ? "border border-(--accent) text-(--accent) font-semibold cursor-pointer hover:bg-(--accent)/10"
             : "bg-(--bg-elevated) text-(--text-muted) border border-(--border-subtle) cursor-not-allowed",
         ].join(" ")}
       >

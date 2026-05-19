@@ -55,7 +55,7 @@ export const AddHookModal = ({ onConfirm, onClose, fixedEvent, initialGroup }: A
       }}
     >
       <form
-        className="bg-(--bg-elevated) border border-(--border-default) rounded-2xl p-6 w-full max-w-md mx-4 shadow-2xl"
+        className="bg-(--bg-elevated) border border-(--border-default) rounded-2xl p-6 w-full max-w-md mx-4 shadow-2xl animate-[modalFadeIn_200ms_ease-out_both]"
         onSubmit={(e) => { e.preventDefault(); handleConfirm(); }}
       >
         <h2 className='m-0 mb-5 text-lg font-["Bricolage_Grotesque",sans-serif] font-bold text-(--text-primary)'>
@@ -185,7 +185,7 @@ export const AddHookModal = ({ onConfirm, onClose, fixedEvent, initialGroup }: A
             className={[
               "text-[13px] font-medium px-4 py-2 rounded-lg border-none transition-colors",
               canConfirm
-                ? "bg-(--accent) text-(--bg-base) font-semibold cursor-pointer hover:bg-(--accent-hover)"
+                ? "border border-(--accent) text-(--accent) font-semibold cursor-pointer hover:bg-(--accent)/10 bg-transparent"
                 : "bg-(--bg-surface) text-(--text-muted) cursor-not-allowed opacity-50",
             ].join(" ")}
           >

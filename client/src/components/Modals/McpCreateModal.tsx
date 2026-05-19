@@ -150,7 +150,7 @@ export const McpCreateModal = ({
           if (e.target === e.currentTarget) handleClose();
         }}
       >
-        <div className="w-full max-w-md mx-4 bg-(--bg-surface) border border-(--border-subtle) rounded-2xl p-8 shadow-2xl">
+        <div className="w-full max-w-md mx-4 bg-(--bg-surface) border border-(--border-subtle) rounded-2xl p-8 shadow-2xl animate-[modalFadeIn_200ms_ease-out_both]">
           {/* Header */}
           <div className="flex items-start justify-between mb-1">
             <div className="flex-1 min-w-0 pr-4">

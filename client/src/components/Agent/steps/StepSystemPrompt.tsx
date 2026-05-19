@@ -80,8 +80,8 @@ export const StepSystemPrompt = ({
           className={[
             "flex items-center gap-2 px-5 py-2.75 rounded-2.5 text-(--bg-base) text-[15px] font-semibold border-none transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-(--accent) focus-visible:outline-offset-2",
             submitting
-              ? "bg-(--accent) opacity-60 cursor-not-allowed"
-              : "bg-(--accent) cursor-pointer hover:bg-(--accent-hover)",
+              ? "border border-(--accent) text-(--accent) opacity-60 cursor-not-allowed"
+              : "border border-(--accent) text-(--accent) cursor-pointer hover:bg-(--accent)/10 bg-transparent",
           ].join(" ")}
         >
           {submitting ? "Creating…" : "Create Agent"}

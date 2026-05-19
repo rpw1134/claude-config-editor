@@ -218,7 +218,7 @@ export const TypeLandingPage = (props: TypeLandingPageProps) => {
 
           <button
             onClick={onNew}
-            className="flex items-center gap-1.75 px-4 py-2 rounded-lg bg-(--accent) text-(--bg-base) text-[14px] font-semibold border-none cursor-pointer shrink-0 transition-colors duration-150 hover:bg-(--accent-hover)"
+            className="flex items-center gap-1.75 px-4 py-2 rounded-lg border border-(--accent) text-(--accent) text-[14px] font-semibold cursor-pointer shrink-0 transition-colors duration-150 hover:bg-(--accent)/10"
           >
             <PlusIcon />
             New {singularType}
