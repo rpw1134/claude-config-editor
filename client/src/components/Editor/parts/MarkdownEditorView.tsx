@@ -43,7 +43,7 @@ export const MarkdownEditorView = ({
   return (
     <div className="flex flex-col h-full bg-(--bg-base)">
       {/* Thin top bar */}
-      <div className="px-5 border-b border-(--border-faint) flex items-center justify-between shrink-0 min-h-14 bg-(--bg-sidebar)">
+      <div className="px-5 flex items-center justify-between shrink-0 min-h-14 bg-(--bg-sidebar)">
         <button
           type="button"
           onClick={onBack}

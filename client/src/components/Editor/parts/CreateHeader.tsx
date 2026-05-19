@@ -36,7 +36,7 @@ export const CreateHeader = ({
   const label = creating ? "Creating…" : isError ? "Error" : "Create";
 
   return (
-    <div className="px-5 border-b border-(--border-faint) flex items-center justify-between shrink-0 min-h-12 bg-(--bg-sidebar)">
+    <div className="px-5 flex items-center justify-between shrink-0 min-h-12 bg-(--bg-sidebar)">
       <div className="flex items-center gap-1.5">
         <span className='font-["Fira_Code",monospace] text-[12px] text-(--text-secondary)'>
           {pathPrefix}

@@ -243,7 +243,7 @@ export const EditorPane = ({
   }, [dirty, blocker]);
 
   return (
-    <div className="flex flex-1 flex-col h-full w-full bg-(--bg-base) border-l border-(--border-faint)">
+    <div className="flex flex-1 flex-col h-full w-full bg-(--bg-base)">
       {/* Unsaved-changes confirmation modal */}
       {blocker.state === "blocked" && (
         <div

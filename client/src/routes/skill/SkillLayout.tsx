@@ -131,7 +131,7 @@ export const SkillLayout = () => {
   );
 
   return (
-    <div className="flex flex-1 flex-col h-full w-full bg-(--bg-base) border-l border-(--border-faint)">
+    <div className="flex flex-1 flex-col h-full w-full bg-(--bg-base)">
       {blocker.state === "blocked" && (
         <UnsavedModal
           onLeave={() => blocker.proceed()}

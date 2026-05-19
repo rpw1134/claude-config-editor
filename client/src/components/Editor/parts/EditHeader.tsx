@@ -46,7 +46,7 @@ export const EditHeader = ({
   const isDisabled = saveDisabled && !isSaved;
 
   return (
-    <div className="px-5 border-b border-(--border-faint) flex items-center justify-between shrink-0 min-h-14 bg-(--bg-sidebar)">
+    <div className="px-5 flex items-center justify-between shrink-0 min-h-14 bg-(--bg-sidebar)">
       {/* Left: optional Back button + file path */}
       <div className="flex items-center gap-0 min-w-0">
         {onBack && (

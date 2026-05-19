@@ -120,12 +120,12 @@ export const McpEditorPane = ({
           onKeep={() => blocker.reset()}
         />
       )}
-      <div className="shrink-0 flex items-stretch justify-between border-b border-(--border-faint) px-4">
+      <div className="shrink-0 flex items-stretch justify-between px-4">
         <div className="flex items-stretch gap-1">
           <button
             type="button"
             onClick={onBack}
-            className="flex items-center gap-1.5 pt-6 pb-5 text-[14px] text-(--text-secondary) hover:text-(--text-primary) bg-transparent border-none cursor-pointer transition-colors duration-150 pr-3 mr-2 border-r border-(--border-subtle)"
+            className="flex items-center gap-1.5 pt-6 pb-5 text-[14px] text-(--text-secondary) hover:text-(--text-primary) bg-transparent border-none cursor-pointer transition-colors duration-150 pr-3 mr-2"
           >
             <ChevronLeftIcon /> Back
           </button>
