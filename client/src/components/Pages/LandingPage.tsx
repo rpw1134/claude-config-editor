@@ -137,13 +137,13 @@ const ItemRow = ({ name, isLast, onClick }: ItemRowProps) => (
   <button
     onClick={onClick}
     className={[
-      "w-full flex items-center pl-4 pr-1 min-h-16 text-left cursor-pointer",
+      "w-full flex items-center pl-4 pr-1 min-h-18 text-left cursor-pointer",
       "bg-transparent transition-colors duration-120",
       "border-none hover:bg-(--bg-hover)",
       !isLast ? "border-b border-(--border-faint)" : "",
     ].join(" ")}
   >
-    <span className="font-['Instrument_Sans',sans-serif] text-[17px] font-medium text-(--text-primary) overflow-hidden text-ellipsis whitespace-nowrap">
+    <span className="font-['Instrument_Sans',sans-serif] text-[19px] font-medium text-(--text-primary) overflow-hidden text-ellipsis whitespace-nowrap">
       {name}
     </span>
   </button>
@@ -218,7 +218,7 @@ export const TypeLandingPage = (props: TypeLandingPageProps) => {
 
           <button
             onClick={onNew}
-            className="flex items-center gap-1.75 px-4 py-2 rounded-lg bg-(--accent) text-white text-[14px] font-medium border-none cursor-pointer shrink-0 transition-colors duration-150 hover:bg-(--accent-hover)"
+            className="flex items-center gap-1.75 px-4 py-2 rounded-lg bg-(--accent) text-(--bg-base) text-[14px] font-semibold border-none cursor-pointer shrink-0 transition-colors duration-150 hover:bg-(--accent-hover)"
           >
             <PlusIcon />
             New {singularType}

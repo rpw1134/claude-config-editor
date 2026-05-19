@@ -38,3 +38,6 @@ coverage/
 *.suo
 *.ntvs*
 *.njsproj
+
+*.png
+.playwright-mcp

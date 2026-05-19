@@ -12,7 +12,7 @@ import {
   HooksIcon,
   PlusIcon,
   SettingsIcon,
-  ChevronIcon,
+  SidebarCloseIcon,
   StrydeLogoIcon,
 } from "../Icons";
 import type { RecentItem } from "../../hooks/useRecents";
@@ -100,13 +100,13 @@ export const Sidebar = ({
       style={{ width: collapsed ? 52 : 260 }}
     >
       {/* App header */}
-      <div className="pt-4 pb-3 border-b border-(--border-faint) shrink-0 flex items-center min-h-14.25 pl-2.5 pr-3 gap-2.5">
+      <div className="pt-4 pb-3 border-b border-(--border-faint) shrink-0 flex items-center min-h-17 pl-2.5 pr-3 gap-2.5">
         <button
           onClick={onToggleCollapsed}
-          title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-          className="w-8 h-8 rounded-lg bg-(--bg-elevated) flex items-center justify-center border-none cursor-pointer transition-colors duration-150 hover:bg-(--border-subtle) shrink-0"
+          title={collapsed ? "Open sidebar" : "Close sidebar"}
+          className="w-10 h-10 rounded-lg bg-(--bg-elevated) flex items-center justify-center border-none cursor-pointer transition-colors duration-150 hover:bg-(--border-subtle) shrink-0"
         >
-          <StrydeLogoIcon size={20} />
+          <StrydeLogoIcon size={28} />
         </button>
         <div
           className="flex-1 min-w-0 overflow-hidden"
@@ -116,11 +116,8 @@ export const Sidebar = ({
             transition: "opacity 100ms ease, max-width 200ms ease 100ms",
           }}
         >
-          <p className="text-[14px] font-semibold font-['Bricolage_Grotesque',sans-serif] text-(--text-primary) leading-[1.2] whitespace-nowrap">
+          <p className="text-[20px] font-semibold font-['Bricolage_Grotesque',sans-serif] text-(--text-primary) leading-[1.2] whitespace-nowrap">
             Stryde
-          </p>
-          <p className="text-[12px] text-(--text-muted) leading-[1.2] mt-0.5 whitespace-nowrap">
-            ~/.claude/
           </p>
         </div>
         <button
@@ -134,7 +131,7 @@ export const Sidebar = ({
             transition: "opacity 100ms ease, width 200ms ease 100ms",
           }}
         >
-          <ChevronIcon direction="left" />
+          <SidebarCloseIcon />
         </button>
       </div>
 

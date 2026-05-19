@@ -182,7 +182,7 @@ const ScriptsRow = ({ scripts, onOpenScript, onCreateScript }: ScriptsRowProps) 
       <button
         type="button"
         onClick={onCreateScript}
-        className="flex items-center justify-center w-5 h-5 rounded bg-(--accent) hover:bg-(--accent-hover) border-none cursor-pointer transition-colors duration-100 text-white text-[14px] leading-none"
+        className="flex items-center justify-center w-5 h-5 rounded bg-(--accent) hover:bg-(--accent-hover) border-none cursor-pointer transition-colors duration-100 text-(--bg-base) font-semibold text-[14px] leading-none"
       >
         +
       </button>

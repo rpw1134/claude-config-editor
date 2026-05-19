@@ -25,7 +25,7 @@ export const NavButton = ({
       "group w-full flex items-center gap-2.5 px-2 rounded-md text-left text-[14px] font-medium min-h-10 py-2 border-none transition-all duration-150",
       collapsed ? "border-l-0" : "border-l-[3px]",
       active
-        ? "bg-(--bg-elevated) text-(--text-primary) border-l-(--accent-secondary)"
+        ? "bg-(--bg-elevated) text-(--text-primary) border-l-(--accent)"
         : disabled
           ? "bg-transparent text-(--text-muted) border-l-transparent cursor-not-allowed"
           : "bg-transparent text-(--text-secondary) border-l-transparent cursor-pointer hover:bg-(--bg-hover) hover:text-(--text-primary)",
@@ -37,7 +37,7 @@ export const NavButton = ({
         disabled
           ? "text-(--text-muted)"
           : active
-            ? "text-(--accent-secondary)"
+            ? "text-(--accent)"
             : "text-(--text-secondary) group-hover:text-(--text-primary)",
       ].join(" ")}
     >

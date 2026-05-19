@@ -247,7 +247,7 @@ const CreateScriptModal = ({
             className={[
               "w-full mt-6 py-3 rounded-xl text-[14px] font-semibold transition-colors duration-150",
               canSubmit
-                ? "bg-(--accent) text-white cursor-pointer hover:bg-(--accent-hover) border-none"
+                ? "bg-(--accent) text-(--bg-base) font-semibold cursor-pointer hover:bg-(--accent-hover) border-none"
                 : "bg-(--bg-elevated) text-(--text-muted) border border-(--border-subtle) cursor-not-allowed",
             ].join(" ")}
           >
@@ -307,7 +307,7 @@ export const ScriptsTab = ({
           <button
             type="button"
             onClick={() => setCreateOpen(true)}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-(--accent) text-white text-[13px] font-medium hover:bg-(--accent-hover) transition-colors duration-150 border-none cursor-pointer shrink-0"
+            className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-(--accent) text-(--bg-base) text-[13px] font-semibold hover:bg-(--accent-hover) transition-colors duration-150 border-none cursor-pointer shrink-0"
           >
             <PlusIcon />
             New Script
@@ -323,7 +323,7 @@ export const ScriptsTab = ({
             <button
               type="button"
               onClick={() => setCreateOpen(true)}
-              className="px-4 py-2 rounded-lg bg-(--accent) text-white text-[13px] font-medium hover:bg-(--accent-hover) transition-colors duration-150 border-none cursor-pointer"
+              className="px-4 py-2 rounded-lg bg-(--accent) text-(--bg-base) text-[13px] font-semibold hover:bg-(--accent-hover) transition-colors duration-150 border-none cursor-pointer"
             >
               Create your first script
             </button>

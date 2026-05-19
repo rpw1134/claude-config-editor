@@ -78,7 +78,7 @@ export const StepSystemPrompt = ({
           onClick={onSubmit}
           disabled={submitting}
           className={[
-            "flex items-center gap-2 px-5 py-2.75 rounded-2.5 text-white text-[15px] font-medium border-none transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-(--accent) focus-visible:outline-offset-2",
+            "flex items-center gap-2 px-5 py-2.75 rounded-2.5 text-(--bg-base) text-[15px] font-semibold border-none transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-(--accent) focus-visible:outline-offset-2",
             submitting
               ? "bg-(--accent) opacity-60 cursor-not-allowed"
               : "bg-(--accent) cursor-pointer hover:bg-(--accent-hover)",

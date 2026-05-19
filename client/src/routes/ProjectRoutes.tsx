@@ -16,7 +16,7 @@ export const ProjectWelcomeContent = () => {
 
   return (
     <WelcomePane
-      projectName={projectPath.split("/").pop() ?? projectPath}
+      projectName={projectPath.replace(/^\/Users\/[^/]+/, "~").replace(/^\/home\/[^/]+/, "~")}
       onOpenClaudeMd={() =>
         navigate(`/${encodeProject(projectPath)}/claude-md`)
       }

@@ -6,16 +6,16 @@
 
 :root {
   /* Surfaces — Stryde deep space palette */
-  --bg-base: #0B0F19;
-  --bg-sidebar: #0D1017;
-  --bg-surface: #1E2230;
-  --bg-elevated: #22262F;
-  --bg-hover: #181C23;
+  --bg-base: #13172A;
+  --bg-sidebar: #0F1322;
+  --bg-surface: #252A3D;
+  --bg-elevated: #2D3247;
+  --bg-hover: #1E2335;
 
   /* Borders */
-  --border-faint: rgba(255, 255, 255, 0.05);
-  --border-subtle: rgba(255, 255, 255, 0.08);
-  --border-default: rgba(255, 255, 255, 0.12);
+  --border-faint: rgba(255, 255, 255, 0.07);
+  --border-subtle: rgba(255, 255, 255, 0.11);
+  --border-default: rgba(255, 255, 255, 0.16);
   --border-strong: rgba(255, 255, 255, 0.20);
 
   /* Accent — Soft Kinetic Teal (primary interactive) */
@@ -30,8 +30,8 @@
 
   /* Text */
   --text-primary: #F5F7FA;
-  --text-secondary: #9099a8;
-  --text-muted: #4E5D78;
+  --text-secondary: #B0BAC8;
+  --text-muted: #6C7D9A;
   --text-accent: #00E5FF;
 
   /* Semantic */

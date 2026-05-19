@@ -147,7 +147,7 @@ export const McpEditorPane = ({
                 "text-[13px] font-medium px-3 py-1 rounded-lg border-none transition-colors duration-150",
                 (!dirty || saving)
                   ? "bg-(--bg-surface) text-(--text-muted) opacity-50 cursor-not-allowed"
-                  : "bg-(--accent) text-white cursor-pointer hover:bg-(--accent-hover)",
+                  : "bg-(--accent) text-(--bg-base) font-semibold cursor-pointer hover:bg-(--accent-hover)",
               ].join(" ")}
             >
               {saving ? "Saving…" : dirty ? "Save" : "Up to date"}

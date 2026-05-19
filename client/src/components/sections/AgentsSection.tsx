@@ -30,7 +30,7 @@ const AgentCard = ({ name, isSelected, onSelect }: AgentCardProps) => (
       />
       <span
         className={[
-          "text-[14px] font-semibold font-mono transition-colors leading-tight",
+          "text-[15px] font-semibold font-mono transition-colors leading-tight",
           isSelected
             ? "text-white/95"
             : "text-white/70 group-hover:text-white/90",

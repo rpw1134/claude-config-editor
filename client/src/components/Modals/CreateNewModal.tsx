@@ -220,7 +220,7 @@ export const CreateNewModal = ({
               className={[
                 "w-full mt-6 py-3 rounded-xl text-[14px] font-semibold transition-colors duration-150",
                 canSubmitName
-                  ? "bg-(--accent) text-white cursor-pointer hover:bg-(--accent-hover) border-none"
+                  ? "bg-(--accent) text-(--bg-base) font-semibold cursor-pointer hover:bg-(--accent-hover) border-none"
                   : "bg-(--bg-elevated) text-(--text-muted) border border-(--border-subtle) cursor-not-allowed",
               ].join(" ")}
             >
@@ -289,7 +289,7 @@ export const CreateNewModal = ({
                 className={[
                   "flex-1 py-3 rounded-xl text-[14px] font-semibold transition-colors duration-150",
                   canSubmitBody
-                    ? "bg-(--accent) text-white cursor-pointer hover:bg-(--accent-hover) border-none"
+                    ? "bg-(--accent) text-(--bg-base) font-semibold cursor-pointer hover:bg-(--accent-hover) border-none"
                     : "bg-(--bg-elevated) text-(--text-muted) border border-(--border-subtle) cursor-not-allowed",
                 ].join(" ")}
               >
