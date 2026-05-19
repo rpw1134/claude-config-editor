@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useLocation, useNavigate } from "react-router-dom";
 import { ProjectPicker } from "../Shared/ProjectPicker";
 import { NavButton } from "./NavButton";
@@ -62,6 +63,18 @@ export const Sidebar = ({
     y: number;
   } | null>(null);
   const createButtonRef = useRef<HTMLButtonElement>(null);
+  const [tooltipVisible, setTooltipVisible] = useState(false);
+  const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
+  const logoWrapperRef = useRef<HTMLDivElement>(null);
+
+  const handleLogoEnter = () => {
+    if (logoWrapperRef.current) {
+      const rect = logoWrapperRef.current.getBoundingClientRect();
+      setTooltipPos({ x: rect.right + 10, y: rect.top + rect.height / 2 });
+    }
+    setTooltipVisible(true);
+  };
+  const handleLogoLeave = () => setTooltipVisible(false);
   const hasProject = selectedProjectPath !== null;
 
   const encodedProject = selectedProjectPath
@@ -96,21 +109,23 @@ export const Sidebar = ({
 
   return (
     <aside
-      className="shrink-0 flex flex-col bg-(--bg-sidebar) border-r border-(--border-faint) h-full transition-[width] duration-250 ease-in-out"
+      className="shrink-0 flex flex-col bg-(--bg-sidebar) border-r border-(--border-faint) h-full overflow-hidden transition-[width] duration-250 ease-in-out"
       style={{ width: collapsed ? 52 : 260 }}
     >
-      {/* App header — lives outside overflow-hidden so tooltip can escape */}
-      <div className={`pt-4 pb-3 border-b border-(--border-faint) shrink-0 flex items-center min-h-17 gap-2.5 ${collapsed ? "justify-center px-0" : "pl-2.5 pr-3"}`}>
-        <div className="relative group shrink-0">
+      {/* App header */}
+      <div className={`pt-4 pb-3 border-b border-(--border-faint) shrink-0 flex items-center min-h-17 pl-2 ${collapsed ? "gap-0" : "pr-3 gap-2.5"}`}>
+        <div
+          ref={logoWrapperRef}
+          className="shrink-0"
+          onMouseEnter={handleLogoEnter}
+          onMouseLeave={handleLogoLeave}
+        >
           <button
             onClick={onToggleCollapsed}
             className="w-9 h-9 rounded-lg bg-transparent flex items-center justify-center border-none cursor-pointer"
           >
             <StrydeLogoIcon size={24} />
           </button>
-          <span className="z-50 pointer-events-none absolute left-full top-1/2 -translate-y-1/2 ml-2.5 px-2 py-1 rounded-md text-[11px] font-medium whitespace-nowrap bg-(--bg-elevated) border border-(--border-subtle) text-(--text-secondary) opacity-0 [transition:none] group-hover:[transition:opacity_150ms_ease-in] group-hover:opacity-100">
-            {collapsed ? "Open sidebar" : "Close sidebar"}
-          </span>
         </div>
         <div
           className="flex-1 min-w-0 overflow-hidden"
@@ -360,6 +375,16 @@ export const Sidebar = ({
       </div>
 
       </div>{/* end inner overflow-hidden wrapper */}
+
+      {tooltipVisible && createPortal(
+        <span
+          className="fixed z-9999 pointer-events-none -translate-y-1/2 px-2 py-1 rounded-md text-[11px] font-medium whitespace-nowrap bg-(--bg-elevated) border border-(--border-subtle) text-(--text-secondary) animate-[tooltipFadeIn_150ms_ease-in_both]"
+          style={{ left: tooltipPos.x, top: tooltipPos.y }}
+        >
+          {collapsed ? "Open sidebar" : "Close sidebar"}
+        </span>,
+        document.body
+      )}
     </aside>
   );
 };

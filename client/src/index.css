@@ -169,3 +169,8 @@ a {
 .toast-in {
   animation: toast-in 0.2s ease-out both;
 }
+
+@keyframes tooltipFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
