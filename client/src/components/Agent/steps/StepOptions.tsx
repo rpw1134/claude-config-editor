@@ -397,7 +397,7 @@ export function StepOptions({
       <div className="flex items-center gap-4 pt-2 pb-1">
         <button
           onClick={onContinue}
-          className="flex items-center gap-2 px-5 py-2.75 rounded-2.5 border border-(--accent) text-(--accent) text-[15px] font-semibold cursor-pointer transition-colors duration-150 hover:bg-(--accent)/10 focus-visible:outline-2 focus-visible:outline-(--accent) focus-visible:outline-offset-2"
+          className="flex items-center gap-2 px-5 py-2.75 rounded-2.5 border border-(--border-subtle) bg-(--bg-elevated) text-(--text-primary) text-[15px] font-semibold cursor-pointer transition-colors duration-150 hover:bg-(--bg-hover)"
         >
           Continue <ArrowRightIcon />
         </button>

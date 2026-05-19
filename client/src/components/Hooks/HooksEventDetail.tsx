@@ -157,7 +157,7 @@ export const HooksEventDetail = ({
               "text-[13px] font-medium px-3 py-1 rounded-lg border-none transition-colors duration-150",
               !dirty || saving
                 ? "bg-(--bg-surface) text-(--text-muted) opacity-50 cursor-not-allowed"
-                : "border border-(--accent) text-(--accent) font-semibold cursor-pointer hover:bg-(--accent)/10 bg-transparent",
+                : "text-(--accent) font-semibold cursor-pointer hover:bg-(--accent)/8 bg-transparent border-none",
             ].join(" ")}
           >
             {saving ? "Saving…" : dirty ? "Save" : "Up to date"}
@@ -180,7 +180,7 @@ export const HooksEventDetail = ({
             <button
               type="button"
               onClick={() => setShowAddModal(true)}
-              className="flex items-center gap-1.5 text-[13px] font-medium px-3 py-1.5 rounded-lg border border-(--border-subtle) bg-(--bg-surface) text-(--text-secondary) hover:text-(--text-primary) hover:bg-(--bg-hover) cursor-pointer transition-colors"
+              className="flex items-center gap-1.5 text-[13px] font-medium px-3 py-1.5 rounded-lg border border-(--border-subtle) bg-(--bg-elevated) text-(--text-primary) hover:bg-(--bg-hover) cursor-pointer transition-colors"
             >
               <PlusIcon /> Add hook
             </button>
@@ -192,7 +192,7 @@ export const HooksEventDetail = ({
               <button
                 type="button"
                 onClick={() => setShowAddModal(true)}
-                className="flex items-center gap-2 text-[13px] font-semibold px-4 py-2 rounded-lg border border-(--accent) text-(--accent) cursor-pointer hover:bg-(--accent)/10 transition-colors"
+                className="flex items-center gap-2 text-[13px] font-semibold px-4 py-2 rounded-lg border border-(--border-subtle) bg-(--bg-elevated) text-(--text-primary) cursor-pointer hover:bg-(--bg-hover) transition-colors"
               >
                 <PlusIcon /> Add hook
               </button>

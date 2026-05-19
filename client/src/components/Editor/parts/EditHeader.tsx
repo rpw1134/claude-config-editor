@@ -107,7 +107,7 @@ export const EditHeader = ({
             "text-[13px] px-3 py-1 rounded-md border-none transition-colors duration-150",
             isDisabled
               ? "bg-(--bg-surface) text-(--text-muted) opacity-50 cursor-not-allowed"
-              : "border border-(--accent) text-(--accent) font-semibold cursor-pointer hover:bg-(--accent)/10 bg-transparent",
+              : "text-(--accent) font-semibold cursor-pointer hover:bg-(--accent)/8 bg-transparent",
           ].join(" ")}
         >
           {saveLabel}

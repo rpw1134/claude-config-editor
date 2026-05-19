@@ -185,7 +185,7 @@ export const AddHookModal = ({ onConfirm, onClose, fixedEvent, initialGroup }: A
             className={[
               "text-[13px] font-medium px-4 py-2 rounded-lg border-none transition-colors",
               canConfirm
-                ? "border border-(--accent) text-(--accent) font-semibold cursor-pointer hover:bg-(--accent)/10 bg-transparent"
+                ? "border border-(--border-subtle) bg-(--bg-elevated) text-(--text-primary) font-semibold cursor-pointer hover:bg-(--bg-hover)"
                 : "bg-(--bg-surface) text-(--text-muted) cursor-not-allowed opacity-50",
             ].join(" ")}
           >

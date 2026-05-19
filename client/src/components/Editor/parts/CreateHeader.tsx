@@ -72,7 +72,7 @@ export const CreateHeader = ({
             isError
               ? "text-(--error) bg-transparent cursor-pointer"
               : !disabled
-                ? "border border-(--accent) text-(--accent) font-semibold cursor-pointer hover:bg-(--accent)/10 bg-transparent"
+                ? "text-(--accent) font-semibold cursor-pointer hover:bg-(--accent)/8 bg-transparent"
                 : "bg-transparent text-(--text-muted) cursor-not-allowed opacity-40",
           ].join(" ")}
         >
