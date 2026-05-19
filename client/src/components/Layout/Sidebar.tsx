@@ -96,19 +96,19 @@ export const Sidebar = ({
 
   return (
     <aside
-      className="shrink-0 flex flex-col bg-(--bg-sidebar) border-r border-(--border-faint) h-full overflow-hidden transition-[width] duration-250 ease-in-out"
+      className="shrink-0 flex flex-col bg-(--bg-sidebar) border-r border-(--border-faint) h-full transition-[width] duration-250 ease-in-out"
       style={{ width: collapsed ? 52 : 260 }}
     >
-      {/* App header */}
+      {/* App header — lives outside overflow-hidden so tooltip can escape */}
       <div className={`pt-4 pb-3 border-b border-(--border-faint) shrink-0 flex items-center min-h-17 gap-2.5 ${collapsed ? "justify-center px-0" : "pl-2.5 pr-3"}`}>
         <div className="relative group shrink-0">
           <button
             onClick={onToggleCollapsed}
-            className="w-10 h-10 rounded-lg bg-transparent flex items-center justify-center border-none cursor-pointer"
+            className="w-9 h-9 rounded-lg bg-transparent flex items-center justify-center border-none cursor-pointer"
           >
-            <StrydeLogoIcon size={28} />
+            <StrydeLogoIcon size={24} />
           </button>
-          <span className="pointer-events-none absolute left-full top-1/2 -translate-y-1/2 ml-2.5 px-2 py-1 rounded-md text-[11px] font-medium whitespace-nowrap bg-(--bg-elevated) border border-(--border-subtle) text-(--text-secondary) opacity-0 group-hover:opacity-100 transition-opacity duration-75">
+          <span className="z-50 pointer-events-none absolute left-full top-1/2 -translate-y-1/2 ml-2.5 px-2 py-1 rounded-md text-[11px] font-medium whitespace-nowrap bg-(--bg-elevated) border border-(--border-subtle) text-(--text-secondary) opacity-0 [transition:none] group-hover:[transition:opacity_150ms_ease-in] group-hover:opacity-100">
             {collapsed ? "Open sidebar" : "Close sidebar"}
           </span>
         </div>
@@ -138,6 +138,9 @@ export const Sidebar = ({
           <SidebarCloseIcon />
         </button>
       </div>
+
+      {/* Inner scroll container — overflow-hidden here, not on <aside>, so tooltip can escape */}
+      <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
 
       {/* Project picker — hidden when collapsed */}
       <div
@@ -355,6 +358,8 @@ export const Sidebar = ({
           onClick={() => navigateTo("settings")}
         />
       </div>
+
+      </div>{/* end inner overflow-hidden wrapper */}
     </aside>
   );
 };
