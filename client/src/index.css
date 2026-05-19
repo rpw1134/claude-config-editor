@@ -6,11 +6,11 @@
 
 :root {
   /* Surfaces — Stryde deep space palette */
-  --bg-base: #13172A;
-  --bg-sidebar: #0F1322;
-  --bg-surface: #252A3D;
-  --bg-elevated: #2D3247;
-  --bg-hover: #1E2335;
+  --bg-base: #0D1119;
+  --bg-sidebar: #0A0E14;
+  --bg-surface: #181D28;
+  --bg-elevated: #1F2430;
+  --bg-hover: #141920;
 
   /* Borders */
   --border-faint: rgba(255, 255, 255, 0.07);
@@ -30,8 +30,8 @@
 
   /* Text */
   --text-primary: #F5F7FA;
-  --text-secondary: #B0BAC8;
-  --text-muted: #6C7D9A;
+  --text-secondary: #9AA6B8;
+  --text-muted: #596879;
   --text-accent: #00E5FF;
 
   /* Semantic */

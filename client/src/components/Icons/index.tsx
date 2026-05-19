@@ -314,9 +314,9 @@ export const BackArrowIcon = () => (
 
 export const SidebarCloseIcon = () => (
   <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <line x1="2" y1="3" x2="2" y2="13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-    <line x1="5" y1="3" x2="5" y2="13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-    <path d="M13 5L9.5 8L13 11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+    <rect x="1.25" y="2.25" width="13.5" height="11.5" rx="2" stroke="currentColor" strokeWidth="1.25"/>
+    <path d="M5.5 2.5V13.5" stroke="currentColor" strokeWidth="1.25"/>
+    <path d="M10.5 6.5L8.5 8L10.5 9.5" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" strokeLinejoin="round"/>
   </svg>
 );
 

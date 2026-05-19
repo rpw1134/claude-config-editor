@@ -100,14 +100,18 @@ export const Sidebar = ({
       style={{ width: collapsed ? 52 : 260 }}
     >
       {/* App header */}
-      <div className="pt-4 pb-3 border-b border-(--border-faint) shrink-0 flex items-center min-h-17 pl-2.5 pr-3 gap-2.5">
-        <button
-          onClick={onToggleCollapsed}
-          title={collapsed ? "Open sidebar" : "Close sidebar"}
-          className="w-10 h-10 rounded-lg bg-(--bg-elevated) flex items-center justify-center border-none cursor-pointer transition-colors duration-150 hover:bg-(--border-subtle) shrink-0"
-        >
-          <StrydeLogoIcon size={28} />
-        </button>
+      <div className={`pt-4 pb-3 border-b border-(--border-faint) shrink-0 flex items-center min-h-17 gap-2.5 ${collapsed ? "justify-center px-0" : "pl-2.5 pr-3"}`}>
+        <div className="relative group shrink-0">
+          <button
+            onClick={onToggleCollapsed}
+            className="w-10 h-10 rounded-lg bg-transparent flex items-center justify-center border-none cursor-pointer"
+          >
+            <StrydeLogoIcon size={28} />
+          </button>
+          <span className="pointer-events-none absolute left-full top-1/2 -translate-y-1/2 ml-2.5 px-2 py-1 rounded-md text-[11px] font-medium whitespace-nowrap bg-(--bg-elevated) border border-(--border-subtle) text-(--text-secondary) opacity-0 group-hover:opacity-100 transition-opacity duration-75">
+            {collapsed ? "Open sidebar" : "Close sidebar"}
+          </span>
+        </div>
         <div
           className="flex-1 min-w-0 overflow-hidden"
           style={{

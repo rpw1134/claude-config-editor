@@ -1,13 +1,9 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="148 147 304 306" width="100%" height="100%">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="150 150 300 300" width="100%" height="100%">
   <defs>
     <radialGradient id="bg" cx="50%" cy="50%" r="75%">
       <stop offset="0%" stop-color="#141824" />
       <stop offset="100%" stop-color="#090C13" />
     </radialGradient>
-
-    <filter id="pyramidShadow" x="-30%" y="-30%" width="160%" height="160%">
-      <feDropShadow dx="0" dy="28" stdDeviation="24" flood-color="#000000" flood-opacity="0.75" />
-    </filter>
 
     <linearGradient id="t-top" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#B2FFFF"/><stop offset="100%" stop-color="#00E5FF"/></linearGradient>
     <linearGradient id="t-left" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#00CBE2"/><stop offset="100%" stop-color="#008396"/></linearGradient>
@@ -22,9 +18,9 @@
     <linearGradient id="v-right" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#7C4DFF"/><stop offset="100%" stop-color="#2D069E"/></linearGradient>
   </defs>
 
-  <rect width="100%" height="100%" rx="108" fill="url(#bg)" />
+  <rect x="150" y="150" width="300" height="300" rx="54" fill="url(#bg)" />
 
-  <g filter="url(#pyramidShadow)" transform="translate(300, 270)">
+  <g transform="translate(300, 270)">
     <g>
       <polygon points="0.0,-101.2 39.8,-78.2 0.0,-55.2 -39.8,-78.2" fill="url(#v-top)" />
       <polygon points="-39.8,-78.2 0.0,-55.2 0.0,-9.2 -39.8,-32.2" fill="url(#v-left)" />
