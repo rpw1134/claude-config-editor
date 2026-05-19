@@ -5,33 +5,38 @@
 /* ── Design tokens ─────────────────────────────────────────────────────────── */
 
 :root {
-  /* Surfaces — pure neutral cool gray, NO color tinting */
-  --bg-base: #141417;
-  --bg-sidebar: #161618;
-  --bg-surface: #1c1c1f;
-  --bg-elevated: #242428;
-  --bg-hover: #1f1f23;
+  /* Surfaces — Stryde deep space palette */
+  --bg-base: #0B0F19;
+  --bg-sidebar: #0D1017;
+  --bg-surface: #1E2230;
+  --bg-elevated: #22262F;
+  --bg-hover: #181C23;
 
-  /* Borders — neutral only */
-  --border-faint: rgba(255, 255, 255, 0.06);
-  --border-subtle: rgba(255, 255, 255, 0.09);
-  --border-default: rgba(255, 255, 255, 0.13);
-  --border-strong: rgba(255, 255, 255, 0.22);
+  /* Borders */
+  --border-faint: rgba(255, 255, 255, 0.05);
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-default: rgba(255, 255, 255, 0.12);
+  --border-strong: rgba(255, 255, 255, 0.20);
 
-  /* Accent — used sparingly, only where specified */
-  --accent: #5dba8a;
-  --accent-hover: #6fcf9e;
-  --accent-dim: rgba(93, 186, 138, 0.12);
+  /* Accent — Soft Kinetic Teal (primary interactive) */
+  --accent: #00E5FF;
+  --accent-hover: #33ECFF;
+  --accent-dim: rgba(0, 229, 255, 0.12);
 
-  /* Text — solid values, never opacity utilities */
-  --text-primary: #f0f0f3;
-  --text-secondary: #9898a6;
-  --text-muted: #5c5c6e;
-  --text-accent: #5dba8a;
+  /* Electric Violet — logo color, secondary accent */
+  --accent-secondary: #7C4DFF;
+  --accent-secondary-hover: #9A73FF;
+  --accent-secondary-dim: rgba(124, 79, 255, 0.15);
+
+  /* Text */
+  --text-primary: #F5F7FA;
+  --text-secondary: #9099a8;
+  --text-muted: #4E5D78;
+  --text-accent: #00E5FF;
 
   /* Semantic */
   --error: #f87171;
-  --success: #5dba8a;
+  --success: #34d399;
   --warning: #fbbf24;
 }
 
@@ -43,7 +48,7 @@ html {
 }
 
 body {
-  font-family: "Instrument Sans", sans-serif;
+  font-family: "Space Grotesk", sans-serif;
   background: var(--bg-base);
   color: var(--text-primary);
   font-size: 15px;

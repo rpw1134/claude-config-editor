@@ -13,6 +13,7 @@ import {
   PlusIcon,
   SettingsIcon,
   ChevronIcon,
+  StrydeLogoIcon,
 } from "../Icons";
 import type { RecentItem } from "../../hooks/useRecents";
 
@@ -103,11 +104,9 @@ export const Sidebar = ({
         <button
           onClick={onToggleCollapsed}
           title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-          className="w-8 h-8 rounded-lg bg-(--accent) flex items-center justify-center border-none cursor-pointer transition-colors duration-150 hover:bg-(--accent-hover) shrink-0"
+          className="w-8 h-8 rounded-lg bg-(--bg-elevated) flex items-center justify-center border-none cursor-pointer transition-colors duration-150 hover:bg-(--border-subtle) shrink-0"
         >
-          <span className="text-[13px] font-bold text-white leading-none">
-            C
-          </span>
+          <StrydeLogoIcon size={20} />
         </button>
         <div
           className="flex-1 min-w-0 overflow-hidden"
@@ -117,10 +116,10 @@ export const Sidebar = ({
             transition: "opacity 100ms ease, max-width 200ms ease 100ms",
           }}
         >
-          <p className="text-[14px] font-semibold text-(--text-primary) leading-[1.2] whitespace-nowrap">
-            Config Studio
+          <p className="text-[14px] font-semibold font-['Bricolage_Grotesque',sans-serif] text-(--text-primary) leading-[1.2] whitespace-nowrap">
+            Stryde
           </p>
-          <p className="text-[12px] text-(--text-muted) font-['Fira_Code',monospace] leading-[1.2] mt-0.5 whitespace-nowrap">
+          <p className="text-[12px] text-(--text-muted) leading-[1.2] mt-0.5 whitespace-nowrap">
             ~/.claude/
           </p>
         </div>

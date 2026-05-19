@@ -318,3 +318,72 @@ export const SearchIcon = () => (
     <path d="M10.5 10.5L13.5 13.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
   </svg>
 );
+
+export const StrydeLogoIcon = ({ size = 20 }: { size?: number }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="175 163 250 275"
+    xmlns="http://www.w3.org/2000/svg"
+    aria-label="Stryde"
+  >
+    <defs>
+      <linearGradient id="sli-t-top" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stopColor="#B2FFFF"/><stop offset="100%" stopColor="#00E5FF"/></linearGradient>
+      <linearGradient id="sli-t-left" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stopColor="#00CBE2"/><stop offset="100%" stopColor="#008396"/></linearGradient>
+      <linearGradient id="sli-t-right" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stopColor="#00E5FF"/><stop offset="100%" stopColor="#005B6B"/></linearGradient>
+      <linearGradient id="sli-m-top" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stopColor="#D4C4FF"/><stop offset="100%" stopColor="#9975FF"/></linearGradient>
+      <linearGradient id="sli-m-left" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stopColor="#8052FF"/><stop offset="100%" stopColor="#552BC6"/></linearGradient>
+      <linearGradient id="sli-m-right" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stopColor="#9975FF"/><stop offset="100%" stopColor="#3D1A9E"/></linearGradient>
+      <linearGradient id="sli-v-top" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stopColor="#E7DBFF"/><stop offset="100%" stopColor="#7C4DFF"/></linearGradient>
+      <linearGradient id="sli-v-left" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stopColor="#6430FF"/><stop offset="100%" stopColor="#4213CC"/></linearGradient>
+      <linearGradient id="sli-v-right" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stopColor="#7C4DFF"/><stop offset="100%" stopColor="#2D069E"/></linearGradient>
+    </defs>
+    <g transform="translate(300, 270)">
+      <g>
+        <polygon points="0.0,-101.2 39.8,-78.2 0.0,-55.2 -39.8,-78.2" fill="url(#sli-v-top)" />
+        <polygon points="-39.8,-78.2 0.0,-55.2 0.0,-9.2 -39.8,-32.2" fill="url(#sli-v-left)" />
+        <polygon points="0.0,-55.2 39.8,-78.2 39.8,-32.2 0.0,-9.2" fill="url(#sli-v-right)" />
+      </g>
+      <g>
+        <polygon points="39.8,-39.1 79.7,-16.1 39.8,6.9 0.0,-16.1" fill="url(#sli-m-top)" />
+        <polygon points="0.0,-16.1 39.8,6.9 39.8,52.9 0.0,29.9" fill="url(#sli-m-left)" />
+        <polygon points="39.8,6.9 79.7,-16.1 79.7,29.9 39.8,52.9" fill="url(#sli-m-right)" />
+      </g>
+      <g>
+        <polygon points="-39.8,-39.1 0.0,-16.1 -39.8,6.9 -79.7,-16.1" fill="url(#sli-m-top)" />
+        <polygon points="-79.7,-16.1 -39.8,6.9 -39.8,52.9 -79.7,29.9" fill="url(#sli-m-left)" />
+        <polygon points="-39.8,6.9 0.0,-16.1 0.0,29.9 -39.8,52.9" fill="url(#sli-m-right)" />
+      </g>
+      <g>
+        <polygon points="79.7,23.0 119.5,46.0 79.7,69.0 39.8,46.0" fill="url(#sli-t-top)" />
+        <polygon points="39.8,46.0 79.7,69.0 79.7,115.0 39.8,92.0" fill="url(#sli-t-left)" />
+        <polygon points="79.7,69.0 119.5,46.0 119.5,92.0 79.7,115.0" fill="url(#sli-t-right)" />
+      </g>
+      <g>
+        <polygon points="-79.7,23.0 -39.8,46.0 -79.7,69.0 -119.5,46.0" fill="url(#sli-t-top)" />
+        <polygon points="-119.5,46.0 -79.7,69.0 -79.7,115.0 -119.5,92.0" fill="url(#sli-t-left)" />
+        <polygon points="-79.7,69.0 -39.8,46.0 -39.8,92.0 -79.7,115.0" fill="url(#sli-t-right)" />
+      </g>
+      <g>
+        <polygon points="0.0,-16.1 39.8,6.9 0.0,29.9 -39.8,6.9" fill="url(#sli-m-top)" />
+        <polygon points="-39.8,6.9 0.0,29.9 0.0,75.9 -39.8,52.9" fill="url(#sli-m-left)" />
+        <polygon points="0.0,29.9 39.8,6.9 39.8,52.9 0.0,75.9" fill="url(#sli-m-right)" />
+      </g>
+      <g>
+        <polygon points="39.8,46.0 79.7,69.0 39.8,92.0 0.0,69.0" fill="url(#sli-t-top)" />
+        <polygon points="0.0,69.0 39.8,92.0 39.8,138.0 0.0,115.0" fill="url(#sli-t-left)" />
+        <polygon points="39.8,92.0 79.7,69.0 79.7,115.0 39.8,138.0" fill="url(#sli-t-right)" />
+      </g>
+      <g>
+        <polygon points="-39.8,46.0 0.0,69.0 -39.8,92.0 -79.7,69.0" fill="url(#sli-t-top)" />
+        <polygon points="-79.7,69.0 -39.8,92.0 -39.8,138.0 -79.7,115.0" fill="url(#sli-t-left)" />
+        <polygon points="-39.8,92.0 0.0,69.0 0.0,115.0 -39.8,138.0" fill="url(#sli-t-right)" />
+      </g>
+      <g>
+        <polygon points="0.0,69.0 39.8,92.0 0.0,115.0 -39.8,92.0" fill="url(#sli-t-top)" />
+        <polygon points="-39.8,92.0 0.0,115.0 0.0,161.0 -39.8,138.0" fill="url(#sli-t-left)" />
+        <polygon points="0.0,115.0 39.8,92.0 39.8,138.0 0.0,161.0" fill="url(#sli-t-right)" />
+      </g>
+    </g>
+  </svg>
+);

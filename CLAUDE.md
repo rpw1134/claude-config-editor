@@ -1,4 +1,4 @@
-# Claude Config Studio
+# Stryde
 
 ## What this is
 

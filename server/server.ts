@@ -26,7 +26,7 @@ app.use(
   }),
 );
 
-app.use("/api/claude-config", claudeConfigRouter);
+app.use("/api/stryde", claudeConfigRouter);
 app.use("/api/agents", agentsRouter);
 app.use("/api/skills", skillsRouter);
 app.use("/api/mcp-servers", mcpServersRouter);

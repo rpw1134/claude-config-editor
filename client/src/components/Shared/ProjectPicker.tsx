@@ -87,7 +87,7 @@ const ProjectModal = ({
         {/* Scrollable project list */}
         <div className="flex-1 overflow-y-auto min-h-0">
           {projects.length === 0 ? (
-            <p className='px-5 py-4 text-[13px] text-(--text-muted) font-["Fira_Code",monospace]'>
+            <p className='px-5 py-4 text-[13px] text-(--text-muted)'>
               No projects found
             </p>
           ) : (
@@ -210,7 +210,7 @@ export const ProjectPicker = ({
         ].join(" ")}
       >
         {loading ? (
-          <span className='font-["Fira_Code",monospace] text-(--text-muted) text-[13px]'>
+          <span className='text-(--text-muted) text-[13px]'>
             Loading…
           </span>
         ) : selected ? (

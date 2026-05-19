@@ -1,0 +1,43 @@
+- generic [ref=e3]:
+  - complementary [ref=e4]:
+    - generic [ref=e5]:
+      - button "Stryde" [ref=e6] [cursor=pointer]:
+        - img "Stryde" [ref=e7]
+      - generic [ref=e45]:
+        - paragraph [ref=e46]: Stryde
+        - paragraph [ref=e47]: ~/.claude/
+      - button "Collapse sidebar" [ref=e48] [cursor=pointer]:
+        - img [ref=e49]
+    - generic [ref=e52]:
+      - paragraph [ref=e53]: Project
+      - button "Loading…" [ref=e54] [cursor=pointer]:
+        - generic [ref=e55]: Loading…
+    - generic [ref=e56]:
+      - button "Create New" [disabled] [ref=e58] [cursor=pointer]:
+        - img [ref=e60]
+        - generic [ref=e62]:
+          - text: Create New
+          - img [ref=e64]
+      - button "CLAUDE.md" [disabled] [ref=e66] [cursor=pointer]:
+        - img [ref=e68]
+        - generic [ref=e72]: CLAUDE.md
+      - button "Agents" [disabled] [ref=e73] [cursor=pointer]:
+        - img [ref=e75]
+        - generic [ref=e78]: Agents
+      - button "Skills" [disabled] [ref=e79] [cursor=pointer]:
+        - img [ref=e81]
+        - generic [ref=e83]: Skills
+      - button "MCP Servers" [disabled] [ref=e84] [cursor=pointer]:
+        - img [ref=e86]
+        - generic [ref=e89]: MCP Servers
+      - button "Hooks" [disabled] [ref=e90] [cursor=pointer]:
+        - img [ref=e92]
+        - generic [ref=e95]: Hooks
+    - button "Settings" [disabled] [ref=e98] [cursor=pointer]:
+      - img [ref=e100]
+      - generic [ref=e103]: Settings
+  - main [ref=e104]:
+    - generic [ref=e106]:
+      - img [ref=e108]
+      - paragraph [ref=e112]: No project selected
+      - paragraph [ref=e113]: Pick a project from the sidebar to get started.

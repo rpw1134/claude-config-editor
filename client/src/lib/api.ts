@@ -39,21 +39,21 @@ async function put(path: string, body: Record<string, unknown>): Promise<void> {
 
 export async function fetchSkills(projectPath: string): Promise<string[]> {
   const data = await get<{ skills: string[] }>(
-    `/api/claude-config/skills?projectPath=${encodeURIComponent(projectPath)}`
+    `/api/stryde/skills?projectPath=${encodeURIComponent(projectPath)}`
   );
   return data.skills;
 }
 
 export async function fetchAgents(projectPath: string): Promise<string[]> {
   const data = await get<{ agents: string[] }>(
-    `/api/claude-config/agents?projectPath=${encodeURIComponent(projectPath)}`
+    `/api/stryde/agents?projectPath=${encodeURIComponent(projectPath)}`
   );
   return data.agents;
 }
 
 export async function fetchMcpServers(projectPath: string): Promise<string[]> {
   const data = await get<{ mcpServers: string[] }>(
-    `/api/claude-config/mcp-servers?projectPath=${encodeURIComponent(projectPath)}`
+    `/api/stryde/mcp-servers?projectPath=${encodeURIComponent(projectPath)}`
   );
   return data.mcpServers;
 }

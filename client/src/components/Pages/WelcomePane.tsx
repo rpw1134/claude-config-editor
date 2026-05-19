@@ -139,7 +139,7 @@ export const NoProjectPane = () => (
         <DocumentIcon />
       </div>
       <p className="text-[14px] font-medium text-(--text-secondary)">No project selected</p>
-      <p className="mt-1.5 text-[13px] text-(--text-muted) font-['Fira_Code',monospace]">
+      <p className="mt-1.5 text-[13px] text-(--text-muted)">
         Pick a project from the sidebar to get started.
       </p>
     </div>

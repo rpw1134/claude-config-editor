@@ -26,7 +26,7 @@ const Shell = ({
   projectsRefreshKey,
   children,
 }: ShellProps) => (
-  <div className="flex h-screen bg-[#0a0a0c] text-white overflow-hidden">
+  <div className="flex h-screen bg-(--bg-base) text-white overflow-hidden">
     <Sidebar
       selectedProjectPath={selectedProjectPath}
       onProjectSelect={onProjectSelect}
