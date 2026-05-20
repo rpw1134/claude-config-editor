@@ -137,7 +137,7 @@ export function useAgentCreateForm(
       });
       await createAgent(projectPath, name.trim(), content);
       setCreateSuccess(true);
-      setTimeout(() => onCreated(name.trim()), 1600);
+      setTimeout(() => onCreated(name.trim()), 400);
     } catch (err) {
       setSubmitError(
         err instanceof Error ? err.message : "Something went wrong.",

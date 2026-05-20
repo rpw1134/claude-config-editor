@@ -34,7 +34,7 @@ export const AgentsLandingContent = () => {
 export const AgentCreateContent = () => {
   const { projectId } = useParams<{ projectId: string }>();
   const navigate = useNavigate();
-  const { addToRecents, onBumpAgentsRefresh, showToast } = useShell();
+  const { addToRecents, onBumpAgentsRefresh, onBumpVcRefresh, showToast } = useShell();
   const projectPath = projectId ? decodeProject(projectId) : null;
 
   if (!projectPath) return <Navigate to="/" replace />;
@@ -44,6 +44,7 @@ export const AgentCreateContent = () => {
       projectPath={projectPath}
       onCreated={(name) => {
         onBumpAgentsRefresh();
+        onBumpVcRefresh();
         addToRecents("agent", name);
         showToast(`Agent "${name}" created`);
         navigate(`/${encodeProject(projectPath)}/agents`, { replace: true });

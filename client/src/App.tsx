@@ -167,6 +167,7 @@ export default function App() {
     if (!selectedProjectPath) return;
     if (type === "skill") {
       setSkillsRefreshKey((k) => k + 1);
+      setVcRefreshKey((k) => k + 1);
       navigate(
         `/${encodeProject(selectedProjectPath)}/skills/${encodeURIComponent(name)}`,
       );
