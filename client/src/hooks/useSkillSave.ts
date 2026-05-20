@@ -6,12 +6,14 @@ import {
   updateSkillFile,
   updateSkillScript,
 } from "../lib/api";
+import { useVersionControl } from "../contexts/VersionControlContext";
 
 export function useSkillSave(
   projectPath: string,
   skillName: string,
   draftStore: React.RefObject<Record<string, SkillDraft>>,
 ) {
+  const { refresh: refreshVc } = useVersionControl();
   const [dirtyFiles, setDirtyFiles] = useState<Record<string, boolean>>({});
   const anyDirty = Object.values(dirtyFiles).some(Boolean);
   const saveHandlerRefs = useRef<Record<string, () => Promise<void>>>({});
@@ -110,6 +112,7 @@ export function useSkillSave(
         return next;
       });
       setSaveStatus("saved");
+      refreshVc();
       if (saveTimer.current) clearTimeout(saveTimer.current);
       saveTimer.current = setTimeout(() => setSaveStatus("idle"), 1500);
     } catch {
@@ -117,7 +120,7 @@ export function useSkillSave(
       if (saveTimer.current) clearTimeout(saveTimer.current);
       saveTimer.current = setTimeout(() => setSaveStatus("idle"), 2000);
     }
-  }, [projectPath, skillName, saveStatus, draftStore]);
+  }, [projectPath, skillName, saveStatus, draftStore, refreshVc]);
 
   // Cmd+S — global for the whole skill
   useEffect(() => {

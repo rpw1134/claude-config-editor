@@ -12,17 +12,16 @@ type ChangeStatus = "M" | "A" | "??";
 
 interface VersionControlContextValue {
   status: VCStatus | null;
+  // Count of tracked changes (agents, skills, CLAUDE.md only — not settings.json)
   changeCount: number;
   isLoading: boolean;
   // Increments after each successful status fetch — use as dep in history tabs
   historyKey: number;
   refresh: () => void;
   getItemStatus: (
-    type: "agent" | "skill" | "mcp" | "hooks",
-    name?: string,
+    type: "agent" | "skill",
+    name: string,
   ) => ChangeStatus | null;
-  markMcpDirty: (key: string) => void;
-  markHooksDirty: (eventName: string) => void;
 }
 
 export const VersionControlContext =
@@ -53,6 +52,14 @@ function computeConfigPrefix(repoRoot: string | null, configDir: string): string
   return "";
 }
 
+function isTrackedChange(file: string): boolean {
+  return (
+    file === "CLAUDE.md" ||
+    file.startsWith("agents/") ||
+    file.startsWith("skills/")
+  );
+}
+
 export function VersionControlProvider({
   projectPath,
   vcRefreshKey,
@@ -61,8 +68,6 @@ export function VersionControlProvider({
   const [status, setStatus] = useState<VCStatus | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [historyKey, setHistoryKey] = useState(0);
-  const [mcpDirty, setMcpDirty] = useState<Set<string>>(new Set());
-  const [hooksDirty, setHooksDirty] = useState<Set<string>>(new Set());
 
   const fetchStatus = useCallback(async () => {
     if (!projectPath) {
@@ -84,14 +89,6 @@ export function VersionControlProvider({
 
       setStatus(normalizedResult);
       setHistoryKey((k) => k + 1);
-
-      const hasSettingsChange = normalizedChanges.some((c: ChangeEntry) =>
-        c.file.includes("settings.json"),
-      );
-      if (!hasSettingsChange) {
-        setMcpDirty(new Set());
-        setHooksDirty(new Set());
-      }
     } catch {
       setStatus(null);
     } finally {
@@ -114,15 +111,10 @@ export function VersionControlProvider({
   }, [fetchStatus]);
 
   const getItemStatus = useCallback(
-    (
-      type: "agent" | "skill" | "mcp" | "hooks",
-      name?: string,
-    ): ChangeStatus | null => {
+    (type: "agent" | "skill", name: string): ChangeStatus | null => {
       if (!status) return null;
 
-      // Changes are already normalized to configDir-relative paths.
       if (type === "agent") {
-        if (!name) return null;
         const entry = status.changes.find(
           (c: ChangeEntry) => c.file === `agents/${name}.md`,
         );
@@ -130,51 +122,27 @@ export function VersionControlProvider({
       }
 
       if (type === "skill") {
-        if (!name) return null;
         const entry = status.changes.find((c: ChangeEntry) =>
           c.file.startsWith(`skills/${name}/`),
         );
         return entry ? (entry.status as ChangeStatus) : null;
       }
 
-      if (type === "mcp") {
-        if (!name) return null;
-        const hasSettings = status.changes.some((c: ChangeEntry) =>
-          c.file.includes("settings.json"),
-        );
-        return mcpDirty.has(name) && hasSettings ? "M" : null;
-      }
-
-      if (type === "hooks") {
-        if (!name) return null;
-        const hasSettings = status.changes.some((c: ChangeEntry) =>
-          c.file.includes("settings.json"),
-        );
-        return hooksDirty.has(name) && hasSettings ? "M" : null;
-      }
-
       return null;
     },
-    [status, mcpDirty, hooksDirty],
+    [status],
   );
 
-  const markMcpDirty = useCallback((key: string) => {
-    setMcpDirty((prev) => new Set(prev).add(key));
-  }, []);
-
-  const markHooksDirty = useCallback((eventName: string) => {
-    setHooksDirty((prev) => new Set(prev).add(eventName));
-  }, []);
+  // Only count tracked changes (agents, skills, CLAUDE.md) in the sidebar badge
+  const changeCount = status?.changes.filter((c) => isTrackedChange(c.file)).length ?? 0;
 
   const value: VersionControlContextValue = {
     status,
-    changeCount: status?.changes.length ?? 0,
+    changeCount,
     isLoading,
     historyKey,
     refresh,
     getItemStatus,
-    markMcpDirty,
-    markHooksDirty,
   };
 
   return (

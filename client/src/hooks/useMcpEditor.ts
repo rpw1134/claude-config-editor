@@ -14,10 +14,10 @@ import {
 } from "../lib/mcp";
 import { useVersionControl } from "../contexts/VersionControlContext";
 
-type TabId = "configure" | "json" | "settings" | "history";
+type TabId = "configure" | "json" | "settings";
 
 export function useMcpEditor(name: string, projectPath: string, onDeleted: () => void) {
-  const { markMcpDirty, refresh: refreshVc } = useVersionControl();
+  const { refresh: refreshVc } = useVersionControl();
   const [activeTab, setActiveTab] = useState<TabId>("configure");
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -133,14 +133,13 @@ export function useMcpEditor(name: string, projectPath: string, onDeleted: () =>
       setRawJson(content);
       setSavedJson(content);
       setConfigDirty(false);
-      markMcpDirty(name);
       refreshVc();
     } catch {
       // save failed — dirty state preserved so user can retry
     } finally {
       setSaving(false);
     }
-  }, [saving, serverType, command, argsRaw, envRaw, url, authType, token, projectPath, name, markMcpDirty, refreshVc]);
+  }, [saving, serverType, command, argsRaw, envRaw, url, authType, token, projectPath, name, refreshVc]);
 
   const handleJsonSave = useCallback(async () => {
     if (saving) return;
@@ -149,14 +148,13 @@ export function useMcpEditor(name: string, projectPath: string, onDeleted: () =>
       await updateMcpServerContent(projectPath, name, rawJson);
       setSavedJson(rawJson);
       setConfigDirty(false);
-      markMcpDirty(name);
       refreshVc();
     } catch {
       // save failed — dirty state preserved so user can retry
     } finally {
       setSaving(false);
     }
-  }, [saving, projectPath, name, rawJson, markMcpDirty, refreshVc]);
+  }, [saving, projectPath, name, rawJson, refreshVc]);
 
   // ── Delete ────────────────────────────────────────────────────────────────
 

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { fetchMcpServers } from "../../lib/api";
 import { SectionHeader } from "../Shared/SectionHeader";
 import { Pagination } from "../Shared/Pagination";
-import { useVersionControl } from "../../contexts/VersionControlContext";
+
 
 const PAGE_SIZE = 10;
 
@@ -69,7 +69,7 @@ export const McpServersSection = ({
   onNew,
   refreshKey,
 }: McpServersSectionProps) => {
-  const { getItemStatus } = useVersionControl();
+
   const [servers, setServers] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -123,7 +123,7 @@ export const McpServersSection = ({
                 name={name}
                 selected={name === selectedName}
                 onClick={() => onSelect(name)}
-                vcStatus={getItemStatus("mcp", name)}
+                vcStatus={null}
               />
             ))}
           </div>

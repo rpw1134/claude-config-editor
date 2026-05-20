@@ -171,3 +171,22 @@ export async function restoreFile(
   await git(["checkout", hash, "--", relativeFilePath], repoRoot);
   return readFileContent(path.join(repoRoot, relativeFilePath));
 }
+
+// Returns repoRoot-relative file paths changed in a commit (or WORKDIR) under a directory.
+export async function getChangedFilesInCommit(
+  repoRoot: string,
+  repoRelDir: string,
+  hash: string,
+): Promise<string[]> {
+  if (hash === "WORKDIR") {
+    const output = await git(["status", "--porcelain", "--", repoRelDir], repoRoot);
+    if (!output) return [];
+    return output.split("\n").map((l) => l.slice(3)).filter(Boolean);
+  }
+  const output = await git(
+    ["diff-tree", "--no-commit-id", "-r", "--name-only", hash, "--", repoRelDir],
+    repoRoot,
+  );
+  if (!output) return [];
+  return output.split("\n").filter(Boolean);
+}

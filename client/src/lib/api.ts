@@ -330,3 +330,14 @@ export async function postVcGitignoreStryde(
 ): Promise<void> {
   await post("/api/vc/gitignore/stryde", { projectPath, ignore });
 }
+
+export async function fetchVcDiffFiles(
+  projectPath: string,
+  dir: string,
+  hash: string,
+): Promise<string[]> {
+  const data = await get<{ files: string[] }>(
+    `/api/vc/diff-files?projectPath=${encodeURIComponent(projectPath)}&dir=${encodeURIComponent(dir)}&hash=${encodeURIComponent(hash)}`
+  );
+  return data.files;
+}

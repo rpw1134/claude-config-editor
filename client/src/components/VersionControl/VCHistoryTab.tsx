@@ -1,12 +1,14 @@
 import { useEffect, useState } from "react";
 import { useVersionControl } from "../../contexts/VersionControlContext";
-import { fetchVcLog, postVcRestore } from "../../lib/api";
+import { fetchVcLog, fetchVcDiffFiles, postVcRestore } from "../../lib/api";
 import type { Commit } from "../../lib/api";
 import { VCDiffViewer } from "./VCDiffViewer";
 
 
 interface VCHistoryTabProps {
   projectPath: string;
+  // When filePath ends with "/", it's treated as a directory: commits are fetched
+  // for the whole directory, and diffs show a file picker before the Monaco diff.
   filePath: string;
   jsonPath?: string;
   onRestored?: (content: string) => void;
@@ -25,6 +27,87 @@ function formatDate(iso: string): string {
   }
 }
 
+// Strip the directory prefix from a file path for display
+function shortFileName(file: string, dirPrefix: string): string {
+  return file.startsWith(dirPrefix) ? file.slice(dirPrefix.length) : file;
+}
+
+// ── Directory diff picker ─────────────────────────────────────────────────────
+
+interface DirDiffPickerProps {
+  projectPath: string;
+  dirPath: string;
+  hash: string;
+}
+
+const DirDiffPicker = ({ projectPath, dirPath, hash }: DirDiffPickerProps) => {
+  const [files, setFiles] = useState<string[] | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [selectedFile, setSelectedFile] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    fetchVcDiffFiles(projectPath, dirPath, hash)
+      .then((result) => {
+        if (!cancelled) {
+          setFiles(result);
+          if (result.length === 1) setSelectedFile(result[0]);
+        }
+      })
+      .catch(() => { if (!cancelled) setFiles([]); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [projectPath, dirPath, hash]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-4">
+        <span className="text-[12px] text-(--text-muted)">Loading files…</span>
+      </div>
+    );
+  }
+
+  if (!files || files.length === 0) {
+    return (
+      <p className="text-[12px] text-(--text-muted) px-3 py-3">No files changed in this commit.</p>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-1 mt-1.5">
+      {/* File list */}
+      <div className="flex flex-wrap gap-1.5 px-1">
+        {files.map((file) => (
+          <button
+            key={file}
+            onClick={() => setSelectedFile((prev) => (prev === file ? null : file))}
+            className={[
+              "font-['Fira_Code',monospace] text-[11px] px-2 py-1 rounded border transition-colors duration-150 cursor-pointer bg-transparent",
+              selectedFile === file
+                ? "border-(--accent)/40 text-(--accent) bg-(--accent)/8"
+                : "border-white/10 text-(--text-secondary) hover:border-white/20 hover:text-(--text-primary)",
+            ].join(" ")}
+          >
+            {shortFileName(file, dirPath)}
+          </button>
+        ))}
+      </div>
+
+      {/* Diff for selected file */}
+      {selectedFile && (
+        <VCDiffViewer
+          projectPath={projectPath}
+          filePath={selectedFile}
+          hash={hash}
+        />
+      )}
+    </div>
+  );
+};
+
+// ── Main component ────────────────────────────────────────────────────────────
+
 export const VCHistoryTab = ({
   projectPath,
   filePath,
@@ -37,6 +120,8 @@ export const VCHistoryTab = ({
   const [expandedHash, setExpandedHash] = useState<string | null>(null);
   const [restoreConfirm, setRestoreConfirm] = useState<string | null>(null);
   const [restoring, setRestoring] = useState(false);
+
+  const isDirectory = filePath.endsWith("/");
 
   useEffect(() => {
     let cancelled = false;
@@ -57,6 +142,7 @@ export const VCHistoryTab = ({
   }, [projectPath, filePath, historyKey]);
 
   const handleRestore = async (hash: string) => {
+    if (isDirectory) return; // can't restore a whole directory
     setRestoring(true);
     try {
       const result = await postVcRestore(projectPath, filePath, hash);
@@ -117,12 +203,14 @@ export const VCHistoryTab = ({
                 >
                   {isExpanded ? "Hide diff" : "View diff"}
                 </button>
-                <button
-                  onClick={() => setRestoreConfirm(isConfirming ? null : commit.hash)}
-                  className="text-(--text-secondary) bg-transparent border-none cursor-pointer text-[12px] font-medium px-2 py-1 rounded hover:bg-(--bg-hover) hover:text-(--text-primary) transition-colors duration-150"
-                >
-                  Restore
-                </button>
+                {!isDirectory && (
+                  <button
+                    onClick={() => setRestoreConfirm(isConfirming ? null : commit.hash)}
+                    className="text-(--text-secondary) bg-transparent border-none cursor-pointer text-[12px] font-medium px-2 py-1 rounded hover:bg-(--bg-hover) hover:text-(--text-primary) transition-colors duration-150"
+                  >
+                    Restore
+                  </button>
+                )}
               </div>
             </div>
 
@@ -151,12 +239,20 @@ export const VCHistoryTab = ({
 
             {isExpanded && (
               <div className="mt-2">
-                <VCDiffViewer
-                  projectPath={projectPath}
-                  filePath={filePath}
-                  hash={commit.hash}
-                  jsonPath={jsonPath}
-                />
+                {isDirectory ? (
+                  <DirDiffPicker
+                    projectPath={projectPath}
+                    dirPath={filePath}
+                    hash={commit.hash}
+                  />
+                ) : (
+                  <VCDiffViewer
+                    projectPath={projectPath}
+                    filePath={filePath}
+                    hash={commit.hash}
+                    jsonPath={jsonPath}
+                  />
+                )}
               </div>
             )}
           </div>

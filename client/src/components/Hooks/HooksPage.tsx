@@ -5,7 +5,6 @@ import { useVersionControl } from "../../contexts/VersionControlContext";
 import { UnsavedModal } from "../Shared/UnsavedModal";
 import { HooksLanding } from "./HooksLanding";
 import { HooksEventDetail } from "./HooksEventDetail";
-import { VCHistoryTab } from "../VersionControl/VCHistoryTab";
 
 interface HooksPageProps {
   projectPath: string;
@@ -15,19 +14,11 @@ export const HooksPage = ({ projectPath }: HooksPageProps) => {
   const hooksEditor = useHooksEditor(projectPath);
   const { dirty, saving, handleSave, hooks } = hooksEditor;
   const [selectedEvent, setSelectedEvent] = useState<string | null>(null);
-  const [activeView, setActiveView] = useState<"hooks" | "history">("hooks");
 
-  const { getItemStatus, markHooksDirty, refresh: refreshVc } = useVersionControl();
-  const hooksVcStatus = getItemStatus("hooks", "settings");
+  const { refresh: refreshVc } = useVersionControl();
 
   const wrappedSave = async () => {
     await handleSave();
-    const eventNames = Object.keys(hooks ?? {});
-    if (eventNames.length > 0) {
-      eventNames.forEach((eventName) => markHooksDirty(eventName));
-    } else {
-      markHooksDirty("settings");
-    }
     refreshVc();
   };
 
@@ -75,69 +66,22 @@ export const HooksPage = ({ projectPath }: HooksPageProps) => {
         />
       )}
 
-      {/* View tabs */}
-      <div className="shrink-0 flex items-stretch px-4 border-b border-(--border-faint)">
-        <button
-          type="button"
-          onClick={() => setActiveView("hooks")}
-          className={[
-            "pt-4 pb-3.5 px-3 bg-transparent border-none relative transition-colors duration-150 flex items-center gap-1.5",
-            activeView === "hooks"
-              ? "cursor-default text-[14px] font-semibold text-(--text-primary) after:absolute after:bottom-0 after:left-0 after:right-0 after:h-px after:bg-(--accent)"
-              : "cursor-pointer text-[14px] text-(--text-secondary) hover:text-(--text-primary)",
-          ].join(" ")}
-        >
-          Hooks
-          {hooksVcStatus && (
-            <span
-              className={[
-                "w-1.5 h-1.5 rounded-full",
-                hooksVcStatus === "M" ? "bg-amber-400" : "bg-emerald-400",
-              ].join(" ")}
-            />
-          )}
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveView("history")}
-          className={[
-            "pt-4 pb-3.5 px-3 bg-transparent border-none relative transition-colors duration-150",
-            activeView === "history"
-              ? "cursor-default text-[14px] font-semibold text-(--text-primary) after:absolute after:bottom-0 after:left-0 after:right-0 after:h-px after:bg-(--accent)"
-              : "cursor-pointer text-[14px] text-(--text-secondary) hover:text-(--text-primary)",
-          ].join(" ")}
-        >
-          History
-        </button>
-      </div>
-
-      {activeView === "hooks" && (
-        selectedEvent ? (
-          <HooksEventDetail
-            event={selectedEvent}
-            projectPath={projectPath}
-            onBack={() => setSelectedEvent(null)}
-            {...hooksEditor}
-            handleSave={wrappedSave}
-          />
-        ) : (
-          <HooksLanding
-            hooks={hooks}
-            dirty={dirty}
-            saving={saving}
-            onSelectEvent={setSelectedEvent}
-            onSave={wrappedSave}
-          />
-        )
-      )}
-
-      {activeView === "history" && (
-        <div className="flex-1 min-h-0 overflow-y-auto">
-          <VCHistoryTab
-            projectPath={projectPath}
-            filePath="settings.json"
-          />
-        </div>
+      {selectedEvent ? (
+        <HooksEventDetail
+          event={selectedEvent}
+          projectPath={projectPath}
+          onBack={() => setSelectedEvent(null)}
+          {...hooksEditor}
+          handleSave={wrappedSave}
+        />
+      ) : (
+        <HooksLanding
+          hooks={hooks}
+          dirty={dirty}
+          saving={saving}
+          onSelectEvent={setSelectedEvent}
+          onSave={wrappedSave}
+        />
       )}
     </div>
   );

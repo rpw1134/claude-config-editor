@@ -12,6 +12,7 @@ import {
   getFileLog,
   getFileDiff,
   restoreFile,
+  getChangedFilesInCommit,
 } from "../services/versionControl.js";
 import {
   checkGitignore,
@@ -262,6 +263,45 @@ router.put(
       await setStrydeConfig(projectPath, { versionControl: { enabled } });
       res.json({ message: "Settings updated" });
     } catch (err) {
+      next(err);
+    }
+  },
+);
+
+// Returns configDir-relative file paths changed in a commit (or WORKDIR) under a directory.
+router.get(
+  "/diff-files",
+  async (req: Request, res: Response, next: NextFunction) => {
+    const projectPath = requireProjectPath(req.query.projectPath, res);
+    if (projectPath === null) return;
+    const dir = req.query.dir as string | undefined;
+    const hash = req.query.hash as string | undefined;
+
+    if (!dir || !hash) {
+      return res.status(400).json({ message: "dir and hash query parameters are required" });
+    }
+
+    try {
+      const { repoRoot, configDir } = await getRepoDirs(projectPath);
+      if (repoRoot === null) {
+        return res.status(404).json({ message: "Version control not initialized" });
+      }
+
+      const repoRelDir = resolveFilePath(repoRoot, configDir, dir);
+      const repoFiles = await getChangedFilesInCommit(repoRoot, repoRelDir, hash);
+
+      // Convert back to configDir-relative paths
+      const prefix = path.relative(repoRoot, configDir);
+      const configFiles = repoFiles.map((f) => {
+        if (prefix && f.startsWith(prefix + path.sep)) return f.slice(prefix.length + 1);
+        return f;
+      });
+
+      res.json({ files: configFiles });
+    } catch (err) {
+      if (isGitNotFoundError(err)) {
+        return res.status(503).json({ code: "GIT_NOT_FOUND" });
+      }
       next(err);
     }
   },

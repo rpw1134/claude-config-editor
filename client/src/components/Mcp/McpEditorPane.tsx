@@ -6,11 +6,9 @@ import { ConfigureTab } from "./tabs/ConfigureTab";
 import { McpSettingsTab } from "./tabs/McpSettingsTab";
 import { UnsavedModal } from "../Shared/UnsavedModal";
 import { ChevronLeftIcon } from "../Icons";
-import { VCHistoryTab } from "../VersionControl/VCHistoryTab";
-
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-type TabId = "configure" | "json" | "settings" | "history";
+type TabId = "configure" | "json" | "settings";
 
 // ── TabButton ─────────────────────────────────────────────────────────────────
 
@@ -133,14 +131,13 @@ export const McpEditorPane = ({
           <TabButton id="configure" label="Configure" active={activeTab} onClick={setActiveTab} />
           <TabButton id="json" label="JSON" active={activeTab} onClick={setActiveTab} />
           <TabButton id="settings" label="Settings" active={activeTab} onClick={setActiveTab} />
-          <TabButton id="history" label="History" active={activeTab} onClick={setActiveTab} />
         </div>
 
         <div className="flex items-center gap-3">
           <span className='font-["Fira_Code",monospace] text-[11px] text-(--text-muted) truncate max-w-48 hidden sm:block'>
             ~/.claude/mcpServers/{name}
           </span>
-          {activeTab !== "settings" && activeTab !== "history" && (
+          {activeTab !== "settings" && (
             <button
               type="button"
               onClick={(!dirty || saving) ? undefined : (activeTab === "configure" ? handleConfigureSave : handleJsonSave)}
@@ -199,15 +196,6 @@ export const McpEditorPane = ({
         </div>
       )}
 
-      {activeTab === "history" && (
-        <div className="flex-1 min-h-0 overflow-y-auto">
-          <VCHistoryTab
-            projectPath={projectPath}
-            filePath="settings.json"
-            jsonPath={`mcpServers.${name}`}
-          />
-        </div>
-      )}
     </div>
   );
 };

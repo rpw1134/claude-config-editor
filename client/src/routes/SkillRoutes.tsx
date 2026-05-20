@@ -71,7 +71,7 @@ export const SkillHistoryContent = () => {
     <div className="flex-1 min-h-0 overflow-y-auto">
       <VCHistoryTab
         projectPath={projectPath}
-        filePath={`skills/${skillName}/SKILL.md`}
+        filePath={`skills/${skillName}/`}
       />
     </div>
   );
