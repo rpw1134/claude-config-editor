@@ -12,9 +12,9 @@ panel and from per-item History tabs inside each editor.
 
 ### Where repos live
 
-| Context | Strategy |
-|---|---|
-| Global `~/.claude/` | Always init a git repo directly inside `~/.claude/` |
+| Context                | Strategy                                                                                                                                                                 |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Global `~/.claude/`    | Always init a git repo directly inside `~/.claude/`                                                                                                                      |
 | Per-project `.claude/` | Walk up from project root looking for `.git`. If found, use it (`.claude/` files are tracked within the existing repo). If not found, offer to init at the project root. |
 
 Rationale: nesting a new `.git` inside a directory that already has a parent `.git`
@@ -61,7 +61,7 @@ After creating `.stryde/` for the first time, check whether `.stryde/` is in any
 
 > "The `.stryde/` directory stores Stryde settings for this project. Add it to
 > `.gitignore`? (Recommended unless sharing with a team that also uses Stryde.)"
-> [Add to .gitignore (recommended)] [Track with git] 
+> [Add to .gitignore (recommended)] [Track with git]
 
 This is a one-time prompt per project. The choice is stored in `.stryde/config.json`
 (`"trackStryde": false`) so we don't prompt again.
@@ -319,10 +319,12 @@ small count pill in the top-right corner of the icon wrapper:
 <span className="relative w-5 h-5 shrink-0 flex items-center justify-center">
   {icon}
   {badge != null && badge > 0 && (
-    <span className="absolute -top-1 -right-1 min-w-[14px] h-[14px] px-[3px]
+    <span
+      className="absolute -top-1 -right-1 min-w-3.5 h-3.5 px-0.75
                      flex items-center justify-center rounded-full
                      bg-(--accent) text-[9px] font-bold text-white
-                     animate-pulse leading-none">
+                     animate-pulse leading-none"
+    >
       {badge > 99 ? "99+" : badge}
     </span>
   )}
@@ -353,12 +355,15 @@ route params, delegates to `VersionControlPage`.
 ### New component directory: `client/src/components/VersionControl/`
 
 #### `VersionControlPage.tsx`
+
 Top-level: reads `useVersionControl()` and `useShell()`. Branches on
 `status.initialized`:
+
 - If not initialized → renders `VCInitPrompt`
 - If initialized → renders `VCChangesPane`
 
 #### `VCInitPrompt.tsx`
+
 Empty-state screen shown before git is initialized.
 
 - Heading: "Version Control"
@@ -376,9 +381,11 @@ Empty-state screen shown before git is initialized.
   prompt asking whether to ignore `.stryde/` or track it.
 
 #### `VCChangesPane.tsx`
+
 Main view when initialized.
 
 Layout:
+
 ```
 ┌─────────────────────────────────────────────────┐
 │  [!] .claude/ is excluded by .gitignore          │  ← only if claudeIgnored
@@ -410,6 +417,7 @@ Layout:
 - Warning banners shown persistently until resolved — not dismissable without action
 
 #### `VCDiffViewer.tsx`
+
 Monaco diff editor (read-only) showing before/after for a specific file at a
 specific commit hash.
 
@@ -419,6 +427,7 @@ Fetches from `GET /api/vc/diff`. Renders `@monaco-editor/react` in `diff` mode
 with `readOnly: true`.
 
 #### `VCHistoryTab.tsx`
+
 Reusable tab content dropped into each editor's tab bar.
 
 Props: `{ projectPath, filePath }`
