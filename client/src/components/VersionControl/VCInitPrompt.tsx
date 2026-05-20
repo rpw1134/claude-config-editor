@@ -17,7 +17,6 @@ export const VCInitPrompt = ({ projectPath }: VCInitPromptProps) => {
     setError(null);
     try {
       await postVcInit(projectPath);
-      refresh();
     } catch (err) {
       const e = err as { code?: string; message?: string };
       if (e.code === "GIT_NOT_FOUND") {
@@ -27,6 +26,7 @@ export const VCInitPrompt = ({ projectPath }: VCInitPromptProps) => {
       }
     } finally {
       setIniting(false);
+      refresh();
     }
   };
 
@@ -54,7 +54,7 @@ export const VCInitPrompt = ({ projectPath }: VCInitPromptProps) => {
             Git repo found at {repoRoot}
           </p>
         ) : (
-          <p className="m-0 text-[12px] text-(--text-muted) font-['Fira_Code',monospace]">
+          <p className="m-0 text-[12px] text-(--text-muted) font-['Fira_Code',monospace] text-center">
             No git repository found in {projectPath}
           </p>
         )}

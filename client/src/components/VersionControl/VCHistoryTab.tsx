@@ -4,6 +4,7 @@ import { fetchVcLog, postVcRestore } from "../../lib/api";
 import type { Commit } from "../../lib/api";
 import { VCDiffViewer } from "./VCDiffViewer";
 
+
 interface VCHistoryTabProps {
   projectPath: string;
   filePath: string;
@@ -30,7 +31,7 @@ export const VCHistoryTab = ({
   jsonPath,
   onRestored,
 }: VCHistoryTabProps) => {
-  const { refresh } = useVersionControl();
+  const { refresh, historyKey } = useVersionControl();
   const [commits, setCommits] = useState<Commit[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedHash, setExpandedHash] = useState<string | null>(null);
@@ -53,7 +54,7 @@ export const VCHistoryTab = ({
       });
 
     return () => { cancelled = true; };
-  }, [projectPath, filePath]);
+  }, [projectPath, filePath, historyKey]);
 
   const handleRestore = async (hash: string) => {
     setRestoring(true);

@@ -14,13 +14,13 @@ interface VersionControlContextValue {
   status: VCStatus | null;
   changeCount: number;
   isLoading: boolean;
+  // Increments after each successful status fetch — use as dep in history tabs
+  historyKey: number;
   refresh: () => void;
-  // Per-item status for landing-page dots
   getItemStatus: (
     type: "agent" | "skill" | "mcp" | "hooks",
     name?: string,
   ) => ChangeStatus | null;
-  // Dirty tracking for MCP/hooks (can't be derived from git alone)
   markMcpDirty: (key: string) => void;
   markHooksDirty: (eventName: string) => void;
 }
@@ -43,6 +43,16 @@ interface VersionControlProviderProps {
   children: React.ReactNode;
 }
 
+// Returns the prefix to strip from repoRoot-relative paths to get configDir-relative paths.
+// e.g. for per-project repos: ".claude/"  for global: ""
+function computeConfigPrefix(repoRoot: string | null, configDir: string): string {
+  if (!repoRoot || configDir === repoRoot) return "";
+  if (configDir.startsWith(repoRoot + "/")) {
+    return configDir.slice(repoRoot.length + 1) + "/";
+  }
+  return "";
+}
+
 export function VersionControlProvider({
   projectPath,
   vcRefreshKey,
@@ -50,6 +60,7 @@ export function VersionControlProvider({
 }: VersionControlProviderProps) {
   const [status, setStatus] = useState<VCStatus | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [historyKey, setHistoryKey] = useState(0);
   const [mcpDirty, setMcpDirty] = useState<Set<string>>(new Set());
   const [hooksDirty, setHooksDirty] = useState<Set<string>>(new Set());
 
@@ -61,8 +72,20 @@ export function VersionControlProvider({
     setIsLoading(true);
     try {
       const result = await fetchVcStatus(projectPath);
-      setStatus(result);
-      const hasSettingsChange = result.changes.some((c: ChangeEntry) =>
+
+      // Normalize change file paths from repoRoot-relative to configDir-relative
+      // so all downstream code uses consistent, prefix-free paths.
+      const prefix = computeConfigPrefix(result.repoRoot, result.configDir);
+      const normalizedChanges = result.changes.map((c: ChangeEntry) => ({
+        ...c,
+        file: prefix && c.file.startsWith(prefix) ? c.file.slice(prefix.length) : c.file,
+      }));
+      const normalizedResult = { ...result, changes: normalizedChanges };
+
+      setStatus(normalizedResult);
+      setHistoryKey((k) => k + 1);
+
+      const hasSettingsChange = normalizedChanges.some((c: ChangeEntry) =>
         c.file.includes("settings.json"),
       );
       if (!hasSettingsChange) {
@@ -76,12 +99,10 @@ export function VersionControlProvider({
     }
   }, [projectPath]);
 
-  // Fetch on mount, projectPath change, vcRefreshKey change
   useEffect(() => {
     fetchStatus();
   }, [fetchStatus, vcRefreshKey]);
 
-  // Fetch on window focus
   useEffect(() => {
     const handleFocus = () => fetchStatus();
     window.addEventListener("focus", handleFocus);
@@ -99,6 +120,7 @@ export function VersionControlProvider({
     ): ChangeStatus | null => {
       if (!status) return null;
 
+      // Changes are already normalized to configDir-relative paths.
       if (type === "agent") {
         if (!name) return null;
         const entry = status.changes.find(
@@ -148,6 +170,7 @@ export function VersionControlProvider({
     status,
     changeCount: status?.changes.length ?? 0,
     isLoading,
+    historyKey,
     refresh,
     getItemStatus,
     markMcpDirty,

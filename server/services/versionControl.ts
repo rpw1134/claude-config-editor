@@ -18,8 +18,11 @@ export interface Commit {
 
 async function git(args: string[], cwd: string): Promise<string> {
   try {
-    const { stdout } = await execFileAsync("git", args, { cwd });
-    return stdout.trim();
+    const { stdout } = await execFileAsync("git", args, { cwd, maxBuffer: 10 * 1024 * 1024 });
+    // Use trimEnd, not trim: git status --porcelain lines can start with a
+    // meaningful space (e.g. " M path") and trim() would strip that leading space
+    // from the first line, corrupting the XY status code parsing.
+    return stdout.trimEnd();
   } catch (err) {
     const error = err as NodeJS.ErrnoException & { stderr?: string; code?: string | number };
     if (error.code === "ENOENT") {
@@ -50,7 +53,10 @@ export async function initRepo(dirPath: string): Promise<void> {
   await git(["init"], dirPath);
   await git(["add", "."], dirPath);
   try {
-    await git(["commit", "-m", "Initial Stryde snapshot"], dirPath);
+    await git(
+      ["-c", "user.name=Stryde", "-c", "user.email=stryde@local", "commit", "-m", "Initial Stryde snapshot"],
+      dirPath,
+    );
   } catch (err) {
     const error = err as NodeJS.ErrnoException & { code?: string | number };
     // Exit code 1 from commit means empty repo — not an error
@@ -63,13 +69,18 @@ export async function commitAll(
   configDir: string,
   message: string,
 ): Promise<void> {
-  const relativeConfigDir = path.relative(repoRoot, configDir);
+  const rel = path.relative(repoRoot, configDir);
+  // When configDir IS the repo root, rel is "" — use "." so git accepts it.
+  const relativeConfigDir = rel === "" ? "." : rel;
   const paths = [relativeConfigDir];
   if (relativeConfigDir !== ".") {
     paths.push("CLAUDE.md");
   }
   await git(["add", ...paths], repoRoot);
-  await git(["commit", "-m", message], repoRoot);
+  await git(
+    ["-c", "user.name=Stryde", "-c", "user.email=stryde@local", "commit", "-m", message],
+    repoRoot,
+  );
 }
 
 function parseStatusCode(xy: string): ChangeEntry["status"] {
@@ -83,7 +94,9 @@ export async function getStatus(
   repoRoot: string,
   configDir: string,
 ): Promise<ChangeEntry[]> {
-  const relativeConfigDir = path.relative(repoRoot, configDir);
+  const rel = path.relative(repoRoot, configDir);
+  // When configDir IS the repo root, rel is "" — use "." so git accepts it.
+  const relativeConfigDir = rel === "" ? "." : rel;
   const paths = [relativeConfigDir];
   if (relativeConfigDir !== ".") {
     paths.push("CLAUDE.md");
@@ -120,6 +133,18 @@ export async function getFileDiff(
   relativeFilePath: string,
   hash: string,
 ): Promise<{ before: string; after: string }> {
+  if (hash === "WORKDIR") {
+    let before = "";
+    let after = "";
+    try {
+      before = await git(["show", `HEAD:${relativeFilePath}`], repoRoot);
+    } catch { before = ""; }
+    try {
+      after = await readFileContent(path.join(repoRoot, relativeFilePath));
+    } catch { after = ""; }
+    return { before, after };
+  }
+
   let after = "";
   let before = "";
 

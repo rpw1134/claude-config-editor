@@ -1,4 +1,5 @@
 import express from "express";
+import path from "path";
 import type { NextFunction, Request, Response, Router } from "express";
 import { requireProjectPath } from "../utils/parsing.js";
 import { getConfigDir } from "../services/claudeConfig.js";
@@ -47,6 +48,14 @@ function isGitNotFoundError(err: unknown): boolean {
   return (err as NodeJS.ErrnoException & { code?: string })?.code === "GIT_NOT_FOUND";
 }
 
+// Convert a configDir-relative path to a repoRoot-relative path.
+// CLAUDE.md is a special case: it lives at the repo root, not inside configDir.
+function resolveFilePath(repoRoot: string, configDir: string, file: string): string {
+  if (file === "CLAUDE.md") return "CLAUDE.md";
+  const prefix = path.relative(repoRoot, configDir);
+  return prefix ? path.join(prefix, file) : file;
+}
+
 router.get(
   "/status",
   async (req: Request, res: Response, next: NextFunction) => {
@@ -61,7 +70,7 @@ router.get(
         ? await checkGitignore(repoRoot!, configDir)
         : { ...ALL_FALSE_GITIGNORE };
 
-      res.json({ initialized, repoRoot, changes, gitignore });
+      res.json({ initialized, repoRoot, configDir, changes, gitignore });
     } catch (err) {
       if (isGitNotFoundError(err)) {
         return res.status(503).json({ code: "GIT_NOT_FOUND" });
@@ -109,12 +118,13 @@ router.get(
     }
 
     try {
-      const { repoRoot } = await getRepoDirs(projectPath);
+      const { repoRoot, configDir } = await getRepoDirs(projectPath);
       if (repoRoot === null) {
         return res.status(404).json({ message: "Version control not initialized" });
       }
 
-      const commits = await getFileLog(repoRoot, file);
+      const repoRelFile = resolveFilePath(repoRoot, configDir, file);
+      const commits = await getFileLog(repoRoot, repoRelFile);
       res.json({ commits });
     } catch (err) {
       if (isGitNotFoundError(err)) {
@@ -138,12 +148,13 @@ router.get(
     }
 
     try {
-      const { repoRoot } = await getRepoDirs(projectPath);
+      const { repoRoot, configDir } = await getRepoDirs(projectPath);
       if (repoRoot === null) {
         return res.status(404).json({ message: "Version control not initialized" });
       }
 
-      const diff = await getFileDiff(repoRoot, file, hash);
+      const repoRelFile = resolveFilePath(repoRoot, configDir, file);
+      const diff = await getFileDiff(repoRoot, repoRelFile, hash);
       res.json(diff);
     } catch (err) {
       if (isGitNotFoundError(err)) {
@@ -170,12 +181,13 @@ router.post(
     }
 
     try {
-      const { repoRoot } = await getRepoDirs(projectPath);
+      const { repoRoot, configDir } = await getRepoDirs(projectPath);
       if (repoRoot === null) {
         return res.status(404).json({ message: "Version control not initialized" });
       }
 
-      const content = await restoreFile(repoRoot, file, hash);
+      const repoRelFile = resolveFilePath(repoRoot, configDir, file);
+      const content = await restoreFile(repoRoot, repoRelFile, hash);
       res.json({ content });
     } catch (err) {
       if (isGitNotFoundError(err)) {

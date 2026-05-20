@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useBlocker } from "react-router-dom";
+import { useVersionControl } from "../../contexts/VersionControlContext";
 import {
   fetchAgentContent,
   fetchSkillContent,
@@ -70,6 +71,7 @@ export const EditorPane = ({
   onDeleted,
 }: EditorPaneProps) => {
   const navigate = useNavigate();
+  const { refresh: refreshVc } = useVersionControl();
   const [content, setContent] = useState("");
   const [savedContent, setSavedContent] = useState("");
   const [loadedKey, setLoadedKey] = useState<string | null>(null);
@@ -161,6 +163,7 @@ export const EditorPane = ({
       setSavedContent(content);
       setSaveStatus("saved");
       statusTimer.current = setTimeout(() => setSaveStatus("idle"), 1500);
+      refreshVc();
     } catch {
       setSaveStatus("error");
       statusTimer.current = setTimeout(() => setSaveStatus("idle"), 2000);

@@ -218,7 +218,7 @@ export const VCChangesPane = ({ projectPath }: VCChangesPaneProps) => {
                       <VCDiffViewer
                         projectPath={projectPath}
                         filePath={entry.file}
-                        hash="HEAD"
+                        hash="WORKDIR"
                         onClose={() => setExpandedDiffFile(null)}
                       />
                     </div>

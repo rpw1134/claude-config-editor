@@ -41,3 +41,8 @@ coverage/
 
 *.png
 .playwright-mcp
+# Stryde — local-only Claude Code config
+.claude/settings.local.json
+.claude/*.local.json
+
+.stryde/

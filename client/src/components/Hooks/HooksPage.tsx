@@ -17,7 +17,7 @@ export const HooksPage = ({ projectPath }: HooksPageProps) => {
   const [selectedEvent, setSelectedEvent] = useState<string | null>(null);
   const [activeView, setActiveView] = useState<"hooks" | "history">("hooks");
 
-  const { getItemStatus, markHooksDirty } = useVersionControl();
+  const { getItemStatus, markHooksDirty, refresh: refreshVc } = useVersionControl();
   const hooksVcStatus = getItemStatus("hooks", "settings");
 
   const wrappedSave = async () => {
@@ -28,6 +28,7 @@ export const HooksPage = ({ projectPath }: HooksPageProps) => {
     } else {
       markHooksDirty("settings");
     }
+    refreshVc();
   };
 
   // Cmd+S / Ctrl+S — works on both landing and event detail
@@ -134,7 +135,7 @@ export const HooksPage = ({ projectPath }: HooksPageProps) => {
         <div className="flex-1 min-h-0 overflow-y-auto">
           <VCHistoryTab
             projectPath={projectPath}
-            filePath=".claude/settings.json"
+            filePath="settings.json"
           />
         </div>
       )}

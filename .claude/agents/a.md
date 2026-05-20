@@ -1,6 +1,6 @@
 ---
 name: a
-description: Changing name
+description: Changing name again again
 ---
 
 This is a system prompt

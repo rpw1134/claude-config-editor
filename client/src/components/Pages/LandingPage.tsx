@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { fetchAgents, fetchSkills, fetchMcpServers } from "../../lib/api";
+import { useVersionControl } from "../../contexts/VersionControlContext";
 
 // ── Icons ─────────────────────────────────────────────────────────────────────
 
@@ -130,10 +131,11 @@ interface TypeLandingPageProps {
 interface ItemRowProps {
   name: string;
   isLast: boolean;
+  vcStatus?: "M" | "A" | "??" | null;
   onClick: () => void;
 }
 
-const ItemRow = ({ name, isLast, onClick }: ItemRowProps) => (
+const ItemRow = ({ name, isLast, vcStatus, onClick }: ItemRowProps) => (
   <button
     onClick={onClick}
     className={[
@@ -143,9 +145,18 @@ const ItemRow = ({ name, isLast, onClick }: ItemRowProps) => (
       !isLast ? "border-b border-(--border-faint)" : "",
     ].join(" ")}
   >
-    <span className="font-['Instrument_Sans',sans-serif] text-[19px] font-medium text-(--text-primary) overflow-hidden text-ellipsis whitespace-nowrap">
+    <span className="font-['Instrument_Sans',sans-serif] text-[19px] font-medium text-(--text-primary) overflow-hidden text-ellipsis whitespace-nowrap flex-1 min-w-0">
       {name}
     </span>
+    {vcStatus && (
+      <span
+        className={[
+          "w-2 h-2 rounded-full shrink-0 mr-4",
+          vcStatus === "M" ? "bg-amber-400" : "bg-emerald-400",
+        ].join(" ")}
+        title={vcStatus === "M" ? "Modified" : "Untracked"}
+      />
+    )}
   </button>
 );
 
@@ -153,6 +164,7 @@ const ItemRow = ({ name, isLast, onClick }: ItemRowProps) => (
 
 export const TypeLandingPage = (props: TypeLandingPageProps) => {
   const { type, title, projectPath, refreshKey, onSelect, onNew } = props;
+  const { getItemStatus } = useVersionControl();
   const [items, setItems] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [showSkeleton, setShowSkeleton] = useState(false);
@@ -288,6 +300,13 @@ export const TypeLandingPage = (props: TypeLandingPageProps) => {
                 key={name}
                 name={name}
                 isLast={idx === filtered.length - 1}
+                vcStatus={
+                  type === "agent"
+                    ? getItemStatus("agent", name)
+                    : type === "skill"
+                      ? getItemStatus("skill", name)
+                      : null
+                }
                 onClick={() => onSelect(name)}
               />
             ))}

@@ -249,6 +249,7 @@ export interface GitignoreStatus {
 export interface VCStatus {
   initialized: boolean;
   repoRoot: string | null;
+  configDir: string;
   changes: ChangeEntry[];
   gitignore: GitignoreStatus;
 }
