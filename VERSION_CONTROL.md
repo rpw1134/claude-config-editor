@@ -269,11 +269,16 @@ interface VCStatus {
   gitignore: GitignoreStatus;
 }
 
+type ChangeStatus = 'M' | 'A' | '??';
+
 interface VersionControlContextValue {
   status: VCStatus | null;
   changeCount: number;
   refresh: () => void;
   isLoading: boolean;
+  // Returns the git status for a named item, or null if clean / VC not initialized.
+  // Used by landing-page cards to show inline modification indicators.
+  getItemStatus: (type: 'agent' | 'skill' | 'mcp' | 'hooks', name?: string) => ChangeStatus | null;
 }
 ```
 
@@ -284,11 +289,113 @@ interface VersionControlContextValue {
 - Exposed via `useVersionControl()` hook.
 - Provider wraps inside `ShellContext.Provider` in `App.tsx`.
 
+**`getItemStatus` lookup logic:**
+
+| Type | Source of truth | Attribution |
+|---|---|---|
+| `'agent'` + `name` | `changes[].file === 'agents/<name>.md'` | Per-item — each agent is its own file |
+| `'skill'` + `name` | any `changes[].file` starting with `skills/<name>/` | Per-item — any file in the skill dir counts |
+| `'mcp'` + `key` | Stryde in-memory dirty set + git clean signal | Per-item — see below |
+| `'hooks'` + `event` | Stryde in-memory dirty set + git clean signal | Per-item — see below |
+
+**MCP and hooks: Stryde-side dirty tracking**
+
+MCP servers and hooks both live in `settings.json` — git can only tell us the
+file changed, not which key. Stryde bridges this gap with two mechanisms:
+
+1. **Dirty set**: `VersionControlContext` maintains `mcpDirty: Set<string>` and
+   `hooksDirty: Set<string>` (keyed by server key / hook event name). These are
+   in-memory only (not persisted — reset on app restart is acceptable).
+
+   - When the user saves an MCP server via Stryde: `mcpDirty.add(key)`
+   - When the user saves a hooks configuration via Stryde: `hooksDirty.add(eventName)`
+   - The existing save flows call `onBumpVcRefresh()` — that's the trigger.
+
+2. **Clean signal**: On every `vcRefreshKey` bump, after fetching git status:
+   - If `settings.json` is **not** in `changes` (i.e. the file is committed):
+     clear both `mcpDirty` and `hooksDirty` entirely. This handles commits made
+     inside Stryde, commits made outside Stryde, and manual git operations.
+   - If `settings.json` **is** in changes: dirty sets are left as-is. Items not
+     in the dirty set are clean from Stryde's perspective (e.g. they existed
+     before the last commit and haven't been touched).
+
+`getItemStatus('mcp', key)` returns `'M'` if `mcpDirty.has(key)` AND
+`settings.json` is in changes. Returns `null` otherwise.
+
+The "worst" status logic (`M` > `A` > `??`) applies to agents and skills only,
+since MCP/hooks always report `'M'` (modification to an existing JSON file).
+
+**MCP and hooks History tab: focused JSON diffing**
+
+The git log for MCP/hooks queries `settings.json` history (same as before). But
+the diff view post-processes the before/after JSON:
+
+- For an MCP server with key `my-server`: extract `mcpServers["my-server"]` from
+  both before and after, stringify with 2-space indent, diff those strings.
+- For a hooks event `PostToolUse`: extract `hooks["PostToolUse"]` from both, diff.
+
+This gives a clean, focused diff of just the relevant section instead of the
+full `settings.json`. If the key doesn't exist in `before`, before = `""`.
+Implemented in `VCDiffViewer` via a `jsonPath?: string` prop that triggers
+extraction before rendering the Monaco diff editor.
+
 ### New refresh key in `ShellContext`
 
 Add `vcRefreshKey: number` and `onBumpVcRefresh: () => void` to `ShellContextValue`.
 Existing save flows call `onBumpVcRefresh()` after each successful save so the
 badge count stays current.
+
+### Item-level change indicators
+
+Landing pages show a small dot next to each item name when that item has uncommitted
+changes. Dots use two colors matching standard git conventions:
+
+- **Amber** (`text-amber-400`) — modified (`M`)
+- **Emerald** (`text-emerald-400`) — untracked or new (`??` / `A`)
+
+The dot is 6×6px, rendered as a filled circle (`rounded-full bg-current`) inline
+with the item label. It does not replace text or add a tooltip — the color alone
+carries the signal, same as VS Code's explorer.
+
+**Agent cards** (`components/sections/AgentsSection.tsx`):
+
+Each card calls `getItemStatus('agent', name)`. If non-null, render a dot after
+the agent name. Example:
+
+```tsx
+const vcStatus = getItemStatus('agent', agent.name);
+<span className="flex items-center gap-1.5">
+  {agent.name}
+  {vcStatus && (
+    <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+      vcStatus === 'M' ? 'bg-amber-400' : 'bg-emerald-400'
+    }`} />
+  )}
+</span>
+```
+
+**Skill cards** (`components/sections/SkillsSection.tsx`):
+
+Same pattern. `getItemStatus('skill', name)` — dot appears if any file under
+`skills/<name>/` is in changes.
+
+**MCP server cards** (`components/sections/McpServersSection.tsx`):
+
+Each card calls `getItemStatus('mcp', key)`. Returns `'M'` only if that specific
+server was saved in this session AND `settings.json` is still uncommitted. Dot
+renders as amber (MCP saves are always modifications to an existing JSON key, never
+untracked). Once `settings.json` is committed (inside or outside Stryde), all dots
+clear automatically.
+
+**Hooks page** (`components/Hooks/HooksPage.tsx`):
+
+Hooks are per-event (e.g. `PostToolUse`, `PreToolUse`). Each event row calls
+`getItemStatus('hooks', eventName)`. Same amber dot, same clean signal logic.
+If hooks are managed as a flat list rather than named events, show the dot on the
+page heading instead, keyed off any entry in `hooksDirty`.
+
+No indicator is shown when VC is not initialized (`status === null` or
+`!status.initialized`). The `getItemStatus` helper returns `null` in that case.
 
 ### Sidebar changes (`Sidebar.tsx`)
 
@@ -421,10 +528,14 @@ Layout:
 Monaco diff editor (read-only) showing before/after for a specific file at a
 specific commit hash.
 
-Props: `{ projectPath, filePath, hash, commitMessage, date, onClose }`
+Props: `{ projectPath, filePath, hash, commitMessage, date, onClose, jsonPath?: string }`
 
-Fetches from `GET /api/vc/diff`. Renders `@monaco-editor/react` in `diff` mode
-with `readOnly: true`.
+Fetches from `GET /api/vc/diff`. If `jsonPath` is provided (e.g. `"mcpServers.my-server"`
+or `"hooks.PostToolUse"`), extracts that key from the before/after JSON strings before
+rendering — giving a focused diff of just the relevant section. Falls back to the full
+file diff if extraction fails (malformed JSON, key not found).
+
+Renders `@monaco-editor/react` in `diff` mode with `readOnly: true`.
 
 #### `VCHistoryTab.tsx`
 
@@ -542,6 +653,10 @@ client/src/
   components/Hooks/HooksPage.tsx     ← add History tab
   components/Agent/steps/* (create)  ← add "Track with version control" toggle
   components/Skill/* (create)        ← add "Track with version control" toggle
+  components/sections/AgentsSection.tsx  ← per-item VC dot (git-derived)
+  components/sections/SkillsSection.tsx  ← per-item VC dot (git-derived)
+  components/sections/McpServersSection.tsx ← per-item VC dot (dirty-set-derived)
+  components/Hooks/HooksPage.tsx         ← per-event VC dot (dirty-set-derived)
 ```
 
 ---
