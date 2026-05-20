@@ -14,6 +14,7 @@ import skillsRouter from "./routers/skills.js";
 import mcpServersRouter from "./routers/mcpServers.js";
 import projectsRouter from "./routers/projects.js";
 import hooksRouter from "./routers/hooks.js";
+import vcRouter from "./routers/versionControl.js";
 
 const app = express();
 const PORT = 3000;
@@ -32,6 +33,7 @@ app.use("/api/skills", skillsRouter);
 app.use("/api/mcp-servers", mcpServersRouter);
 app.use("/api/projects", projectsRouter);
 app.use("/api/hooks", hooksRouter);
+app.use("/api/vc", vcRouter);
 
 // Dummy routes so I remember how express works 💀
 app.get("/api/health", (req, res) => {

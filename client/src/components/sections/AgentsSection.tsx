@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { fetchAgents } from "../../lib/api";
 import { SectionHeader } from "../Shared/SectionHeader";
 import { Pagination } from "../Shared/Pagination";
+import { useVersionControl } from "../../contexts/VersionControlContext";
 
 const PAGE_SIZE = 10;
 
@@ -9,9 +10,10 @@ interface AgentCardProps {
   name: string;
   isSelected: boolean;
   onSelect: (name: string | null) => void;
+  vcStatus?: "M" | "A" | "??" | null;
 }
 
-const AgentCard = ({ name, isSelected, onSelect }: AgentCardProps) => (
+const AgentCard = ({ name, isSelected, onSelect, vcStatus }: AgentCardProps) => (
   <button
     onClick={() => onSelect(isSelected ? null : name)}
     className={[
@@ -28,16 +30,26 @@ const AgentCard = ({ name, isSelected, onSelect }: AgentCardProps) => (
           isSelected ? "bg-orange-400" : "bg-white/20 group-hover:bg-white/35",
         ].join(" ")}
       />
-      <span
-        className={[
-          "text-[15px] font-semibold font-mono transition-colors leading-tight",
-          isSelected
-            ? "text-white/95"
-            : "text-white/70 group-hover:text-white/90",
-        ].join(" ")}
-      >
-        {name}
-      </span>
+      <div className="flex items-center gap-1.5 min-w-0">
+        <span
+          className={[
+            "text-[15px] font-semibold font-mono transition-colors leading-tight truncate",
+            isSelected
+              ? "text-white/95"
+              : "text-white/70 group-hover:text-white/90",
+          ].join(" ")}
+        >
+          {name}
+        </span>
+        {vcStatus && (
+          <span
+            className={[
+              "w-1.5 h-1.5 rounded-full shrink-0 flex-none",
+              vcStatus === "M" ? "bg-amber-400" : "bg-emerald-400",
+            ].join(" ")}
+          />
+        )}
+      </div>
     </div>
   </button>
 );
@@ -57,6 +69,7 @@ export const AgentsSection = ({
   onNew,
   refreshKey,
 }: AgentsSectionProps) => {
+  const { getItemStatus } = useVersionControl();
   const [agents, setAgents] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -108,6 +121,7 @@ export const AgentsSection = ({
                 name={name}
                 isSelected={selectedName === name}
                 onSelect={onSelect}
+                vcStatus={getItemStatus("agent", name)}
               />
             ))}
           </div>

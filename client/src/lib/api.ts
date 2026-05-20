@@ -225,3 +225,107 @@ export async function fetchHooks(projectPath: string): Promise<HooksConfig> {
 export async function updateHooks(projectPath: string, hooks: HooksConfig): Promise<void> {
   await put(`/api/hooks`, { projectPath, hooks });
 }
+
+// ── Version control ────────────────────────────────────────────────────────────
+
+export interface ChangeEntry {
+  status: 'M' | 'A' | '??';
+  file: string;
+}
+
+export interface Commit {
+  hash: string;
+  date: string;
+  message: string;
+}
+
+export interface GitignoreStatus {
+  claudeIgnored: boolean;
+  claudeIgnoredBy: string | null;
+  localsProtected: boolean;
+  strydeIgnored: boolean;
+}
+
+export interface VCStatus {
+  initialized: boolean;
+  repoRoot: string | null;
+  changes: ChangeEntry[];
+  gitignore: GitignoreStatus;
+}
+
+async function postJson<T>(path: string, body: Record<string, unknown>): Promise<T> {
+  const res = await fetch(`${BASE_URL}${path}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    throw new Error(`${res.status} ${res.statusText} — ${path}`);
+  }
+  return res.json() as Promise<T>;
+}
+
+export async function fetchVcStatus(projectPath: string): Promise<VCStatus> {
+  return get<VCStatus>(`/api/vc/status?projectPath=${encodeURIComponent(projectPath)}`);
+}
+
+export async function postVcInit(projectPath: string): Promise<void> {
+  await post("/api/vc/init", { projectPath });
+}
+
+export async function fetchVcLog(projectPath: string, file: string): Promise<Commit[]> {
+  const data = await get<{ commits: Commit[] }>(
+    `/api/vc/log?projectPath=${encodeURIComponent(projectPath)}&file=${encodeURIComponent(file)}`
+  );
+  return data.commits;
+}
+
+export async function fetchVcDiff(
+  projectPath: string,
+  file: string,
+  hash: string
+): Promise<{ before: string; after: string }> {
+  return get<{ before: string; after: string }>(
+    `/api/vc/diff?projectPath=${encodeURIComponent(projectPath)}&file=${encodeURIComponent(file)}&hash=${encodeURIComponent(hash)}`
+  );
+}
+
+export async function postVcRestore(
+  projectPath: string,
+  file: string,
+  hash: string
+): Promise<{ content: string }> {
+  return postJson<{ content: string }>("/api/vc/restore", { projectPath, file, hash });
+}
+
+export async function postVcCommit(projectPath: string, message: string): Promise<void> {
+  await post("/api/vc/commit", { projectPath, message });
+}
+
+export async function fetchVcSettings(projectPath: string): Promise<{ enabled: boolean }> {
+  return get<{ enabled: boolean }>(
+    `/api/vc/settings?projectPath=${encodeURIComponent(projectPath)}`
+  );
+}
+
+export async function putVcSettings(projectPath: string, enabled: boolean): Promise<void> {
+  await put("/api/vc/settings", { projectPath, enabled });
+}
+
+export async function postVcGitignoreProtect(projectPath: string): Promise<void> {
+  await post("/api/vc/gitignore/protect", { projectPath });
+}
+
+export async function postVcGitignoreUnblock(
+  projectPath: string,
+  gitignorePath: string
+): Promise<void> {
+  await post("/api/vc/gitignore/unblock", { projectPath, gitignorePath });
+}
+
+export async function postVcGitignoreStryde(
+  projectPath: string,
+  ignore: boolean
+): Promise<void> {
+  await post("/api/vc/gitignore/stryde", { projectPath, ignore });
+}

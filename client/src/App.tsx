@@ -31,10 +31,13 @@ import {
   SkillLayout,
   SkillEditorContent,
   SkillFileContent,
+  SkillHistoryContent,
   ScriptsTabContent,
   ScriptEditorContent,
 } from "./routes/SkillRoutes";
+import { VCContent } from "./routes/VCRoutes";
 import { ShellContext } from "./contexts/ShellContext";
+import { VersionControlProvider } from "./contexts/VersionControlContext";
 import type { ShellContextValue } from "./contexts/ShellContext";
 import { encodeProject } from "./lib/navigation";
 import { fetchProjects } from "./lib/api";
@@ -62,10 +65,12 @@ export default function App() {
   const [skillsRefreshKey, setSkillsRefreshKey] = useState(0);
   const [mcpRefreshKey, setMcpRefreshKey] = useState(0);
   const [projectsRefreshKey, setProjectsRefreshKey] = useState(0);
+  const [vcRefreshKey, setVcRefreshKey] = useState(0);
   const onBumpProjectsRefresh = useCallback(
     () => setProjectsRefreshKey((k) => k + 1),
     [],
   );
+  const onBumpVcRefresh = useCallback(() => setVcRefreshKey((k) => k + 1), []);
 
   // Modal for skill / mcp-server create
   const [modalType, setModalType] = useState<
@@ -191,89 +196,103 @@ export default function App() {
     onBumpSkillsRefresh: () => setSkillsRefreshKey((k) => k + 1),
     onBumpMcpRefresh: () => setMcpRefreshKey((k) => k + 1),
     onBumpProjectsRefresh,
+    vcRefreshKey,
+    onBumpVcRefresh,
     showToast,
   };
 
   return (
     <>
       <ShellContext.Provider value={shellContextValue}>
-        <Routes>
-          {/* Single layout wrapper — Shell is mounted once */}
-          <Route element={<LayoutRoute />}>
-            <Route path="/" element={<RootContent />} />
+        <VersionControlProvider
+          projectPath={selectedProjectPath}
+          vcRefreshKey={vcRefreshKey}
+        >
+          <Routes>
+            {/* Single layout wrapper — Shell is mounted once */}
+            <Route element={<LayoutRoute />}>
+              <Route path="/" element={<RootContent />} />
 
-            <Route path="/:projectId" element={<ProjectWelcomeContent />} />
-            <Route path="/:projectId/claude-md" element={<ClaudeMdContent />} />
+              <Route path="/:projectId" element={<ProjectWelcomeContent />} />
+              <Route path="/:projectId/claude-md" element={<ClaudeMdContent />} />
 
-            {/* Agents */}
-            <Route path="/:projectId/agents" element={<AgentsLandingContent />} />
-            <Route
-              path="/:projectId/agents/new"
-              element={<AgentCreateContent />}
-            />
-            <Route
-              path="/:projectId/agents/:name"
-              element={<AgentEditorContent />}
-            />
+              {/* Agents */}
+              <Route path="/:projectId/agents" element={<AgentsLandingContent />} />
+              <Route
+                path="/:projectId/agents/new"
+                element={<AgentCreateContent />}
+              />
+              <Route
+                path="/:projectId/agents/:name"
+                element={<AgentEditorContent />}
+              />
 
-            {/* Skills */}
-            <Route path="/:projectId/skills" element={<SkillsLandingContent />} />
-            <Route path="/:projectId/skills/:name" element={<SkillLayout />}>
-              <Route index element={<SkillEditorContent />} />
-              <Route path="scripts" element={<ScriptsTabContent />} />
-              <Route path="scripts/:scriptFile" element={<ScriptEditorContent />} />
-              <Route path=":file" element={<SkillFileContent />} />
+              {/* Skills */}
+              <Route path="/:projectId/skills" element={<SkillsLandingContent />} />
+              <Route path="/:projectId/skills/:name" element={<SkillLayout />}>
+                <Route index element={<SkillEditorContent />} />
+                <Route path="scripts" element={<ScriptsTabContent />} />
+                <Route path="scripts/:scriptFile" element={<ScriptEditorContent />} />
+                <Route path="history" element={<SkillHistoryContent />} />
+                <Route path=":file" element={<SkillFileContent />} />
+              </Route>
+
+              {/* MCP */}
+              <Route path="/:projectId/mcp" element={<McpLandingContent />} />
+              <Route path="/:projectId/mcp/:name" element={<McpEditorContent />} />
+
+              {/* Settings */}
+              <Route
+                path="/:projectId/settings"
+                element={<ProjectSettingsContent />}
+              />
+
+              {/* Hooks */}
+              <Route path="/:projectId/hooks" element={<HooksContent />} />
+
+              {/* Version Control */}
+              <Route
+                path="/:projectId/version-control"
+                element={<VCContent />}
+              />
             </Route>
+          </Routes>
 
-            {/* MCP */}
-            <Route path="/:projectId/mcp" element={<McpLandingContent />} />
-            <Route path="/:projectId/mcp/:name" element={<McpEditorContent />} />
-
-            {/* Settings */}
-            <Route
-              path="/:projectId/settings"
-              element={<ProjectSettingsContent />}
+          {/* Create modals */}
+          {modalType === "skill" && selectedProjectPath && (
+            <CreateNewModal
+              type="skill"
+              projectPath={selectedProjectPath}
+              onSuccess={handleModalSuccess}
+              onClose={() => setModalType(null)}
             />
-
-            {/* Hooks */}
-            <Route path="/:projectId/hooks" element={<HooksContent />} />
-          </Route>
-        </Routes>
-
-        {/* Create modals */}
-        {modalType === "skill" && selectedProjectPath && (
-          <CreateNewModal
-            type="skill"
-            projectPath={selectedProjectPath}
-            onSuccess={handleModalSuccess}
-            onClose={() => setModalType(null)}
-          />
-        )}
-        {modalType === "mcp-server" && selectedProjectPath && (
-          <McpCreateModal
-            projectPath={selectedProjectPath}
-            onSuccess={(name) => {
-              setModalType(null);
-              addToRecents("mcp-server", name);
-              setMcpRefreshKey((k) => k + 1);
-              navigate(
-                `/${encodeProject(selectedProjectPath)}/mcp/${encodeURIComponent(name)}`,
-              );
-            }}
-            onClose={() => setModalType(null)}
-          />
-        )}
-        {modalType === "project" && (
-          <CreateProjectModal
-            onSuccess={(absolutePath) => {
-              setModalType(null);
-              onBumpProjectsRefresh();
-              handleProjectSelect(absolutePath);
-              showToast(`Project created`);
-            }}
-            onClose={() => setModalType(null)}
-          />
-        )}
+          )}
+          {modalType === "mcp-server" && selectedProjectPath && (
+            <McpCreateModal
+              projectPath={selectedProjectPath}
+              onSuccess={(name) => {
+                setModalType(null);
+                addToRecents("mcp-server", name);
+                setMcpRefreshKey((k) => k + 1);
+                navigate(
+                  `/${encodeProject(selectedProjectPath)}/mcp/${encodeURIComponent(name)}`,
+                );
+              }}
+              onClose={() => setModalType(null)}
+            />
+          )}
+          {modalType === "project" && (
+            <CreateProjectModal
+              onSuccess={(absolutePath) => {
+                setModalType(null);
+                onBumpProjectsRefresh();
+                handleProjectSelect(absolutePath);
+                showToast(`Project created`);
+              }}
+              onClose={() => setModalType(null)}
+            />
+          )}
+        </VersionControlProvider>
       </ShellContext.Provider>
       {toastMessage && <Toast message={toastMessage} />}
     </>

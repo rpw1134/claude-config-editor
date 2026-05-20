@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { fetchMcpServers } from "../../lib/api";
 import { SectionHeader } from "../Shared/SectionHeader";
 import { Pagination } from "../Shared/Pagination";
+import { useVersionControl } from "../../contexts/VersionControlContext";
 
 const PAGE_SIZE = 10;
 
@@ -17,9 +18,10 @@ interface McpServerRowProps {
   name: string;
   selected: boolean;
   onClick: () => void;
+  vcStatus?: "M" | "A" | "??" | null;
 }
 
-const McpServerRow = ({ name, selected, onClick }: McpServerRowProps) => (
+const McpServerRow = ({ name, selected, onClick, vcStatus }: McpServerRowProps) => (
   <button
     onClick={onClick}
     className={[
@@ -36,16 +38,26 @@ const McpServerRow = ({ name, selected, onClick }: McpServerRowProps) => (
           selected ? "bg-white/50" : "bg-white/20 group-hover:bg-white/35",
         ].join(" ")}
       />
-      <span
-        className={[
-          "text-[14px] font-semibold font-mono leading-tight transition-colors",
-          selected
-            ? "text-white/90"
-            : "text-white/70 group-hover:text-white/90",
-        ].join(" ")}
-      >
-        {name}
-      </span>
+      <div className="flex items-center gap-1.5 min-w-0">
+        <span
+          className={[
+            "text-[14px] font-semibold font-mono leading-tight transition-colors truncate",
+            selected
+              ? "text-white/90"
+              : "text-white/70 group-hover:text-white/90",
+          ].join(" ")}
+        >
+          {name}
+        </span>
+        {vcStatus && (
+          <span
+            className={[
+              "w-1.5 h-1.5 rounded-full shrink-0 flex-none",
+              vcStatus === "M" ? "bg-amber-400" : "bg-emerald-400",
+            ].join(" ")}
+          />
+        )}
+      </div>
     </div>
   </button>
 );
@@ -57,6 +69,7 @@ export const McpServersSection = ({
   onNew,
   refreshKey,
 }: McpServersSectionProps) => {
+  const { getItemStatus } = useVersionControl();
   const [servers, setServers] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -110,6 +123,7 @@ export const McpServersSection = ({
                 name={name}
                 selected={name === selectedName}
                 onClick={() => onSelect(name)}
+                vcStatus={getItemStatus("mcp", name)}
               />
             ))}
           </div>

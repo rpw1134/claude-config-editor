@@ -11,11 +11,13 @@ import {
   SkillIcon,
   McpIcon,
   HooksIcon,
+  VersionControlIcon,
   PlusIcon,
   SettingsIcon,
   SidebarCloseIcon,
   StrydeLogoIcon,
 } from "../Icons";
+import { useVersionControl } from "../../contexts/VersionControlContext";
 import type { RecentItem } from "../../hooks/useRecents";
 
 // ── Type label helpers ────────────────────────────────────────────────────────
@@ -75,6 +77,7 @@ export const Sidebar = ({
     setTooltipVisible(true);
   };
   const handleLogoLeave = () => setTooltipVisible(false);
+  const { changeCount } = useVersionControl();
   const hasProject = selectedProjectPath !== null;
 
   const encodedProject = selectedProjectPath
@@ -90,6 +93,7 @@ export const Sidebar = ({
     if (pathname.startsWith(`${base}/skills`)) return "skills";
     if (pathname.startsWith(`${base}/mcp`)) return "mcp-servers";
     if (pathname.startsWith(`${base}/hooks`)) return "hooks";
+    if (pathname.startsWith(`${base}/version-control`)) return "version-control";
     if (pathname.startsWith(`${base}/claude-md`)) return "claude-md";
     if (pathname.startsWith(`${base}/settings`)) return "settings";
     return "welcome";
@@ -103,6 +107,7 @@ export const Sidebar = ({
     else if (tab === "skills") navigate(`${base}/skills`);
     else if (tab === "mcp-servers") navigate(`${base}/mcp`);
     else if (tab === "hooks") navigate(`${base}/hooks`);
+    else if (tab === "version-control") navigate(`${base}/version-control`);
     else if (tab === "settings") navigate(`${base}/settings`);
     else navigate(base);
   };
@@ -315,6 +320,15 @@ export const Sidebar = ({
           disabled={!hasProject}
           collapsed={collapsed}
           onClick={() => navigateTo("hooks")}
+        />
+        <NavButton
+          icon={<VersionControlIcon />}
+          label="Version Control"
+          active={activeTab === "version-control"}
+          disabled={!hasProject}
+          collapsed={collapsed}
+          onClick={() => navigateTo("version-control")}
+          badge={changeCount}
         />
       </div>
 

@@ -13,7 +13,7 @@ import {
   envToRaw,
 } from "../lib/mcp";
 
-type TabId = "configure" | "json" | "settings";
+type TabId = "configure" | "json" | "settings" | "history";
 
 export function useMcpEditor(name: string, projectPath: string, onDeleted: () => void) {
   const [activeTab, setActiveTab] = useState<TabId>("configure");

@@ -1,4 +1,5 @@
 import { Navigate, useParams, useSearchParams } from "react-router-dom";
+import { VCHistoryTab } from "../components/VersionControl/VCHistoryTab";
 import { SkillDirectoryView } from "../components/Skill/SkillDirectoryView";
 import { ScriptsTab } from "../components/Skill/ScriptsTab";
 import { SkillsLandingPage } from "../components/Pages/LandingPage";
@@ -55,6 +56,24 @@ export const SkillEditorContent = () => {
       skillName={skillName}
       projectPath={projectPath}
     />
+  );
+};
+
+// /:projectId/skills/:name/history
+export const SkillHistoryContent = () => {
+  const { projectId, name } = useParams<{ projectId: string; name: string }>();
+  const projectPath = projectId ? decodeProject(projectId) : null;
+  const skillName = name ? decodeURIComponent(name) : null;
+
+  if (!projectPath || !skillName) return <Navigate to="/" replace />;
+
+  return (
+    <div className="flex-1 min-h-0 overflow-y-auto">
+      <VCHistoryTab
+        projectPath={projectPath}
+        filePath={`skills/${skillName}/SKILL.md`}
+      />
+    </div>
   );
 };
 

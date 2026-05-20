@@ -11,7 +11,8 @@ export type SkillTabId =
   | "scripts"
   | "identity"
   | "instructions"
-  | "settings";
+  | "settings"
+  | "history";
 
 export interface SkillTabBarProps {
   activeTab: SkillTabId;
@@ -39,6 +40,7 @@ const TABS: TabDef[] = [
   { id: "examples.md", label: "Examples" },
   { id: "scripts", label: "Scripts" },
   { id: "settings", label: "Settings" },
+  { id: "history", label: "History" },
 ];
 
 // ── SkillTabBar ───────────────────────────────────────────────────────────────
@@ -69,6 +71,13 @@ export const SkillTabBar = ({
     if (tab.id === "scripts") {
       navigate(
         `/${encodeURIComponent(projectId)}/skills/${encodeURIComponent(skillName)}/scripts`,
+      );
+      return;
+    }
+
+    if (tab.id === "history") {
+      navigate(
+        `/${encodeURIComponent(projectId)}/skills/${encodeURIComponent(skillName)}/history`,
       );
       return;
     }

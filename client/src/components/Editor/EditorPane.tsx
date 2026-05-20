@@ -17,6 +17,7 @@ import {
 } from "../../lib/api";
 import { Editor } from "./Editor";
 import { AgentFormEditor } from "../Agent/AgentFormEditor";
+import { VCHistoryTab } from "../VersionControl/VCHistoryTab";
 import type { ViewMode } from "./parts/types";
 import { CreateHeader } from "./parts/CreateHeader";
 import { EditHeader } from "./parts/EditHeader";
@@ -79,6 +80,7 @@ export const EditorPane = ({
 
   const [draftName, setDraftName] = useState("");
   const [createStatus, setCreateStatus] = useState<CreateStatus>("idle");
+  const [claudeMdView, setClaudeMdView] = useState<"edit" | "history">("edit");
 
   const isCreateMode = name === null;
   const currentKey = `${type}:${projectPath}:${name}`;
@@ -138,6 +140,10 @@ export const EditorPane = ({
       if (dt !== null) clearTimeout(dt);
     };
   }, []);
+
+  useEffect(() => {
+    setClaudeMdView("edit");
+  }, [name, type]);
 
   const handleSave = async () => {
     if (loading || !dirty || saving || isCreateMode || !name) return;
@@ -302,9 +308,39 @@ export const EditorPane = ({
           onBack={() => navigate(-1)}
         />
       ) : null}
+      {!isCreateMode && type === "project" && (
+        <div className="shrink-0 flex items-stretch px-4 border-b border-(--border-faint)">
+          {(["edit", "history"] as const).map((v) => (
+            <button
+              key={v}
+              type="button"
+              onClick={() => setClaudeMdView(v)}
+              className={[
+                "pt-4 pb-3.5 px-3 bg-transparent border-none relative transition-colors duration-150 capitalize",
+                claudeMdView === v
+                  ? "cursor-default text-[14px] font-semibold text-(--text-primary) after:absolute after:bottom-0 after:left-0 after:right-0 after:h-px after:bg-(--accent)"
+                  : "cursor-pointer text-[14px] text-(--text-secondary) hover:text-(--text-primary)",
+              ].join(" ")}
+            >
+              {v === "edit" ? "Edit" : "History"}
+            </button>
+          ))}
+        </div>
+      )}
       <div className="flex-1 min-h-0">
         {loading ? (
           <div className="w-full h-full bg-(--bg-base)" />
+        ) : !isCreateMode && type === "project" && claudeMdView === "history" && name ? (
+          <div className="h-full overflow-y-auto">
+            <VCHistoryTab
+              projectPath={name}
+              filePath="CLAUDE.md"
+              onRestored={(restored) => {
+                setContent(restored);
+                setSavedContent(restored);
+              }}
+            />
+          </div>
         ) : showFormView ? (
           <AgentFormEditor
             content={content}
@@ -317,6 +353,8 @@ export const EditorPane = ({
             disabled={saving}
             onBack={() => navigate(-1)}
             filePath={name ? filePath(name, "agent", projectPath) : undefined}
+            agentName={name ?? undefined}
+            projectPath={projectPath ?? undefined}
           />
         ) : isMarkdown && !isCreateMode ? (
           <MarkdownEditorView

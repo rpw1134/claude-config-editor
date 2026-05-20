@@ -19,6 +19,8 @@ export interface ShellContextValue {
   onBumpSkillsRefresh: () => void;
   onBumpMcpRefresh: () => void;
   onBumpProjectsRefresh: () => void;
+  vcRefreshKey: number;
+  onBumpVcRefresh: () => void;
   showToast: (message: string) => void;
 }
 

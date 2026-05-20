@@ -7,6 +7,7 @@ interface NavButtonProps {
   disabled?: boolean;
   collapsed: boolean;
   onClick: () => void;
+  badge?: number;
 }
 
 export const NavButton = ({
@@ -16,6 +17,7 @@ export const NavButton = ({
   disabled = false,
   collapsed,
   onClick,
+  badge,
 }: NavButtonProps) => (
   <button
     onClick={onClick}
@@ -31,18 +33,38 @@ export const NavButton = ({
           : "bg-transparent text-(--text-secondary) border-l-transparent cursor-pointer hover:bg-(--bg-hover) hover:text-(--text-primary)",
     ].join(" ")}
   >
-    <span
-      className={[
-        "w-5 h-5 shrink-0 flex items-center justify-center transition-colors duration-150",
-        disabled
-          ? "text-(--text-muted)"
-          : active
-            ? "text-(--accent)"
-            : "text-(--text-secondary) group-hover:text-(--text-primary)",
-      ].join(" ")}
-    >
-      {icon}
-    </span>
+    {badge != null && badge > 0 ? (
+      <span className="relative w-5 h-5 shrink-0 flex items-center justify-center">
+        <span
+          className={[
+            "w-5 h-5 shrink-0 flex items-center justify-center transition-colors duration-150",
+            disabled
+              ? "text-(--text-muted)"
+              : active
+                ? "text-(--accent)"
+                : "text-(--text-secondary) group-hover:text-(--text-primary)",
+          ].join(" ")}
+        >
+          {icon}
+        </span>
+        <span className="absolute -top-1 -right-1.5 min-w-3.5 h-3.5 px-0.75 flex items-center justify-center rounded-full bg-(--accent) text-[9px] font-bold text-white animate-pulse leading-none">
+          {badge > 99 ? "99+" : badge}
+        </span>
+      </span>
+    ) : (
+      <span
+        className={[
+          "w-5 h-5 shrink-0 flex items-center justify-center transition-colors duration-150",
+          disabled
+            ? "text-(--text-muted)"
+            : active
+              ? "text-(--accent)"
+              : "text-(--text-secondary) group-hover:text-(--text-primary)",
+        ].join(" ")}
+      >
+        {icon}
+      </span>
+    )}
     <span
       className="overflow-hidden whitespace-nowrap"
       style={{

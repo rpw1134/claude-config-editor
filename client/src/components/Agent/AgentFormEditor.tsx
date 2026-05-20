@@ -8,10 +8,11 @@ import { BackArrowIcon } from "../Icons";
 import { IdentityTab } from "./tabs/IdentityTab";
 import { PromptTab } from "./tabs/PromptTab";
 import { SettingsTab } from "./tabs/SettingsTab";
+import { VCHistoryTab } from "../VersionControl/VCHistoryTab";
 
 // ── Tab types ─────────────────────────────────────────────────────────────────
 
-type Tab = "identity" | "prompt" | "settings";
+type Tab = "identity" | "prompt" | "settings" | "history";
 
 // ── AgentFormEditor ───────────────────────────────────────────────────────────
 
@@ -27,6 +28,8 @@ export interface AgentFormEditorProps {
   onClose?: () => void;
   onBack?: () => void;
   filePath?: string;
+  agentName?: string;
+  projectPath?: string;
 }
 
 export const AgentFormEditor = ({
@@ -41,6 +44,8 @@ export const AgentFormEditor = ({
   onClose,
   onBack,
   filePath,
+  agentName,
+  projectPath,
 }: AgentFormEditorProps) => {
   const { frontmatter: initialFm, body: initialBody } = useMemo(
     () => parseFrontmatter(content),
@@ -82,11 +87,13 @@ export const AgentFormEditor = ({
     emit(fm, val);
   };
 
-  // Fix 5 & 6: rename tab labels
   const tabs: { id: Tab; label: string }[] = [
     { id: "identity", label: "Identity" },
     { id: "prompt", label: "System Prompt" },
     { id: "settings", label: "Settings & Config" },
+    ...(agentName && projectPath
+      ? [{ id: "history" as Tab, label: "History" }]
+      : []),
   ];
 
   return (
@@ -191,6 +198,15 @@ export const AgentFormEditor = ({
             deleteStatus={deleteStatus}
             disabled={disabled}
           />
+        )}
+        {activeTab === "history" && agentName && projectPath && (
+          <div className="flex-1 min-h-0 overflow-y-auto h-full">
+            <VCHistoryTab
+              projectPath={projectPath}
+              filePath={`agents/${agentName}.md`}
+              onRestored={onChange}
+            />
+          </div>
         )}
       </div>
     </div>

@@ -102,6 +102,16 @@ export const McpIcon = () => (
   </svg>
 );
 
+export const VersionControlIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="4" cy="3" r="1.5" stroke="currentColor" strokeWidth="1.2" />
+    <circle cx="4" cy="12" r="1.5" stroke="currentColor" strokeWidth="1.2" />
+    <circle cx="11" cy="3" r="1.5" stroke="currentColor" strokeWidth="1.2" />
+    <line x1="4" y1="4.5" x2="4" y2="10.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+    <path d="M4 4.5C4 7 11 6 11 4.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" fill="none" />
+  </svg>
+);
+
 export const HooksIcon = () => (
   <svg
     width="20"
