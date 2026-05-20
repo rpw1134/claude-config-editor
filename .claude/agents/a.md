@@ -1,6 +1,6 @@
 ---
 name: a
-description: a
+description: Changing name
 ---
 
-a
+This is a system prompt
