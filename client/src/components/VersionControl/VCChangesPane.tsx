@@ -93,7 +93,7 @@ const StatusLetter = ({ status }: { status: ChangeStatus }) => (
     }`}
     title={status === "M" ? "Modified" : status === "A" ? "Added" : "Untracked"}
   >
-    {status === "M" ? "M" : status === "A" ? "A" : "?"}
+    {status === "M" ? "M" : status === "A" ? "A" : "U"}
   </span>
 );
 

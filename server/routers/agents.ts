@@ -1,8 +1,10 @@
 import express from "express";
+import path from "path";
 import type { NextFunction, Request, Response, Router } from "express";
 import { readFileContent, writeFileContent, writeFileEnsureDir, fileExists, deleteFile } from "../utils/fileIO.js";
 import { requireProjectPath } from "../utils/parsing.js";
 import { getConfigDir } from "../services/claudeConfig.js";
+import { findRepoRoot, stageFiles } from "../services/versionControl.js";
 
 const router: Router = express.Router();
 
@@ -62,12 +64,20 @@ router.post(
     if (!name || name.includes("/") || name.includes("\\") || name.includes("..")) {
       return res.status(400).json({ message: "name must not be empty or contain path separators" });
     }
-    const filePath = `${getConfigDir(projectPath)}/agents/${name}.md`;
+    const configDir = getConfigDir(projectPath);
+    const filePath = `${configDir}/agents/${name}.md`;
     try {
       if (await fileExists(filePath)) {
         return res.status(409).json({ message: "Agent already exists" });
       }
       await writeFileEnsureDir(filePath, content);
+
+      const repoRoot = await findRepoRoot(configDir) ?? await findRepoRoot(projectPath);
+      if (repoRoot) {
+        const rel = path.relative(repoRoot, filePath);
+        await stageFiles(repoRoot, [rel]);
+      }
+
       res.status(201).json({ message: "Agent created" });
     } catch (err) {
       next(err);

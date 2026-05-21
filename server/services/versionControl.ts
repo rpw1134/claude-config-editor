@@ -70,6 +70,16 @@ export async function initRepo(dirPath: string, stagePaths: string[] = ["."]): P
   }
 }
 
+export async function stageFiles(repoRoot: string, paths: string[]): Promise<void> {
+  for (const p of paths) {
+    try {
+      await git(["add", p], repoRoot);
+    } catch {
+      // ignore — file may not exist or git may not be set up
+    }
+  }
+}
+
 export async function commitAll(
   repoRoot: string,
   configDir: string,
