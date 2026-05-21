@@ -43,7 +43,7 @@ interface SidebarProps {
   onToggleCollapsed: () => void;
   recents: RecentItem[];
   onRecentClick: (item: RecentItem) => void;
-  onCreateNew: (type: "agent" | "skill" | "mcp-server" | "project") => void;
+  onCreateNew: (type: "agent" | "skill" | "mcp-server" | "hooks" | "project") => void;
   projectsRefreshKey?: number;
 }
 

@@ -16,17 +16,17 @@ const beforeMount: BeforeMount = (monaco) => {
     inherit: true,
     rules: [],
     colors: {
-      // Surfaces — match --bg-surface / --bg-elevated
-      'editor.background': '#181D28',
-      'editorGutter.background': '#181D28',
+      // Surfaces — match --bg-base so editor blends seamlessly into the page
+      'editor.background': '#0D1119',
+      'editorGutter.background': '#0D1119',
       'editorWidget.background': '#1F2430',
       'editorWidget.border': '#ffffff1c',
       'editorSuggestWidget.background': '#1F2430',
       'editorSuggestWidget.border': '#ffffff1c',
       'editorSuggestWidget.selectedBackground': '#ffffff12',
 
-      // Line highlight — subtle, matches --bg-elevated
-      'editor.lineHighlightBackground': '#1F243040',
+      // Line highlight — very subtle on the dark base
+      'editor.lineHighlightBackground': '#ffffff06',
       'editor.lineHighlightBorder': '#00000000',
 
       // Line numbers — --text-muted (#6B7D96) at reduced opacity
@@ -78,7 +78,7 @@ const EDITOR_OPTIONS = {
 };
 
 const LoadingPlaceholder = () => (
-  <div className="w-full h-full flex items-center justify-center bg-[#181D28]">
+  <div className="w-full h-full flex items-center justify-center bg-[#0D1119]">
     <span className="text-[12px] font-mono text-white/25">Loading editor…</span>
   </div>
 );

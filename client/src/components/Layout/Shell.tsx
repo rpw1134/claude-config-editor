@@ -8,7 +8,7 @@ interface ShellProps {
   onProjectSelect: (path: string) => void;
   recents: RecentItem[];
   onRecentClick: (item: RecentItem) => void;
-  onCreateNew: (type: "agent" | "skill" | "mcp-server" | "project") => void;
+  onCreateNew: (type: "agent" | "skill" | "mcp-server" | "hooks" | "project") => void;
   sidebarCollapsed: boolean;
   onToggleCollapsed: () => void;
   projectsRefreshKey: number;

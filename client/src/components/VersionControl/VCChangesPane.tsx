@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useVersionControl } from "../../contexts/VersionControlContext";
 import {
   postVcCommit,
@@ -8,13 +8,13 @@ import {
 } from "../../lib/api";
 import type { ChangeEntry } from "../../lib/api";
 import { VCDiffViewer } from "./VCDiffViewer";
-import { AgentIcon, SkillIcon, FileIcon, SearchIcon } from "../Icons";
+import { AgentIcon, SkillIcon, FileIcon, SearchIcon, CommitIcon } from "../Icons";
 
 interface VCChangesPaneProps {
   projectPath: string;
 }
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
+// ── Types ─────────────────────────────────────────────────────────────────────
 
 type ChangeStatus = ChangeEntry["status"];
 
@@ -27,6 +27,8 @@ interface GroupedChanges {
     files: { file: string; status: ChangeStatus; shortName: string }[];
   }[];
 }
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
 
 function skillFileShortName(file: string, skillName: string): string {
   const prefix = `skills/${skillName}/`;
@@ -79,6 +81,92 @@ function groupChanges(changes: ChangeEntry[]): GroupedChanges {
 
   return { claude, agents, skills };
 }
+
+// ── CommitModal ───────────────────────────────────────────────────────────────
+
+interface CommitModalProps {
+  count: number;
+  committing: boolean;
+  onCommit: (message: string) => void;
+  onClose: () => void;
+}
+
+const CommitModal = ({ count, committing, onCommit, onClose }: CommitModalProps) => {
+  const [message, setMessage] = useState("");
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    textareaRef.current?.focus();
+  }, []);
+
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.stopPropagation();
+        onClose();
+      }
+    };
+    window.addEventListener("keydown", handleKey, true);
+    return () => window.removeEventListener("keydown", handleKey, true);
+  }, [onClose]);
+
+  const handleSubmit = () => {
+    if (!message.trim() || committing) return;
+    onCommit(message);
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+      onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div className="bg-(--bg-surface) rounded-2xl border border-(--border-subtle) p-8 max-w-md w-full mx-4 shadow-2xl flex flex-col gap-5">
+        <div className="flex flex-col gap-1">
+          <h2 className="font-['Bricolage_Grotesque',sans-serif] text-[22px] font-semibold text-(--text-primary) m-0 leading-tight">
+            Create commit
+          </h2>
+          <p className="m-0 text-[13px] text-(--text-muted)">
+            {count} change{count !== 1 ? "s" : ""} will be committed
+          </p>
+        </div>
+
+        <textarea
+          ref={textareaRef}
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+          placeholder="Commit message…"
+          rows={3}
+          disabled={committing}
+          className="w-full resize-none bg-(--bg-elevated) border border-(--border-subtle) rounded-lg text-[14px] text-(--text-primary) px-3 py-2.5 placeholder:text-(--text-muted) focus:outline-none focus:border-(--accent) transition-colors duration-150 disabled:opacity-50"
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) handleSubmit();
+          }}
+        />
+
+        <div className="flex items-center justify-between">
+          <button
+            onClick={onClose}
+            className="text-[13px] text-(--text-muted) bg-transparent border-none cursor-pointer hover:text-(--text-secondary) transition-colors duration-150 px-0 py-0"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSubmit}
+            disabled={!message.trim() || committing}
+            className={[
+              "px-5 py-2 rounded-xl text-[13px] font-semibold transition-colors duration-150",
+              !message.trim() || committing
+                ? "border border-(--border-subtle) bg-(--bg-elevated) text-(--text-muted) cursor-not-allowed"
+                : "border border-(--border-subtle) bg-(--bg-elevated) text-(--text-primary) cursor-pointer hover:bg-(--bg-hover)",
+            ].join(" ")}
+          >
+            {committing ? "Committing…" : "Commit"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 // ── Sub-components ────────────────────────────────────────────────────────────
 
@@ -134,13 +222,7 @@ const Banner = ({
   );
 };
 
-// ── Row components ────────────────────────────────────────────────────────────
-
-const ChangeRow = ({
-  children,
-}: {
-  children: React.ReactNode;
-}) => (
+const ChangeRow = ({ children }: { children: React.ReactNode }) => (
   <div className="flex items-center gap-3 px-4 py-2.5 rounded-lg border border-white/7 bg-white/2.5">
     {children}
   </div>
@@ -150,8 +232,8 @@ const ChangeRow = ({
 
 export const VCChangesPane = ({ projectPath }: VCChangesPaneProps) => {
   const { status, refresh } = useVersionControl();
-  const [commitMessage, setCommitMessage] = useState("");
   const [committing, setCommitting] = useState(false);
+  const [showCommitModal, setShowCommitModal] = useState(false);
   const [search, setSearch] = useState("");
 
   const [expandedDiff, setExpandedDiff] = useState<string | null>(null);
@@ -180,17 +262,18 @@ export const VCChangesPane = ({ projectPath }: VCChangesPaneProps) => {
   );
 
   const count = (filteredClaude ? 1 : 0) + filteredAgents.length + filteredSkills.length;
-  const hasChanges = (grouped.claude ? 1 : 0) + grouped.agents.length + grouped.skills.length > 0;
+  const totalCount = (grouped.claude ? 1 : 0) + grouped.agents.length + grouped.skills.length;
+  const hasChanges = totalCount > 0;
 
   const toggleDiff = (key: string) =>
     setExpandedDiff((prev) => (prev === key ? null : key));
 
-  const handleCommit = async () => {
-    if (!commitMessage.trim() || !hasChanges || committing) return;
+  const handleCommit = async (message: string) => {
+    if (!message.trim() || !hasChanges || committing) return;
     setCommitting(true);
     try {
-      await postVcCommit(projectPath, commitMessage.trim());
-      setCommitMessage("");
+      await postVcCommit(projectPath, message.trim());
+      setShowCommitModal(false);
       setExpandedDiff(null);
       setExpandedSkill(null);
       refresh();
@@ -222,6 +305,15 @@ export const VCChangesPane = ({ projectPath }: VCChangesPaneProps) => {
 
   return (
     <div className="flex-1 flex flex-col min-h-0 bg-(--bg-base)">
+
+      {showCommitModal && (
+        <CommitModal
+          count={totalCount}
+          committing={committing}
+          onCommit={handleCommit}
+          onClose={() => setShowCommitModal(false)}
+        />
+      )}
 
       {/* ── Banners ─────────────────────────────────────────────────── */}
       {gitignore.claudeIgnored && (
@@ -292,10 +384,21 @@ export const VCChangesPane = ({ projectPath }: VCChangesPaneProps) => {
       )}
 
       {/* ── Header ──────────────────────────────────────────────────── */}
-      <div className="shrink-0 w-full px-14 pt-16 pb-6 border-b border-(--border-faint)">
-        <h1 className="font-['Bricolage_Grotesque',sans-serif] text-[40px] font-bold text-(--text-primary) tracking-[-0.03em] leading-[1.05] m-0 mb-10">
-          Version Control
-        </h1>
+      <div className="shrink-0 w-full px-14 pt-16 pb-6">
+        <div className="flex items-center justify-between mb-10">
+          <h1 className="font-['Bricolage_Grotesque',sans-serif] text-[40px] font-bold text-(--text-primary) tracking-[-0.03em] leading-[1.05] m-0">
+            Version Control
+          </h1>
+          {hasChanges && (
+            <button
+              onClick={() => setShowCommitModal(true)}
+              className="flex items-center gap-1.75 px-4 py-2 rounded-lg border-none bg-white text-gray-900 text-[14px] font-semibold cursor-pointer shrink-0 transition-all duration-150 hover:bg-white/90"
+            >
+              <CommitIcon />
+              Create commit
+            </button>
+          )}
+        </div>
         <div className="relative mb-4">
           <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-(--text-muted) flex items-center pointer-events-none">
             <SearchIcon />
@@ -314,7 +417,7 @@ export const VCChangesPane = ({ projectPath }: VCChangesPaneProps) => {
       <div className="flex-1 min-h-0 overflow-y-auto px-14 py-6 flex flex-col gap-1">
         {hasChanges ? (
           <>
-            <div className="mb-2 px-2 flex items-center">
+            <div className="mb-3 px-2">
               <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-(--text-muted)">
                 Changes ({count})
               </span>
@@ -445,30 +548,6 @@ export const VCChangesPane = ({ projectPath }: VCChangesPaneProps) => {
             <span>All changes committed</span>
           </div>
         )}
-      </div>
-
-      {/* ── Commit section ───────────────────────────────────────────── */}
-      <div className="shrink-0 px-14 py-4 border-t border-(--border-faint) flex flex-col gap-2">
-        <textarea
-          value={commitMessage}
-          onChange={(e) => setCommitMessage(e.target.value)}
-          placeholder="Commit message…"
-          rows={2}
-          disabled={!hasChanges}
-          className="w-full resize-none bg-(--bg-surface) border border-(--border-subtle) rounded-lg text-[13px] text-(--text-primary) px-3 py-2 placeholder:text-(--text-muted) focus:outline-none focus:border-(--accent)/50 transition-colors duration-150 disabled:opacity-40 disabled:cursor-not-allowed"
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
-              handleCommit();
-            }
-          }}
-        />
-        <button
-          onClick={handleCommit}
-          disabled={!hasChanges || !commitMessage.trim() || committing}
-          className="self-end px-4 py-2 rounded-lg text-[13px] font-semibold text-white bg-(--accent) border-none cursor-pointer transition-all duration-150 hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
-        >
-          {committing ? "Committing…" : "Commit Changes"}
-        </button>
       </div>
     </div>
   );

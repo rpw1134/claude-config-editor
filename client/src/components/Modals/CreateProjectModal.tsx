@@ -227,8 +227,8 @@ export const CreateProjectModal = ({
               className={[
                 "shrink-0 mt-0.5 w-4 h-4 rounded flex items-center justify-center border transition-colors duration-150",
                 enableVC
-                  ? "bg-(--accent) border-(--accent)"
-                  : "bg-(--bg-elevated) border-(--border-subtle) group-hover:border-(--accent)/50",
+                  ? "bg-white/12 border-white/25"
+                  : "bg-(--bg-elevated) border-(--border-subtle) group-hover:border-white/20",
               ].join(" ")}
             >
               {enableVC && (
@@ -238,7 +238,7 @@ export const CreateProjectModal = ({
               )}
             </div>
             <div>
-              <span className="block text-[13px] font-medium text-(--text-primary)">
+              <span className="block text-[13px] font-medium text-(--text-secondary)">
                 Enable version control
               </span>
               <span className="block text-[12px] text-(--text-muted) mt-0.5">

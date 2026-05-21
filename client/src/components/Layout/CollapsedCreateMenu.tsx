@@ -1,10 +1,10 @@
 import { useEffect, useRef } from "react";
-import { AgentIcon, SkillIcon, McpIcon } from "../Icons";
+import { AgentIcon, SkillIcon, McpIcon, HooksIcon } from "../Icons";
 
 interface CollapsedCreateMenuProps {
   x: number;
   y: number;
-  onSelect: (type: "agent" | "skill" | "mcp-server" | "project") => void;
+  onSelect: (type: "agent" | "skill" | "mcp-server" | "hooks" | "project") => void;
   onClose: () => void;
 }
 
@@ -31,13 +31,14 @@ export const CollapsedCreateMenu = ({
   }, [onClose]);
 
   const options: {
-    type: "agent" | "skill" | "mcp-server";
+    type: "agent" | "skill" | "mcp-server" | "hooks";
     label: string;
     icon: React.ReactNode;
   }[] = [
     { type: "agent", label: "Agent", icon: <AgentIcon /> },
     { type: "skill", label: "Skill", icon: <SkillIcon /> },
     { type: "mcp-server", label: "MCP Server", icon: <McpIcon /> },
+    { type: "hooks", label: "Hooks", icon: <HooksIcon /> },
   ];
 
   return (

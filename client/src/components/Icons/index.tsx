@@ -343,6 +343,13 @@ export const FileIcon = () => (
   </svg>
 );
 
+export const CommitIcon = () => (
+  <svg className="w-4 h-4" viewBox="0 0 16 16" fill="currentColor">
+    <circle cx="8" cy="8" r="2.5" />
+    <path d="M8 0v4.5M8 11.5V16M0 8h4.5M11.5 8H16" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round" />
+  </svg>
+);
+
 export const StrydeLogoIcon = ({ size = 20 }: { size?: number }) => (
   <svg
     width={size}

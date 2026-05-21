@@ -146,7 +146,7 @@ export default function App() {
   };
 
   const handleCreateNew = (
-    type: "agent" | "skill" | "mcp-server" | "project",
+    type: "agent" | "skill" | "mcp-server" | "hooks" | "project",
   ) => {
     if (type === "project") {
       setModalType("project");
@@ -155,6 +155,8 @@ export default function App() {
     if (!selectedProjectPath) return;
     if (type === "agent") {
       navigate(`/${encodeProject(selectedProjectPath)}/agents/new`);
+    } else if (type === "hooks") {
+      navigate(`/${encodeProject(selectedProjectPath)}/hooks`);
     } else {
       setModalType(type);
     }

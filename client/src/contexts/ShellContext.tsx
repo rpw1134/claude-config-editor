@@ -8,7 +8,7 @@ export interface ShellContextValue {
   onRecentClick: (item: RecentItem) => void;
   addToRecents: (type: RecentItem["type"], name: string) => void;
   removeFromRecents: (type: RecentItem["type"], name: string) => void;
-  onCreateNew: (type: "agent" | "skill" | "mcp-server" | "project") => void;
+  onCreateNew: (type: "agent" | "skill" | "mcp-server" | "hooks" | "project") => void;
   sidebarCollapsed: boolean;
   onToggleCollapsed: () => void;
   agentsRefreshKey: number;

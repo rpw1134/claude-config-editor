@@ -200,12 +200,20 @@ router.post(
     if (projectPath === null) return;
     const file = validateFileName(rawFile, res);
     if (file === null) return;
-    const filePath = `${getConfigDir(projectPath)}/skills/${name}/${file}`;
+    const configDir = getConfigDir(projectPath);
+    const filePath = `${configDir}/skills/${name}/${file}`;
     try {
       if (await fileExists(filePath)) {
         return res.status(409).json({ message: "File already exists" });
       }
       await writeFileEnsureDir(filePath, "");
+
+      const repoRoot = await findRepoRoot(configDir) ?? await findRepoRoot(projectPath);
+      if (repoRoot) {
+        const rel = path.relative(repoRoot, filePath);
+        await stageFiles(repoRoot, [rel]);
+      }
+
       res.status(201).json({ message: "File created" });
     } catch (err) {
       next(err);
