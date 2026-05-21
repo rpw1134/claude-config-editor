@@ -41,7 +41,11 @@ async function getRepoDirs(
   projectPath: string,
 ): Promise<{ configDir: string; repoRoot: string | null }> {
   const configDir = getConfigDir(projectPath);
-  const repoRoot = await findRepoRoot(configDir);
+  let repoRoot = await findRepoRoot(configDir);
+  // configDir may not exist yet (no agents/skills created); fall back to projectPath
+  if (repoRoot === null && configDir !== projectPath) {
+    repoRoot = await findRepoRoot(projectPath);
+  }
   return { configDir, repoRoot };
 }
 
@@ -93,7 +97,12 @@ router.post(
 
       if (repoRoot === null) {
         const isGlobal = projectPath === GLOBAL_CLAUDE_DIR;
-        await initRepo(isGlobal ? configDir : projectPath);
+        if (isGlobal) {
+          await initRepo(configDir);
+        } else {
+          // Only stage .claude/ and CLAUDE.md — not the entire project tree
+          await initRepo(projectPath, [".claude", "CLAUDE.md"]);
+        }
       }
 
       await setStrydeConfig(projectPath, { versionControl: { enabled: true } });

@@ -151,11 +151,13 @@ const ItemRow = ({ name, isLast, vcStatus, onClick }: ItemRowProps) => (
     {vcStatus && (
       <span
         className={[
-          "w-2 h-2 rounded-full shrink-0 mr-4",
-          vcStatus === "M" ? "bg-amber-400" : "bg-emerald-400",
+          "shrink-0 mr-4 w-4 text-center text-[12px] font-bold font-mono",
+          vcStatus === "M" ? "text-amber-400" : "text-emerald-400",
         ].join(" ")}
-        title={vcStatus === "M" ? "Modified" : "Untracked"}
-      />
+        title={vcStatus === "M" ? "Modified" : "Added"}
+      >
+        {vcStatus === "M" ? "M" : "A"}
+      </span>
     )}
   </button>
 );

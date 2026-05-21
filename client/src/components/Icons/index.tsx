@@ -337,6 +337,12 @@ export const SearchIcon = () => (
   </svg>
 );
 
+export const FileIcon = () => (
+  <svg className="w-4 h-4" viewBox="0 0 16 16" fill="currentColor">
+    <path d="M4 0h5.5L13 3.5V14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2zm5 0v4h4L9 0z"/>
+  </svg>
+);
+
 export const StrydeLogoIcon = ({ size = 20 }: { size?: number }) => (
   <svg
     width={size}

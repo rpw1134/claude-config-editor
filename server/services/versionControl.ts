@@ -49,9 +49,15 @@ export async function findRepoRoot(fromDir: string): Promise<string | null> {
   }
 }
 
-export async function initRepo(dirPath: string): Promise<void> {
+export async function initRepo(dirPath: string, stagePaths: string[] = ["."]): Promise<void> {
   await git(["init"], dirPath);
-  await git(["add", "."], dirPath);
+  for (const p of stagePaths) {
+    try {
+      await git(["add", p], dirPath);
+    } catch {
+      // path may not exist yet — skip silently
+    }
+  }
   try {
     await git(
       ["-c", "user.name=Stryde", "-c", "user.email=stryde@local", "commit", "-m", "Initial Stryde snapshot"],
@@ -59,7 +65,7 @@ export async function initRepo(dirPath: string): Promise<void> {
     );
   } catch (err) {
     const error = err as NodeJS.ErrnoException & { code?: string | number };
-    // Exit code 1 from commit means empty repo — not an error
+    // Exit code 1 from commit means nothing to stage — not an error
     if (error.code !== 1) throw err;
   }
 }
@@ -101,7 +107,8 @@ export async function getStatus(
   if (relativeConfigDir !== ".") {
     paths.push("CLAUDE.md");
   }
-  const output = await git(["status", "--porcelain", ...paths], repoRoot);
+  // -uall expands untracked directories to individual files instead of showing "?? .claude/"
+  const output = await git(["status", "--porcelain", "-uall", ...paths], repoRoot);
   if (!output) return [];
 
   return output.split("\n").map((line) => {
@@ -179,7 +186,7 @@ export async function getChangedFilesInCommit(
   hash: string,
 ): Promise<string[]> {
   if (hash === "WORKDIR") {
-    const output = await git(["status", "--porcelain", "--", repoRelDir], repoRoot);
+    const output = await git(["status", "--porcelain", "-uall", "--", repoRelDir], repoRoot);
     if (!output) return [];
     return output.split("\n").map((l) => l.slice(3)).filter(Boolean);
   }

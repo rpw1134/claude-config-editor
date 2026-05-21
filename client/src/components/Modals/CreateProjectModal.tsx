@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { createProject } from "../../lib/api";
+import { createProject, postVcInit } from "../../lib/api";
 
 // ── Icons ─────────────────────────────────────────────────────────────────────
 
@@ -91,6 +91,7 @@ export const CreateProjectModal = ({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
+  const [enableVC, setEnableVC] = useState(false);
 
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -125,6 +126,13 @@ export const CreateProjectModal = ({
 
     try {
       const result = await createProject("~/" + pathSuffix.trim());
+      if (enableVC) {
+        try {
+          await postVcInit(result.absolutePath);
+        } catch {
+          // VC init failure doesn't block project creation
+        }
+      }
       onSuccess(result.absolutePath, result.name);
     } catch (err) {
       const e = err as Error & { code?: string };
@@ -207,8 +215,40 @@ export const CreateProjectModal = ({
             </div>
           </Field>
 
+          {/* Version control option */}
+          <label className="flex items-start gap-3 mt-4 cursor-pointer select-none group">
+            <input
+              type="checkbox"
+              checked={enableVC}
+              onChange={(e) => setEnableVC(e.target.checked)}
+              className="sr-only"
+            />
+            <div
+              className={[
+                "shrink-0 mt-0.5 w-4 h-4 rounded flex items-center justify-center border transition-colors duration-150",
+                enableVC
+                  ? "bg-(--accent) border-(--accent)"
+                  : "bg-(--bg-elevated) border-(--border-subtle) group-hover:border-(--accent)/50",
+              ].join(" ")}
+            >
+              {enableVC && (
+                <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                  <path d="M1.5 5L4 7.5L8.5 2.5" stroke="white" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              )}
+            </div>
+            <div>
+              <span className="block text-[13px] font-medium text-(--text-primary)">
+                Enable version control
+              </span>
+              <span className="block text-[12px] text-(--text-muted) mt-0.5">
+                Initialize a git repository for this project
+              </span>
+            </div>
+          </label>
+
           {/* Caption */}
-          <p className="text-[12px] text-(--text-muted) leading-relaxed mt-2">
+          <p className="text-[12px] text-(--text-muted) leading-relaxed mt-4">
             If this directory doesn't exist, it and any parent directories will
             be created automatically.
           </p>

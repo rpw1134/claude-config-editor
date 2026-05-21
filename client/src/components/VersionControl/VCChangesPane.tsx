@@ -8,6 +8,7 @@ import {
 } from "../../lib/api";
 import type { ChangeEntry } from "../../lib/api";
 import { VCDiffViewer } from "./VCDiffViewer";
+import { AgentIcon, SkillIcon, FileIcon, SearchIcon } from "../Icons";
 
 interface VCChangesPaneProps {
   projectPath: string;
@@ -28,8 +29,6 @@ interface GroupedChanges {
 }
 
 function skillFileShortName(file: string, skillName: string): string {
-  // e.g. "skills/my-skill/SKILL.md" → "SKILL.md"
-  // e.g. "skills/my-skill/scripts/foo.sh" → "scripts/foo.sh"
   const prefix = `skills/${skillName}/`;
   return file.startsWith(prefix) ? file.slice(prefix.length) : file;
 }
@@ -59,12 +58,10 @@ function groupChanges(changes: ChangeEntry[]): GroupedChanges {
         shortName: skillFileShortName(c.file, name),
       });
     }
-    // settings.json and everything else: ignored
   }
 
   const skills: GroupedChanges["skills"] = Array.from(skillMap.entries()).map(
     ([name, { files }]) => {
-      // Bubble up worst status: M > A > ??
       const status = files.some((f) => f.status === "M")
         ? "M"
         : files.some((f) => f.status === "A")
@@ -83,17 +80,21 @@ function groupChanges(changes: ChangeEntry[]): GroupedChanges {
   return { claude, agents, skills };
 }
 
-function totalCount(g: GroupedChanges): number {
-  return (g.claude ? 1 : 0) + g.agents.length + g.skills.length;
-}
-
 // ── Sub-components ────────────────────────────────────────────────────────────
 
-const StatusDot = ({ status }: { status: ChangeStatus }) => (
+const StatusLetter = ({ status }: { status: ChangeStatus }) => (
   <span
-    className={`shrink-0 w-1.5 h-1.5 rounded-full ${status === "M" ? "bg-amber-400" : "bg-emerald-400"}`}
+    className={`shrink-0 w-4 text-[11px] font-bold font-mono text-center ${
+      status === "M"
+        ? "text-amber-400"
+        : status === "A"
+          ? "text-emerald-400"
+          : "text-(--text-muted)"
+    }`}
     title={status === "M" ? "Modified" : status === "A" ? "Added" : "Untracked"}
-  />
+  >
+    {status === "M" ? "M" : status === "A" ? "A" : "?"}
+  </span>
 );
 
 const DiffButton = ({
@@ -109,12 +110,6 @@ const DiffButton = ({
   >
     {expanded ? "Hide" : "View diff"}
   </button>
-);
-
-const TypeBadge = ({ label }: { label: string }) => (
-  <span className="shrink-0 text-[10px] font-semibold uppercase tracking-widest text-(--text-muted) px-1.5 py-0.5 rounded bg-white/5 border border-white/8">
-    {label}
-  </span>
 );
 
 const Banner = ({
@@ -157,10 +152,9 @@ export const VCChangesPane = ({ projectPath }: VCChangesPaneProps) => {
   const { status, refresh } = useVersionControl();
   const [commitMessage, setCommitMessage] = useState("");
   const [committing, setCommitting] = useState(false);
+  const [search, setSearch] = useState("");
 
-  // expandedDiff: "agent:name", "claude", "skill:name:file"
   const [expandedDiff, setExpandedDiff] = useState<string | null>(null);
-  // expandedSkill: skill name whose file list is shown
   const [expandedSkill, setExpandedSkill] = useState<string | null>(null);
 
   const [localsPromptDismissed, setLocalsPromptDismissed] = useState(false);
@@ -170,8 +164,23 @@ export const VCChangesPane = ({ projectPath }: VCChangesPaneProps) => {
 
   const { changes, gitignore } = status;
   const grouped = groupChanges(changes);
-  const count = totalCount(grouped);
-  const hasChanges = count > 0;
+
+  const searchLower = search.toLowerCase();
+  const filteredClaude =
+    !grouped.claude
+      ? null
+      : search === "" || "claude.md".includes(searchLower)
+        ? grouped.claude
+        : null;
+  const filteredAgents = grouped.agents.filter(
+    (a) => search === "" || a.name.toLowerCase().includes(searchLower),
+  );
+  const filteredSkills = grouped.skills.filter(
+    (s) => search === "" || s.name.toLowerCase().includes(searchLower),
+  );
+
+  const count = (filteredClaude ? 1 : 0) + filteredAgents.length + filteredSkills.length;
+  const hasChanges = (grouped.claude ? 1 : 0) + grouped.agents.length + grouped.skills.length > 0;
 
   const toggleDiff = (key: string) =>
     setExpandedDiff((prev) => (prev === key ? null : key));
@@ -283,14 +292,26 @@ export const VCChangesPane = ({ projectPath }: VCChangesPaneProps) => {
       )}
 
       {/* ── Header ──────────────────────────────────────────────────── */}
-      <div className="shrink-0 px-6 pt-6 pb-4 border-b border-(--border-faint)">
-        <h1 className="m-0 text-[18px] font-semibold text-(--text-primary)">
+      <div className="shrink-0 w-full px-14 pt-16 pb-6 border-b border-(--border-faint)">
+        <h1 className="font-['Bricolage_Grotesque',sans-serif] text-[40px] font-bold text-(--text-primary) tracking-[-0.03em] leading-[1.05] m-0 mb-10">
           Version Control
         </h1>
+        <div className="relative mb-4">
+          <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-(--text-muted) flex items-center pointer-events-none">
+            <SearchIcon />
+          </span>
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search changes…"
+            className="w-full h-11 pl-10 pr-3.5 bg-(--bg-surface) border border-(--border-subtle) rounded-2.5 text-[15px] text-(--text-primary) outline-none box-border transition-colors duration-120 focus:border-(--border-default)"
+          />
+        </div>
       </div>
 
       {/* ── Changes list (scrollable) ────────────────────────────────── */}
-      <div className="flex-1 min-h-0 overflow-y-auto px-4 py-4 flex flex-col gap-1">
+      <div className="flex-1 min-h-0 overflow-y-auto px-14 py-6 flex flex-col gap-1">
         {hasChanges ? (
           <>
             <div className="mb-2 px-2 flex items-center">
@@ -300,18 +321,20 @@ export const VCChangesPane = ({ projectPath }: VCChangesPaneProps) => {
             </div>
 
             {/* CLAUDE.md */}
-            {grouped.claude && (() => {
+            {filteredClaude && (() => {
               const diffKey = "claude";
               const isExpanded = expandedDiff === diffKey;
               return (
                 <div key="claude" className="flex flex-col">
                   <ChangeRow>
-                    <StatusDot status={grouped.claude.status} />
+                    <span className="shrink-0 w-4 h-4 text-(--text-muted) flex items-center justify-center">
+                      <FileIcon />
+                    </span>
                     <span className="flex-1 min-w-0 font-medium text-[13px] text-(--text-primary) truncate">
                       CLAUDE.md
                     </span>
-                    <TypeBadge label="project" />
                     <DiffButton expanded={isExpanded} onToggle={() => toggleDiff(diffKey)} />
+                    <StatusLetter status={filteredClaude.status} />
                   </ChangeRow>
                   {isExpanded && (
                     <div className="mt-1.5 mb-1">
@@ -328,18 +351,20 @@ export const VCChangesPane = ({ projectPath }: VCChangesPaneProps) => {
             })()}
 
             {/* Agents */}
-            {grouped.agents.map(({ name, file, status: st }) => {
+            {filteredAgents.map(({ name, file, status: st }) => {
               const diffKey = `agent:${name}`;
               const isExpanded = expandedDiff === diffKey;
               return (
                 <div key={diffKey} className="flex flex-col">
                   <ChangeRow>
-                    <StatusDot status={st} />
+                    <span className="shrink-0 w-4 h-4 text-(--text-muted) flex items-center justify-center">
+                      <AgentIcon />
+                    </span>
                     <span className="flex-1 min-w-0 font-medium text-[13px] text-(--text-primary) truncate">
                       {name}
                     </span>
-                    <TypeBadge label="agent" />
                     <DiffButton expanded={isExpanded} onToggle={() => toggleDiff(diffKey)} />
+                    <StatusLetter status={st} />
                   </ChangeRow>
                   {isExpanded && (
                     <div className="mt-1.5 mb-1">
@@ -356,16 +381,17 @@ export const VCChangesPane = ({ projectPath }: VCChangesPaneProps) => {
             })}
 
             {/* Skills */}
-            {grouped.skills.map(({ name, status: st, files }) => {
+            {filteredSkills.map(({ name, status: st, files }) => {
               const isSkillExpanded = expandedSkill === name;
               return (
                 <div key={`skill:${name}`} className="flex flex-col gap-0.5">
                   <ChangeRow>
-                    <StatusDot status={st} />
+                    <span className="shrink-0 w-4 h-4 text-(--text-muted) flex items-center justify-center">
+                      <SkillIcon />
+                    </span>
                     <span className="flex-1 min-w-0 font-medium text-[13px] text-(--text-primary) truncate">
                       {name}
                     </span>
-                    <TypeBadge label="skill" />
                     <button
                       onClick={() =>
                         setExpandedSkill((prev) => (prev === name ? null : name))
@@ -374,6 +400,7 @@ export const VCChangesPane = ({ projectPath }: VCChangesPaneProps) => {
                     >
                       {isSkillExpanded ? "Hide files" : `${files.length} file${files.length !== 1 ? "s" : ""}`}
                     </button>
+                    <StatusLetter status={st} />
                   </ChangeRow>
 
                   {isSkillExpanded && (
@@ -384,7 +411,7 @@ export const VCChangesPane = ({ projectPath }: VCChangesPaneProps) => {
                         return (
                           <div key={diffKey} className="flex flex-col">
                             <div className="flex items-center gap-3 px-4 py-2 rounded-lg border border-white/5 bg-white/1.5">
-                              <StatusDot status={fst} />
+                              <StatusLetter status={fst} />
                               <span className="flex-1 min-w-0 font-['Fira_Code',monospace] text-[12px] text-(--text-secondary) truncate">
                                 {shortName}
                               </span>
@@ -421,7 +448,7 @@ export const VCChangesPane = ({ projectPath }: VCChangesPaneProps) => {
       </div>
 
       {/* ── Commit section ───────────────────────────────────────────── */}
-      <div className="shrink-0 p-4 border-t border-(--border-faint) flex flex-col gap-2">
+      <div className="shrink-0 px-14 py-4 border-t border-(--border-faint) flex flex-col gap-2">
         <textarea
           value={commitMessage}
           onChange={(e) => setCommitMessage(e.target.value)}
