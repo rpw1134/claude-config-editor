@@ -8,7 +8,7 @@ import {
 } from "../../lib/api";
 import type { ChangeEntry } from "../../lib/api";
 import { VCDiffViewer } from "./VCDiffViewer";
-import { AgentIcon, SkillIcon, FileIcon, SearchIcon, CommitIcon } from "../Icons";
+import { AgentIcon, SkillIcon, FileIcon, SearchIcon } from "../Icons";
 
 interface VCChangesPaneProps {
   projectPath: string;
@@ -137,7 +137,7 @@ const CommitModal = ({ count, committing, onCommit, onClose }: CommitModalProps)
           placeholder="Commit message…"
           rows={3}
           disabled={committing}
-          className="w-full resize-none bg-(--bg-elevated) border border-(--border-subtle) rounded-lg text-[14px] text-(--text-primary) px-3 py-2.5 placeholder:text-(--text-muted) focus:outline-none focus:border-(--accent) transition-colors duration-150 disabled:opacity-50"
+          className="w-full resize-none bg-(--bg-elevated) border border-(--border-subtle) rounded-lg text-[14px] text-(--text-primary) px-3 py-2.5 placeholder:text-(--text-muted) focus:outline-none focus:border-(--accent)/50 transition-colors duration-150 disabled:opacity-50"
           onKeyDown={(e) => {
             if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) handleSubmit();
           }}
@@ -153,12 +153,7 @@ const CommitModal = ({ count, committing, onCommit, onClose }: CommitModalProps)
           <button
             onClick={handleSubmit}
             disabled={!message.trim() || committing}
-            className={[
-              "px-5 py-2 rounded-xl text-[13px] font-semibold transition-colors duration-150",
-              !message.trim() || committing
-                ? "border border-(--border-subtle) bg-(--bg-elevated) text-(--text-muted) cursor-not-allowed"
-                : "border border-(--border-subtle) bg-(--bg-elevated) text-(--text-primary) cursor-pointer hover:bg-(--bg-hover)",
-            ].join(" ")}
+            className="px-5 py-2 rounded-lg text-[13px] font-semibold text-white bg-(--accent) border-none cursor-pointer transition-all duration-150 hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {committing ? "Committing…" : "Commit"}
           </button>
@@ -394,7 +389,7 @@ export const VCChangesPane = ({ projectPath }: VCChangesPaneProps) => {
               onClick={() => setShowCommitModal(true)}
               className="flex items-center gap-1.75 px-4 py-2 rounded-lg border-none bg-white text-gray-900 text-[14px] font-semibold cursor-pointer shrink-0 transition-all duration-150 hover:bg-white/90"
             >
-              <CommitIcon />
+              <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M6.5 1.5V11.5M1.5 6.5H11.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
               Create commit
             </button>
           )}
@@ -414,7 +409,7 @@ export const VCChangesPane = ({ projectPath }: VCChangesPaneProps) => {
       </div>
 
       {/* ── Changes list (scrollable) ────────────────────────────────── */}
-      <div className="flex-1 min-h-0 overflow-y-auto px-14 py-6 flex flex-col gap-1">
+      <div className="flex-1 min-h-0 overflow-y-auto px-14 pt-2 pb-6 flex flex-col gap-1">
         {hasChanges ? (
           <>
             <div className="mb-3 px-2">
@@ -545,7 +540,7 @@ export const VCChangesPane = ({ projectPath }: VCChangesPaneProps) => {
         ) : (
           <div className="flex items-center gap-2 text-(--text-muted) text-[14px] px-2 py-4">
             <span className="text-emerald-400">✓</span>
-            <span>All changes committed</span>
+            <span>No changes to commit</span>
           </div>
         )}
       </div>
