@@ -25,7 +25,7 @@ interface MarkdownEditorViewProps {
 export const MarkdownEditorView = ({
   title,
   description,
-  resolvedFilePath,
+  resolvedFilePath: _resolvedFilePath,
   content,
   onChange,
   saveStatus,
@@ -102,11 +102,6 @@ export const MarkdownEditorView = ({
             )}
           </div>
         </div>
-
-        {/* File path — small, muted, monospace */}
-        <p className="m-0 text-[13px] text-(--text-muted) font-['Fira_Code',monospace] mb-1">
-          {resolvedFilePath}
-        </p>
 
         {/* Optional description */}
         {description && (

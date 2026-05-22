@@ -10,7 +10,7 @@ import {
 import { decodeProject } from "../../lib/navigation";
 import { useSkillFileEditor } from "../../hooks/useSkillFileEditor";
 
-// /:projectId/skills/:name/reference.md|examples.md — supplementary file editor
+// /:projectId/skills/:name/template.md|examples.md — supplementary file editor
 export const SkillFileContent = () => {
   const { projectId, name, file } = useParams<{
     projectId: string;

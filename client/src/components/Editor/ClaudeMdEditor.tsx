@@ -25,7 +25,6 @@ export const ClaudeMdEditor = ({
   saveStatus,
   saveDisabled,
   onBack,
-  filePath,
   projectPath,
 }: ClaudeMdEditorProps) => {
   const [activeTab, setActiveTab] = useState<Tab>("edit");
@@ -81,11 +80,6 @@ export const ClaudeMdEditor = ({
 
         {/* Right: file path + Save */}
         <div className="flex items-center gap-3">
-          {filePath && (
-            <span className='font-["Fira_Code",monospace] text-[11px] text-(--text-muted) truncate max-w-48 hidden sm:block'>
-              {filePath}
-            </span>
-          )}
           <button
             onClick={isDisabled ? undefined : onSave}
             disabled={isDisabled}

@@ -134,9 +134,6 @@ export const McpEditorPane = ({
         </div>
 
         <div className="flex items-center gap-3">
-          <span className='font-["Fira_Code",monospace] text-[11px] text-(--text-muted) truncate max-w-48 hidden sm:block'>
-            ~/.claude/mcpServers/{name}
-          </span>
           {activeTab !== "settings" && (
             <button
               type="button"

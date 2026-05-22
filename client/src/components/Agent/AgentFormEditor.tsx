@@ -43,7 +43,6 @@ export const AgentFormEditor = ({
   saveDisabled,
   onClose,
   onBack,
-  filePath,
   agentName,
   projectPath,
 }: AgentFormEditorProps) => {
@@ -130,11 +129,6 @@ export const AgentFormEditor = ({
 
         {/* Right: file path + Save + Close actions */}
         <div className="flex items-center gap-3">
-          {filePath && (
-            <span className='font-["Fira_Code",monospace] text-[11px] text-(--text-muted) truncate max-w-48 hidden sm:block'>
-              {filePath}
-            </span>
-          )}
           {onSave &&
             (() => {
               const isSaved = saveStatus === "saved";

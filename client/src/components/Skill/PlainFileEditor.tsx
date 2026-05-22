@@ -54,11 +54,11 @@ const FILE_META: Record<
   string,
   { icon: React.ReactNode; title: string; subtitle: string }
 > = {
-  "reference.md": {
+  "template.md": {
     icon: <DocumentIcon />,
-    title: "References",
+    title: "Template",
     subtitle:
-      "Optional. Background knowledge Claude consults during skill execution.",
+      "Optional. A template that shapes the structure of Claude's output.",
   },
   "examples.md": {
     icon: <ExamplesIcon />,
@@ -92,10 +92,10 @@ export const PlainFileEditor = ({
       <div className="px-7 pt-8 pb-4 shrink-0 flex items-start justify-between gap-4">
         <div>
           <h2 className="m-0 mb-1 text-2xl font-['Bricolage_Grotesque',sans-serif] font-bold tracking-[-0.015em] text-(--text-primary)">
-            {(FILE_META[file] ?? FILE_META["reference.md"]).title}
+            {(FILE_META[file] ?? FILE_META["template.md"]).title}
           </h2>
           <p className="m-0 text-[13px] text-(--text-secondary)">
-            {(FILE_META[file] ?? FILE_META["reference.md"]).subtitle}
+            {(FILE_META[file] ?? FILE_META["template.md"]).subtitle}
           </p>
         </div>
         {onSetPreviewMode && (

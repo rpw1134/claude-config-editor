@@ -96,6 +96,52 @@ ${CLAUDE_SKILL_DIR} The directory containing the skill’s SKILL.md file. For pl
    Subagent with skills field Subagent’s markdown body Claude’s delegation message Preloaded skills + CLAUDE.md
    With context: fork, you write the task in your skill and pick an agent type to execute it. For the inverse (defining a custom subagent that uses skills as reference material), see Subagents.
 
+### Grids:
+
+A visual editor for building multi-agent orchestration systems. The output of a Grid is an orchestrator agent file whose system prompt is auto-generated from the graph you draw.
+
+#### Core concepts
+
+- **Orchestrator** — the single root node of every Grid. Intentionally thin: its only job is routing. Its system prompt is auto-generated from the graph; it does not contain domain knowledge. Lives at `~/.claude/agents/grids/<name>.md` because Claude Code scans agents recursively.
+- **Agents** — existing agents from `~/.claude/agents/` dragged onto the grid and wired to the orchestrator. Orchestrators may only connect to agents, never directly to skills.
+- **Skills** — existing skills from `~/.claude/skills/` dragged onto the grid and wired to an agent. Only agents may connect to skills.
+- **Grid-to-Grid** — a Grid can be connected as a node in another Grid (the sub-grid's orchestrator becomes a callable agent). No multi-orchestrator within a single Grid.
+
+#### Constraints (opinionated)
+
+- One orchestrator per Grid, always the root.
+- Orchestrator → Agent only. Agent → Skill only. No orchestrator-to-skill edges.
+- Nodes must be existing agents or skills (no placeholders). New agents can be created directly from the node creation menu within the Grid editor; they are simple named agents and should be edited from the Agents tab.
+
+#### Connection metadata
+
+When an edge is drawn, the user is prompted to write a description of when that node should be invoked. This description is woven into the orchestrator's auto-generated system prompt.
+
+#### Deep nesting and clean agent files
+
+Individual agent files are never modified by a Grid. Instead, the orchestrator carries all routing logic for the full tree. For `orch → agent1 → skill1`, the orchestrator's system prompt includes:
+
+> When invoking agent1: also pass the following directions — [skill1 description]
+
+This keeps agent files reusable across multiple Grids and avoids duplication.
+
+#### Storage
+
+| Artifact | Location | Purpose |
+|---|---|---|
+| Visual metadata | `.stryde/grids/<name>.json` | Node positions, edges, connection descriptions |
+| Orchestrator agent | `~/.claude/agents/grids/<name>.md` | Generated agent file; the live output Claude Code uses |
+
+The `.stryde/` directory lives at the root of the Stryde project repository. Grid metadata is source-controlled alongside the app; the generated agent files live in `~/.claude/` as with any other agent.
+
+#### UI
+
+- **Grids tab** — list pane matching the style of Agents and Skills. Selecting a Grid routes to the full-page visual editor (different navigation pattern from other tabs).
+- **Visual editor** — drag-and-drop canvas. Orchestrator node is always present and cannot be deleted. Users drag agents/skills from a side panel onto the canvas and draw edges. Connecting two nodes opens a prompt for the "when to use" description.
+- **Node creation** — the side panel shows all available agents and skills. A "+ New Agent" action creates a minimal named agent file and adds it to the panel; users are directed to the Agents tab to flesh it out.
+- **Generated prompt preview** — a read-only panel shows the orchestrator's current auto-generated system prompt, updating live as the graph changes.
+- **Save** — writes both the `.stryde/grids/<name>.json` metadata and the `~/.claude/agents/grids/<name>.md` agent file.
+
 ### Claude.md:
 
 1. Add an opinionated creator. Can see raw, or add links and references. Research what makes a good agent system

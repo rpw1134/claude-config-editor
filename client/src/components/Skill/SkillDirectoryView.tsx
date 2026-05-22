@@ -20,7 +20,7 @@ const FolderIcon = () => (
 
 // ── Static file manifest ───────────────────────────────────────────────────────
 
-const OPTIONAL_FILES = ['reference.md', 'examples.md'] as const;
+const OPTIONAL_FILES = ['template.md', 'examples.md'] as const;
 
 // ── SkillDirectoryView ─────────────────────────────────────────────────────────
 

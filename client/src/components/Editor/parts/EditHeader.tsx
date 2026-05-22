@@ -21,7 +21,7 @@ interface EditHeaderProps {
 }
 
 export const EditHeader = ({
-  filePath,
+  filePath: _filePath,
   type,
   saveStatus,
   saveDisabled,
@@ -61,9 +61,6 @@ export const EditHeader = ({
             <span className="w-px h-4 bg-(--border-subtle) mx-3 shrink-0" />
           </>
         )}
-        <span className='font-["Fira_Code",monospace] text-[12px] text-(--text-secondary) truncate'>
-          {filePath}
-        </span>
       </div>
 
       {/* Right: view toggle + preview toggle + save */}

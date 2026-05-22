@@ -6,7 +6,7 @@ import { BackArrowIcon } from "../Icons";
 
 export type SkillTabId =
   | "directory"
-  | "reference.md"
+  | "template.md"
   | "examples.md"
   | "scripts"
   | "identity"
@@ -36,10 +36,10 @@ const TABS: TabDef[] = [
   { id: "directory", label: "Skill Directory" },
   { id: "identity", label: "Identity" },
   { id: "instructions", label: "Instructions" },
-  { id: "reference.md", label: "References" },
+  { id: "template.md", label: "Template" },
   { id: "examples.md", label: "Examples" },
   { id: "scripts", label: "Scripts" },
-  { id: "settings", label: "Settings" },
+  { id: "settings", label: "Settings & Config" },
   { id: "history", label: "History" },
 ];
 
@@ -151,9 +151,6 @@ export const SkillTabBar = ({
       </div>
       {filePath && (
         <div className="flex items-center gap-3">
-          <span className='font-["Fira_Code",monospace] text-[11px] text-(--text-muted) truncate max-w-48 hidden sm:block'>
-            {filePath}
-          </span>
           {onSave && (() => {
             const isDisabled = !!saveDisabled;
             return (
