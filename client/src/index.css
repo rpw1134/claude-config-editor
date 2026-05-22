@@ -185,3 +185,82 @@ a {
     transform: translateY(0);
   }
 }
+
+/* ── Grid canvas node styles ───────────────────────────────────────────────── */
+
+.orchestrator-node {
+  background: var(--bg-elevated);
+  border: 1.5px solid rgba(0, 229, 255, 0.35);
+  box-shadow:
+    0 0 0 1px rgba(0, 229, 255, 0.08),
+    0 0 24px rgba(0, 229, 255, 0.12),
+    0 8px 32px rgba(0, 0, 0, 0.5);
+  animation: orchestratorPulse 3s ease-in-out infinite;
+  transition: box-shadow 0.2s ease, transform 0.15s ease;
+}
+
+.orchestrator-node:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 0 0 1px rgba(0, 229, 255, 0.2),
+    0 0 36px rgba(0, 229, 255, 0.22),
+    0 12px 40px rgba(0, 0, 0, 0.6);
+}
+
+@keyframes orchestratorPulse {
+  0%, 100% {
+    box-shadow:
+      0 0 0 1px rgba(0, 229, 255, 0.08),
+      0 0 24px rgba(0, 229, 255, 0.12),
+      0 8px 32px rgba(0, 0, 0, 0.5);
+  }
+  50% {
+    box-shadow:
+      0 0 0 1px rgba(0, 229, 255, 0.18),
+      0 0 36px rgba(0, 229, 255, 0.22),
+      0 8px 32px rgba(0, 0, 0, 0.5);
+  }
+}
+
+.agent-node {
+  background: var(--bg-elevated);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-left: 3px solid var(--accent);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  transition: box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.agent-node:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.5), 0 0 12px rgba(0, 229, 255, 0.08);
+}
+
+.skill-node {
+  background: rgba(124, 58, 237, 0.18);
+  border: 1px solid rgba(124, 58, 237, 0.4);
+  box-shadow: 0 4px 16px rgba(124, 58, 237, 0.15);
+  transition: box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.skill-node:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(124, 58, 237, 0.25);
+}
+
+/* React Flow overrides for dark theme */
+.react-flow__controls-button {
+  background: var(--bg-elevated) !important;
+  border-color: var(--border-subtle) !important;
+  fill: var(--text-secondary) !important;
+  color: var(--text-secondary) !important;
+}
+
+.react-flow__controls-button:hover {
+  background: var(--bg-hover) !important;
+  fill: var(--text-primary) !important;
+}
+
+@keyframes gridEdgeDash {
+  from { stroke-dashoffset: 18; }
+  to { stroke-dashoffset: 0; }
+}

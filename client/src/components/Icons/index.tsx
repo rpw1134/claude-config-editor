@@ -350,6 +350,24 @@ export const CommitIcon = () => (
   </svg>
 );
 
+export const GridsIcon = ({ size = 20 }: { size?: number }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 15 15"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <circle cx="7.5" cy="7.5" r="1.5" stroke="currentColor" strokeWidth="1.15" fill="none" />
+    <circle cx="2.5" cy="3" r="1.2" stroke="currentColor" strokeWidth="1.1" fill="none" />
+    <circle cx="12.5" cy="3" r="1.2" stroke="currentColor" strokeWidth="1.1" fill="none" />
+    <circle cx="2.5" cy="12" r="1.2" stroke="currentColor" strokeWidth="1.1" fill="none" />
+    <circle cx="12.5" cy="12" r="1.2" stroke="currentColor" strokeWidth="1.1" fill="none" />
+    <path d="M3.5 3.6L6.4 6.5M8.6 8.5L11.5 11.4" stroke="currentColor" strokeWidth="1.05" strokeLinecap="round" />
+    <path d="M11.5 3.6L8.6 6.5M6.4 8.5L3.5 11.4" stroke="currentColor" strokeWidth="1.05" strokeLinecap="round" />
+  </svg>
+);
+
 export const StrydeLogoIcon = ({ size = 20 }: { size?: number }) => (
   <svg
     width={size}

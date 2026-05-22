@@ -36,6 +36,7 @@ import {
   ScriptEditorContent,
 } from "./routes/SkillRoutes";
 import { VCContent } from "./routes/VCRoutes";
+import { GridsLandingContent, GridEditor } from "./routes/GridRoutes";
 import { ShellContext } from "./contexts/ShellContext";
 import { VersionControlProvider } from "./contexts/VersionControlContext";
 import type { ShellContextValue } from "./contexts/ShellContext";
@@ -65,12 +66,14 @@ export default function App() {
   const [skillsRefreshKey, setSkillsRefreshKey] = useState(0);
   const [mcpRefreshKey, setMcpRefreshKey] = useState(0);
   const [projectsRefreshKey, setProjectsRefreshKey] = useState(0);
+  const [gridsRefreshKey, setGridsRefreshKey] = useState(0);
   const [vcRefreshKey, setVcRefreshKey] = useState(0);
   const onBumpProjectsRefresh = useCallback(
     () => setProjectsRefreshKey((k) => k + 1),
     [],
   );
   const onBumpVcRefresh = useCallback(() => setVcRefreshKey((k) => k + 1), []);
+  const onBumpGridsRefresh = useCallback(() => setGridsRefreshKey((k) => k + 1), []);
 
   // Modal for skill / mcp-server create
   const [modalType, setModalType] = useState<
@@ -146,7 +149,7 @@ export default function App() {
   };
 
   const handleCreateNew = (
-    type: "agent" | "skill" | "mcp-server" | "hooks" | "project",
+    type: "agent" | "skill" | "mcp-server" | "hooks" | "project" | "grid",
   ) => {
     if (type === "project") {
       setModalType("project");
@@ -157,6 +160,8 @@ export default function App() {
       navigate(`/${encodeProject(selectedProjectPath)}/agents/new`);
     } else if (type === "hooks") {
       navigate(`/${encodeProject(selectedProjectPath)}/hooks`);
+    } else if (type === "grid") {
+      navigate(`/${encodeProject(selectedProjectPath)}/grids`);
     } else {
       setModalType(type);
     }
@@ -195,10 +200,12 @@ export default function App() {
     skillsRefreshKey,
     mcpRefreshKey,
     projectsRefreshKey,
+    gridsRefreshKey,
     onBumpAgentsRefresh: () => setAgentsRefreshKey((k) => k + 1),
     onBumpSkillsRefresh: () => setSkillsRefreshKey((k) => k + 1),
     onBumpMcpRefresh: () => setMcpRefreshKey((k) => k + 1),
     onBumpProjectsRefresh,
+    onBumpGridsRefresh,
     vcRefreshKey,
     onBumpVcRefresh,
     showToast,
@@ -258,7 +265,13 @@ export default function App() {
                 path="/:projectId/version-control"
                 element={<VCContent />}
               />
+
+              {/* Grids list — inside Shell */}
+              <Route path="/:projectId/grids" element={<GridsLandingContent />} />
             </Route>
+
+            {/* Grid canvas editor — full-page, outside Shell */}
+            <Route path="/:projectId/grids/:name" element={<GridEditor />} />
           </Routes>
 
           {/* Create modals */}

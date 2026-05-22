@@ -341,3 +341,28 @@ export async function fetchVcDiffFiles(
   );
   return data.files;
 }
+
+// ── Grids ──────────────────────────────────────────────────────────────────────
+
+import type { GridData, GridSummary } from '../types/grids';
+export type { GridData, GridSummary };
+
+export async function listGrids(_projectPath: string): Promise<GridSummary[]> {
+  return get<GridSummary[]>('/api/grids');
+}
+
+export async function getGrid(_projectPath: string, name: string): Promise<GridData> {
+  return get<GridData>(`/api/grids/${encodeURIComponent(name)}`);
+}
+
+export async function createGrid(_projectPath: string, name: string, description: string): Promise<void> {
+  await post('/api/grids', { name, description });
+}
+
+export async function updateGrid(_projectPath: string, name: string, data: GridData): Promise<void> {
+  await put(`/api/grids/${encodeURIComponent(name)}`, { data });
+}
+
+export async function deleteGrid(_projectPath: string, name: string): Promise<void> {
+  await del(`/api/grids/${encodeURIComponent(name)}`);
+}

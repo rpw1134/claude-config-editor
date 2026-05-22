@@ -12,6 +12,7 @@ import {
   McpIcon,
   HooksIcon,
   VersionControlIcon,
+  GridsIcon,
   PlusIcon,
   SettingsIcon,
   SidebarCloseIcon,
@@ -96,6 +97,7 @@ export const Sidebar = ({
     if (pathname.startsWith(`${base}/version-control`)) return "version-control";
     if (pathname.startsWith(`${base}/claude-md`)) return "claude-md";
     if (pathname.startsWith(`${base}/settings`)) return "settings";
+    if (pathname.startsWith(`${base}/grids`)) return "grids";
     return "welcome";
   })();
 
@@ -109,6 +111,7 @@ export const Sidebar = ({
     else if (tab === "hooks") navigate(`${base}/hooks`);
     else if (tab === "version-control") navigate(`${base}/version-control`);
     else if (tab === "settings") navigate(`${base}/settings`);
+    else if (tab === "grids") navigate(`${base}/grids`);
     else navigate(base);
   };
 
@@ -329,6 +332,14 @@ export const Sidebar = ({
           collapsed={collapsed}
           onClick={() => navigateTo("version-control")}
           badge={changeCount}
+        />
+        <NavButton
+          icon={<GridsIcon />}
+          label="Grids"
+          active={activeTab === "grids"}
+          disabled={!hasProject}
+          collapsed={collapsed}
+          onClick={() => navigateTo("grids")}
         />
       </div>
 
