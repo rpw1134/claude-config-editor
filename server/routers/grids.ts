@@ -364,6 +364,16 @@ router.put(
       await writeFileEnsureDir(filePath, JSON.stringify(grid, null, 2));
       await writeAgentFile(projectPath, grid);
 
+      const projectRepoRoot = await findRepoRoot(projectPath);
+      if (projectRepoRoot) {
+        await stageFiles(projectRepoRoot, [path.relative(projectRepoRoot, filePath)]);
+      }
+      const agentFilePath = agentPath(projectPath, name);
+      const agentRepoRoot = await findRepoRoot(path.dirname(agentFilePath));
+      if (agentRepoRoot) {
+        await stageFiles(agentRepoRoot, [path.relative(agentRepoRoot, agentFilePath)]);
+      }
+
       res.status(200).json({ message: "Grid saved" });
     } catch (err) {
       next(err);

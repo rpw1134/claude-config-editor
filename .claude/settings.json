@@ -15,7 +15,9 @@
       "mcp__playwright__browser_evaluate",
       "mcp__playwright__browser_click",
       "mcp__playwright__browser_snapshot",
-      "mcp__playwright__browser_hover"
+      "mcp__playwright__browser_hover",
+      "Bash(curl -s \"http://localhost:3000/api/vc/status?projectPath=/Users/ryanwilliams/.claude\")",
+      "Bash(curl -s -X POST http://localhost:3000/api/vc/commit -H 'Content-Type: application/json' -d '{\"projectPath\": \"/Users/ryanwilliams/.claude\", \"message\": \"test: verify grid history fix\"}')"
     ]
   }
 }

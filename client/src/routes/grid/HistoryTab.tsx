@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { fetchVcStatus, fetchVcLog, postVcInit } from '../../lib/api';
 import type { Commit } from '../../lib/api';
+import { VCDiffViewer } from '../../components/VersionControl/VCDiffViewer';
 
 interface HistoryTabProps {
   projectPath: string;
@@ -100,21 +101,41 @@ const VCInitBlock = ({ projectPath, onInitialized }: VCInitBlockProps) => {
 
 interface CommitRowProps {
   commit: Commit;
+  projectPath: string;
+  gridFilePath: string;
 }
 
-const CommitRow = ({ commit }: CommitRowProps) => {
+const CommitRow = ({ commit, projectPath, gridFilePath }: CommitRowProps) => {
+  const [showDiff, setShowDiff] = useState(false);
   const shortHash = commit.hash.slice(0, 7);
   return (
-    <div className="flex items-start gap-4 py-3 border-b border-(--border-faint) last:border-b-0">
-      <div className="mt-2 w-2 h-2 rounded-full bg-(--border-subtle) shrink-0" />
-      <div className="flex flex-col gap-0.5 flex-1 min-w-0">
-        <p className="text-[13px] text-(--text-primary) m-0 truncate">{commit.message}</p>
-        <div className="flex items-center gap-2">
-          <span className="font-mono text-[11px] text-(--text-muted)">{shortHash}</span>
-          <span className="text-[11px] text-(--border-subtle)">·</span>
-          <span className="text-[11px] text-(--text-muted)">{formatDate(commit.date)}</span>
+    <div className="flex flex-col border-b border-(--border-faint) last:border-b-0">
+      <div className="flex items-start gap-4 py-3">
+        <div className="mt-2 w-2 h-2 rounded-full bg-(--border-subtle) shrink-0" />
+        <div className="flex flex-col gap-0.5 flex-1 min-w-0">
+          <p className="text-[13px] text-(--text-primary) m-0 truncate">{commit.message}</p>
+          <div className="flex items-center gap-2">
+            <span className="font-mono text-[11px] text-(--text-muted)">{shortHash}</span>
+            <span className="text-[11px] text-(--border-subtle)">·</span>
+            <span className="text-[11px] text-(--text-muted)">{formatDate(commit.date)}</span>
+          </div>
         </div>
+        <button
+          onClick={() => setShowDiff((v) => !v)}
+          className="text-(--accent) bg-transparent border-none cursor-pointer text-[12px] font-medium px-2 py-1 rounded hover:bg-(--accent)/8 shrink-0 transition-colors duration-150"
+        >
+          {showDiff ? 'Hide diff' : 'View diff'}
+        </button>
       </div>
+      {showDiff && (
+        <div className="pb-3">
+          <VCDiffViewer
+            projectPath={projectPath}
+            filePath={gridFilePath}
+            hash={commit.hash}
+          />
+        </div>
+      )}
     </div>
   );
 };
@@ -194,7 +215,12 @@ export const HistoryTab = ({ projectPath, gridName }: HistoryTabProps) => {
         ) : (
           <div className="bg-(--bg-surface) border border-(--border-subtle) rounded-xl overflow-hidden px-4">
             {commits.map((commit) => (
-              <CommitRow key={commit.hash} commit={commit} />
+              <CommitRow
+                key={commit.hash}
+                commit={commit}
+                projectPath={projectPath}
+                gridFilePath={gridFilePath}
+              />
             ))}
           </div>
         )}

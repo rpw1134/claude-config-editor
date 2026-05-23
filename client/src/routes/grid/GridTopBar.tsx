@@ -36,7 +36,7 @@ export const GridTopBar = ({
   onSave,
   onUndo,
 }: GridTopBarProps) => (
-  <div className={`shrink-0 flex items-stretch justify-between px-4 transition-colors duration-250 ${sidebarCollapsed ? "bg-(--bg-base)" : "bg-(--bg-sidebar) border-b border-(--border-faint)"}`}>
+  <div className={`shrink-0 flex items-stretch justify-between px-4 border-b transition-[background-color,border-color] duration-250 ${sidebarCollapsed ? "bg-(--bg-base) border-transparent" : "bg-(--bg-sidebar) border-(--border-faint)"}`}>
     <div className="flex items-stretch gap-1">
       {/* Back button */}
       <button

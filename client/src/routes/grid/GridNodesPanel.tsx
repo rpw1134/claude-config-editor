@@ -332,17 +332,19 @@ export const GridNodesPanel = ({
 
   return (
     <aside
-      className={`shrink-0 flex flex-col h-full overflow-hidden transition-[width,background-color] duration-250 ease-in-out ${
+      className={`shrink-0 flex flex-col h-full overflow-hidden border-r transition-[width,background-color,border-color] duration-250 ease-in-out ${
         collapsed
-          ? "bg-(--bg-base)"
-          : "bg-(--bg-sidebar) border-r border-(--border-faint)"
+          ? "bg-(--bg-base) border-transparent"
+          : "bg-(--bg-sidebar) border-(--border-faint)"
       }`}
       style={{ width: collapsed ? 52 : 260 }}
     >
       {/* Header */}
       <div
-        className={`pt-4 pb-3 min-h-17 shrink-0 flex items-center pl-2 ${
-          collapsed ? "gap-0" : "gap-2.5 pr-3 border-b border-(--border-faint)"
+        className={`pt-4 pb-3 min-h-17 shrink-0 flex items-center pl-2 border-b transition-[border-color] duration-250 ease-in-out ${
+          collapsed
+            ? "gap-0 border-transparent"
+            : "gap-2.5 pr-3 border-(--border-faint)"
         }`}
       >
         <button

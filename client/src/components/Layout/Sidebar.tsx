@@ -333,6 +333,13 @@ export const Sidebar = ({
           onClick={() => navigateTo("version-control")}
           badge={changeCount}
         />
+
+        {/* Grids section divider */}
+        <div
+          className="mx-2 my-1.5 border-t border-(--border-faint) shrink-0 transition-opacity duration-100"
+          style={{ opacity: collapsed ? 0 : 1 }}
+        />
+
         <NavButton
           icon={<GridsIcon />}
           label="Grids"

@@ -53,10 +53,13 @@ function isGitNotFoundError(err: unknown): boolean {
   return (err as NodeJS.ErrnoException & { code?: string })?.code === "GIT_NOT_FOUND";
 }
 
-// Convert a configDir-relative path to a repoRoot-relative path.
-// CLAUDE.md is a special case: it lives at the repo root, not inside configDir.
+// Convert a path to a repoRoot-relative path.
+// Absolute paths are resolved directly against repoRoot.
+// Relative paths are assumed to be configDir-relative and prefixed accordingly.
+// CLAUDE.md is a special case: it lives at the repo root.
 function resolveFilePath(repoRoot: string, configDir: string, file: string): string {
   if (file === "CLAUDE.md") return "CLAUDE.md";
+  if (path.isAbsolute(file)) return path.relative(repoRoot, file);
   const prefix = path.relative(repoRoot, configDir);
   return prefix ? path.join(prefix, file) : file;
 }
@@ -128,12 +131,27 @@ router.get(
     }
 
     try {
-      const { repoRoot, configDir } = await getRepoDirs(projectPath);
-      if (repoRoot === null) {
-        return res.status(404).json({ message: "Version control not initialized" });
+      let repoRoot: string | null;
+      let repoRelFile: string;
+
+      if (path.isAbsolute(file)) {
+        // File path is absolute — find the repo from the file's own directory.
+        // This handles grid JSON files at projectPath/.stryde/ which live outside
+        // the .claude sub-repo that getRepoDirs would otherwise return.
+        repoRoot = await findRepoRoot(path.dirname(file));
+        if (repoRoot === null) {
+          return res.status(404).json({ message: "Version control not initialized" });
+        }
+        repoRelFile = path.relative(repoRoot, file);
+      } else {
+        const dirs = await getRepoDirs(projectPath);
+        repoRoot = dirs.repoRoot;
+        if (repoRoot === null) {
+          return res.status(404).json({ message: "Version control not initialized" });
+        }
+        repoRelFile = resolveFilePath(repoRoot, dirs.configDir, file);
       }
 
-      const repoRelFile = resolveFilePath(repoRoot, configDir, file);
       const commits = await getFileLog(repoRoot, repoRelFile);
       res.json({ commits });
     } catch (err) {

@@ -86,13 +86,17 @@ export async function commitAll(
   message: string,
 ): Promise<void> {
   const rel = path.relative(repoRoot, configDir);
-  // When configDir IS the repo root, rel is "" — use "." so git accepts it.
   const relativeConfigDir = rel === "" ? "." : rel;
   const paths = [relativeConfigDir];
   if (relativeConfigDir !== ".") {
     paths.push("CLAUDE.md");
   }
-  await git(["add", ...paths], repoRoot);
+  for (const p of paths) {
+    try { await git(["add", p], repoRoot); } catch { /* path may not exist */ }
+  }
+  // Grid files live in .stryde/ at the project root. Use --force so they are
+  // staged even when .stryde/ appears in .gitignore (common in project repos).
+  try { await git(["add", "--force", ".stryde"], repoRoot); } catch { /* path may not exist */ }
   await git(
     ["-c", "user.name=Stryde", "-c", "user.email=stryde@local", "commit", "-m", message],
     repoRoot,
