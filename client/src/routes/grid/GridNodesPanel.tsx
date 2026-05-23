@@ -1,9 +1,14 @@
-import { useEffect, useState } from 'react';
-import { fetchAgents, fetchSkills, createAgent, createSkill } from '../../lib/api';
+import { useEffect, useState } from "react";
+import {
+  fetchAgents,
+  fetchSkills,
+  createAgent,
+  createSkill,
+} from "../../lib/api";
 
 interface DraggableItemProps {
   name: string;
-  type: 'agent' | 'skill';
+  type: "agent" | "skill";
 }
 
 const DraggableItem = ({ name, type }: DraggableItemProps) => {
@@ -11,10 +16,13 @@ const DraggableItem = ({ name, type }: DraggableItemProps) => {
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
     const offsetX = e.clientX - rect.left;
     const offsetY = e.clientY - rect.top;
-    e.dataTransfer.setData('application/grid-node-type', type);
-    e.dataTransfer.setData('application/grid-node-name', name);
-    e.dataTransfer.setData('application/drag-offset', JSON.stringify({ offsetX, offsetY }));
-    e.dataTransfer.effectAllowed = 'copy';
+    e.dataTransfer.setData("application/grid-node-type", type);
+    e.dataTransfer.setData("application/grid-node-name", name);
+    e.dataTransfer.setData(
+      "application/drag-offset",
+      JSON.stringify({ offsetX, offsetY }),
+    );
+    e.dataTransfer.effectAllowed = "copy";
   };
 
   return (
@@ -22,23 +30,55 @@ const DraggableItem = ({ name, type }: DraggableItemProps) => {
       draggable
       onDragStart={handleDragStart}
       className={[
-        'flex items-center gap-2.5 px-3 py-2 rounded-lg cursor-grab active:cursor-grabbing',
-        'bg-white/3 border border-white/6 hover:bg-white/6 hover:border-white/12',
-        'transition-all duration-120 select-none',
-      ].join(' ')}
+        "flex items-center gap-2.5 px-3 py-2 rounded-lg cursor-grab active:cursor-grabbing",
+        "bg-white/3 border border-white/6 hover:bg-white/6 hover:border-white/12",
+        "transition-all duration-120 select-none",
+      ].join(" ")}
     >
-      {type === 'agent' ? (
-        <svg width="12" height="12" viewBox="0 0 15 15" fill="none" className="text-(--text-muted) shrink-0">
-          <circle cx="7.5" cy="5" r="3" stroke="currentColor" strokeWidth="1.3" fill="none" />
-          <path d="M2 13C2 10.24 4.46 8 7.5 8C10.54 8 13 10.24 13 13" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" fill="none" />
+      {type === "agent" ? (
+        <svg
+          width="12"
+          height="12"
+          viewBox="0 0 15 15"
+          fill="none"
+          className="text-(--text-muted) shrink-0"
+        >
+          <circle
+            cx="7.5"
+            cy="5"
+            r="3"
+            stroke="currentColor"
+            strokeWidth="1.3"
+            fill="none"
+          />
+          <path
+            d="M2 13C2 10.24 4.46 8 7.5 8C10.54 8 13 10.24 13 13"
+            stroke="currentColor"
+            strokeWidth="1.3"
+            strokeLinecap="round"
+            fill="none"
+          />
         </svg>
       ) : (
-        <svg width="12" height="12" viewBox="0 0 15 15" fill="none" className="text-[#a78bfa] shrink-0">
-          <path d="M7.5 1L9.18 5.27L13.5 5.64L10.35 8.38L11.35 12.59L7.5 10.2L3.65 12.59L4.65 8.38L1.5 5.64L5.82 5.27L7.5 1Z"
-            stroke="currentColor" strokeWidth="1.3" fill="none" strokeLinejoin="round" />
+        <svg
+          width="12"
+          height="12"
+          viewBox="0 0 15 15"
+          fill="none"
+          className="text-[#a78bfa] shrink-0"
+        >
+          <path
+            d="M7.5 1L9.18 5.27L13.5 5.64L10.35 8.38L11.35 12.59L7.5 10.2L3.65 12.59L4.65 8.38L1.5 5.64L5.82 5.27L7.5 1Z"
+            stroke="currentColor"
+            strokeWidth="1.3"
+            fill="none"
+            strokeLinejoin="round"
+          />
         </svg>
       )}
-      <span className="text-[12px] font-medium text-(--text-secondary) truncate">{name}</span>
+      <span className="text-[12px] font-medium text-(--text-secondary) truncate">
+        {name}
+      </span>
     </div>
   );
 };
@@ -50,11 +90,11 @@ interface InlineCreateProps {
 }
 
 const InlineCreate = ({ label, onSubmit, onCancel }: InlineCreateProps) => {
-  const [value, setValue] = useState('');
+  const [value, setValue] = useState("");
 
   const handleKey = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && value.trim()) onSubmit(value.trim());
-    if (e.key === 'Escape') onCancel();
+    if (e.key === "Enter" && value.trim()) onSubmit(value.trim());
+    if (e.key === "Escape") onCancel();
   };
 
   return (
@@ -103,7 +143,6 @@ export const GridNodesPanel = ({
 
   useEffect(() => {
     let cancelled = false;
-    setLoading(true);
     Promise.all([fetchAgents(projectPath), fetchSkills(projectPath)])
       .then(([a, s]) => {
         if (cancelled) return;
@@ -115,7 +154,9 @@ export const GridNodesPanel = ({
         if (cancelled) return;
         setLoading(false);
       });
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [projectPath, refreshKey]);
 
   const handleCreateAgent = async (name: string) => {
@@ -126,7 +167,7 @@ export const GridNodesPanel = ({
       onAgentCreated(name);
       showToast(`Agent "${name}" created — edit it in the Agents tab`);
     } catch {
-      showToast('Failed to create agent');
+      showToast("Failed to create agent");
     }
     setCreatingAgent(false);
   };
@@ -139,13 +180,13 @@ export const GridNodesPanel = ({
       onSkillCreated(name);
       showToast(`Skill "${name}" created — edit it in the Skills tab.`);
     } catch {
-      showToast('Failed to create skill');
+      showToast("Failed to create skill");
     }
     setCreatingSkill(false);
   };
 
   return (
-    <div className="w-[200px] shrink-0 flex flex-col border-r border-(--border-faint) bg-(--bg-sidebar) overflow-y-auto">
+    <div className="w-50 shrink-0 flex flex-col border-r border-(--border-faint) bg-(--bg-sidebar) overflow-y-auto">
       <div className="px-4 pt-5 pb-3 shrink-0">
         <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-(--text-muted) m-0">
           Nodes
@@ -162,13 +203,25 @@ export const GridNodesPanel = ({
             className="w-full flex items-center gap-1.5 mb-2 text-left bg-transparent border-none cursor-pointer group"
           >
             <svg
-              width="10" height="10" viewBox="0 0 10 10" fill="none"
-              className={`text-(--text-muted) transition-transform duration-150 ${agentsOpen ? 'rotate-90' : ''}`}
+              width="10"
+              height="10"
+              viewBox="0 0 10 10"
+              fill="none"
+              className={`text-(--text-muted) transition-transform duration-150 ${agentsOpen ? "rotate-90" : ""}`}
             >
-              <path d="M3 2L7 5L3 8" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+              <path
+                d="M3 2L7 5L3 8"
+                stroke="currentColor"
+                strokeWidth="1.3"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
             </svg>
-            <span className="text-[11px] font-semibold text-(--text-secondary) uppercase tracking-[0.1em]">
-              Agents {!loading && <span className="opacity-50">({agents.length})</span>}
+            <span className="text-[11px] font-semibold text-(--text-secondary) uppercase tracking-widest">
+              Agents{" "}
+              {!loading && (
+                <span className="opacity-50">({agents.length})</span>
+              )}
             </span>
           </button>
 
@@ -189,7 +242,12 @@ export const GridNodesPanel = ({
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium text-(--text-muted) hover:text-(--text-secondary) bg-transparent border border-dashed border-white/10 hover:border-white/20 cursor-pointer transition-all duration-120 mt-1"
                 >
                   <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-                    <path d="M5 1.5V8.5M1.5 5H8.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+                    <path
+                      d="M5 1.5V8.5M1.5 5H8.5"
+                      stroke="currentColor"
+                      strokeWidth="1.4"
+                      strokeLinecap="round"
+                    />
                   </svg>
                   New Agent
                 </button>
@@ -204,13 +262,25 @@ export const GridNodesPanel = ({
             className="w-full flex items-center gap-1.5 mb-2 text-left bg-transparent border-none cursor-pointer group"
           >
             <svg
-              width="10" height="10" viewBox="0 0 10 10" fill="none"
-              className={`text-(--text-muted) transition-transform duration-150 ${skillsOpen ? 'rotate-90' : ''}`}
+              width="10"
+              height="10"
+              viewBox="0 0 10 10"
+              fill="none"
+              className={`text-(--text-muted) transition-transform duration-150 ${skillsOpen ? "rotate-90" : ""}`}
             >
-              <path d="M3 2L7 5L3 8" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+              <path
+                d="M3 2L7 5L3 8"
+                stroke="currentColor"
+                strokeWidth="1.3"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
             </svg>
-            <span className="text-[11px] font-semibold text-(--text-secondary) uppercase tracking-[0.1em]">
-              Skills {!loading && <span className="opacity-50">({skills.length})</span>}
+            <span className="text-[11px] font-semibold text-(--text-secondary) uppercase tracking-widest">
+              Skills{" "}
+              {!loading && (
+                <span className="opacity-50">({skills.length})</span>
+              )}
             </span>
           </button>
 
@@ -231,7 +301,12 @@ export const GridNodesPanel = ({
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium text-(--text-muted) hover:text-(--text-secondary) bg-transparent border border-dashed border-white/10 hover:border-white/20 cursor-pointer transition-all duration-120 mt-1"
                 >
                   <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-                    <path d="M5 1.5V8.5M1.5 5H8.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+                    <path
+                      d="M5 1.5V8.5M1.5 5H8.5"
+                      stroke="currentColor"
+                      strokeWidth="1.4"
+                      strokeLinecap="round"
+                    />
                   </svg>
                   New Skill
                 </button>

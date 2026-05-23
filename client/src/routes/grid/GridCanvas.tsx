@@ -1,4 +1,4 @@
-import { useCallback, useRef } from 'react';
+import { useCallback, useLayoutEffect, useRef } from "react";
 import {
   ReactFlow,
   Background,
@@ -6,9 +6,6 @@ import {
   Controls,
   MiniMap,
   ConnectionMode,
-  addEdge,
-  useNodesState,
-  useEdgesState,
   type Node,
   type Edge,
   type Connection,
@@ -17,12 +14,12 @@ import {
   type EdgeTypes,
   type OnNodesChange,
   type OnEdgesChange,
-} from '@xyflow/react';
-import '@xyflow/react/dist/style.css';
-import { OrchestratorNode } from '../../components/Grid/nodes/OrchestratorNode';
-import { AgentNode } from '../../components/Grid/nodes/AgentNode';
-import { SkillNode } from '../../components/Grid/nodes/SkillNode';
-import { GridEdgeComponent } from '../../components/Grid/GridEdge';
+} from "@xyflow/react";
+import "@xyflow/react/dist/style.css";
+import { OrchestratorNode } from "../../components/Grid/nodes/OrchestratorNode";
+import { AgentNode } from "../../components/Grid/nodes/AgentNode";
+import { SkillNode } from "../../components/Grid/nodes/SkillNode";
+import { GridEdgeComponent } from "../../components/Grid/GridEdge";
 
 const nodeTypes: NodeTypes = {
   orchestrator: OrchestratorNode as unknown as NodeTypes[string],
@@ -56,24 +53,23 @@ export const GridCanvas = ({
   onDragOver,
 }: GridCanvasProps) => {
   const nodeMap = useRef<Map<string, Node>>(new Map());
-  nodeMap.current = new Map(nodes.map((n) => [n.id, n]));
+  useLayoutEffect(() => {
+    nodeMap.current = new Map(nodes.map((n) => [n.id, n]));
+  });
 
   // React Flow v12: isValidConnection receives Connection | Edge (not two Node args).
   // We resolve source/target types from our nodeMap ref here.
-  const checkConnection = useCallback<IsValidConnection>(
-    (connectionOrEdge) => {
-      const src = nodeMap.current.get(connectionOrEdge.source ?? '') ?? null;
-      const tgt = nodeMap.current.get(connectionOrEdge.target ?? '') ?? null;
-      if (!src || !tgt) return false;
-      if (src.id === tgt.id) return false;
-      const types = new Set([src.type, tgt.type]);
-      if (types.has('orchestrator') && types.has('agent')) return true;
-      if (types.has('agent') && types.has('skill')) return true;
-      if (src.type === 'agent' && tgt.type === 'agent') return true;
-      return false;
-    },
-    [],
-  );
+  const checkConnection = useCallback<IsValidConnection>((connectionOrEdge) => {
+    const src = nodeMap.current.get(connectionOrEdge.source ?? "") ?? null;
+    const tgt = nodeMap.current.get(connectionOrEdge.target ?? "") ?? null;
+    if (!src || !tgt) return false;
+    if (src.id === tgt.id) return false;
+    const types = new Set([src.type, tgt.type]);
+    if (types.has("orchestrator") && types.has("agent")) return true;
+    if (types.has("agent") && types.has("skill")) return true;
+    if (src.type === "agent" && tgt.type === "agent") return true;
+    return false;
+  }, []);
 
   const handleConnect = useCallback(
     (connection: Connection) => {
@@ -100,12 +96,12 @@ export const GridCanvas = ({
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         connectionMode={ConnectionMode.Loose}
-        defaultEdgeOptions={{ type: 'gridEdge', animated: false }}
+        defaultEdgeOptions={{ type: "gridEdge", animated: false }}
         fitView
         fitViewOptions={{ padding: 0.3 }}
         minZoom={0.3}
         maxZoom={2}
-        style={{ background: 'var(--bg-base)' }}
+        style={{ background: "var(--bg-base)" }}
         proOptions={{ hideAttribution: true }}
       >
         <Background
@@ -115,19 +111,19 @@ export const GridCanvas = ({
           color="rgba(255,255,255,0.06)"
         />
         <Controls
-          className="!bg-(--bg-elevated) !border !border-(--border-subtle) !rounded-xl !overflow-hidden !shadow-lg"
+          className="bg-(--bg-elevated)! border! border-(--border-subtle)! rounded-xl! overflow-hidden! shadow-lg!"
           style={{ bottom: 24, left: 24 }}
         />
         <MiniMap
           style={{
-            background: 'var(--bg-surface)',
-            border: '1px solid var(--border-subtle)',
+            background: "var(--bg-surface)",
+            border: "1px solid var(--border-subtle)",
             borderRadius: 12,
           }}
           nodeColor={(n) => {
-            if (n.type === 'orchestrator') return 'var(--accent)';
-            if (n.type === 'agent') return 'rgba(255,255,255,0.3)';
-            return '#7c3aed';
+            if (n.type === "orchestrator") return "var(--accent)";
+            if (n.type === "agent") return "rgba(255,255,255,0.3)";
+            return "#7c3aed";
           }}
           maskColor="rgba(0,0,0,0.4)"
         />
@@ -136,4 +132,3 @@ export const GridCanvas = ({
   );
 };
 
-export { useNodesState, useEdgesState, addEdge };

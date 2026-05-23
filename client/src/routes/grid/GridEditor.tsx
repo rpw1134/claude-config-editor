@@ -53,7 +53,7 @@ function GridEditorInner({
     } catch {
       showToast('Save failed');
     }
-  }, [save, nodes, edges, onBumpGridsRefresh, showToast]);
+  }, [save, nodes, edges, onBumpGridsRefresh, onBumpVcRefresh, showToast]);
 
   // CMD+S to save, CMD+Z to undo
   useEffect(() => {

@@ -1,12 +1,12 @@
-import { useEffect, useState } from 'react';
-import { Navigate, useNavigate, useParams } from 'react-router-dom';
-import { useShell } from '../contexts/ShellContext';
-import { decodeProject, encodeProject } from '../lib/navigation';
-import { listGrids, createGrid } from '../lib/api';
-import type { GridSummary } from '../types/grids';
-import { GridsIcon } from '../components/Icons';
+import { useEffect, useState } from "react";
+import { Navigate, useNavigate, useParams } from "react-router-dom";
+import { useShell } from "../contexts/ShellContext";
+import { decodeProject, encodeProject } from "../lib/navigation";
+import { listGrids, createGrid } from "../lib/api";
+import type { GridSummary } from "../types/grids";
+import { GridsIcon } from "../components/Icons";
 
-export { GridEditor } from './grid/GridEditor';
+export { GridEditor } from "./grid/GridEditor";
 
 interface GridCardRowProps {
   grid: GridSummary;
@@ -18,10 +18,10 @@ const GridCardRow = ({ grid, onClick, isLast }: GridCardRowProps) => (
   <button
     onClick={onClick}
     className={[
-      'w-full flex items-center gap-5 pl-6 pr-4 min-h-20 text-left cursor-pointer',
-      'bg-transparent transition-colors duration-120 border-none hover:bg-(--bg-hover)',
-      !isLast ? 'border-b border-(--border-faint)' : '',
-    ].join(' ')}
+      "w-full flex items-center gap-5 pl-6 pr-4 min-h-20 text-left cursor-pointer",
+      "bg-transparent transition-colors duration-120 border-none hover:bg-(--bg-hover)",
+      !isLast ? "border-b border-(--border-faint)" : "",
+    ].join(" ")}
   >
     <div className="w-9 h-9 rounded-xl bg-(--accent)/10 flex items-center justify-center shrink-0 text-(--accent)">
       <GridsIcon size={16} />
@@ -31,11 +31,25 @@ const GridCardRow = ({ grid, onClick, isLast }: GridCardRowProps) => (
         {grid.name}
       </span>
       {grid.description && (
-        <span className="text-[13px] text-(--text-muted) truncate">{grid.description}</span>
+        <span className="text-[13px] text-(--text-muted) truncate">
+          {grid.description}
+        </span>
       )}
     </div>
-    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="text-(--text-muted) shrink-0">
-      <path d="M5.5 3L9.5 7L5.5 11" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 14 14"
+      fill="none"
+      className="text-(--text-muted) shrink-0"
+    >
+      <path
+        d="M5.5 3L9.5 7L5.5 11"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </svg>
   </button>
 );
@@ -46,33 +60,38 @@ interface CreateGridModalProps {
 }
 
 const CreateGridModal = ({ onConfirm, onClose }: CreateGridModalProps) => {
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
   const [submitted, setSubmitted] = useState(false);
 
-  const nameError = submitted && !name.trim() ? 'Name is required' : null;
-  const descriptionError = submitted && !description.trim() ? 'Description is required' : null;
+  const nameError = submitted && !name.trim() ? "Name is required" : null;
+  const descriptionError =
+    submitted && !description.trim() ? "Description is required" : null;
 
   const handleSubmit = () => {
     setSubmitted(true);
-    if (name.trim() && description.trim()) onConfirm(name.trim(), description.trim());
+    if (name.trim() && description.trim())
+      onConfirm(name.trim(), description.trim());
   };
 
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
     >
       <div
-        className="w-[440px] bg-(--bg-elevated) border border-(--border-subtle) rounded-2xl shadow-2xl p-7 flex flex-col gap-5"
-        style={{ animation: 'modalFadeIn 0.18s ease-out both' }}
+        className="w-110 bg-(--bg-elevated) border border-(--border-subtle) rounded-2xl shadow-2xl p-7 flex flex-col gap-5"
+        style={{ animation: "modalFadeIn 0.18s ease-out both" }}
       >
         <div>
           <h2 className="text-[18px] font-bold text-(--text-primary) m-0 mb-1.5 font-['Bricolage_Grotesque',sans-serif]">
             New Grid
           </h2>
           <p className="text-[13px] text-(--text-muted) m-0">
-            A Grid is a visual orchestration system. You'll connect agents and skills to auto-generate an orchestrator agent.
+            A Grid is a visual orchestration system. You'll connect agents and
+            skills to auto-generate an orchestrator agent.
           </p>
         </div>
 
@@ -85,12 +104,17 @@ const CreateGridModal = ({ onConfirm, onClose }: CreateGridModalProps) => {
               autoFocus
               value={name}
               onChange={(e) => setName(e.target.value)}
-              onKeyDown={(e) => { if (e.key === 'Enter') handleSubmit(); if (e.key === 'Escape') onClose(); }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") handleSubmit();
+                if (e.key === "Escape") onClose();
+              }}
               placeholder="my-orchestration"
               className={[
-                'w-full bg-(--bg-surface) border rounded-xl px-3.5 py-2.5 text-[14px] text-(--text-primary) outline-none focus:outline-none transition-colors duration-120 placeholder:text-(--text-muted) font-mono',
-                nameError ? 'border-red-500/60 focus:border-red-500/80' : 'border-(--border-subtle) focus:border-(--accent)',
-              ].join(' ')}
+                "w-full bg-(--bg-surface) border rounded-xl px-3.5 py-2.5 text-[14px] text-(--text-primary) outline-none focus:outline-none transition-colors duration-120 placeholder:text-(--text-muted) font-mono",
+                nameError
+                  ? "border-red-500/60 focus:border-red-500/80"
+                  : "border-(--border-subtle) focus:border-(--accent)",
+              ].join(" ")}
             />
             {nameError && (
               <p className="text-[12px] text-red-400 mt-1.5 m-0">{nameError}</p>
@@ -103,16 +127,22 @@ const CreateGridModal = ({ onConfirm, onClose }: CreateGridModalProps) => {
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              onKeyDown={(e) => { if (e.key === 'Escape') onClose(); }}
+              onKeyDown={(e) => {
+                if (e.key === "Escape") onClose();
+              }}
               placeholder="What does this orchestrator do?"
               rows={3}
               className={[
-                'w-full bg-(--bg-surface) border rounded-xl px-3.5 py-2.5 text-[14px] text-(--text-primary) outline-none focus:outline-none transition-colors duration-120 placeholder:text-(--text-muted) resize-none',
-                descriptionError ? 'border-red-500/60 focus:border-red-500/80' : 'border-(--border-subtle) focus:border-(--accent)',
-              ].join(' ')}
+                "w-full bg-(--bg-surface) border rounded-xl px-3.5 py-2.5 text-[14px] text-(--text-primary) outline-none focus:outline-none transition-colors duration-120 placeholder:text-(--text-muted) resize-none",
+                descriptionError
+                  ? "border-red-500/60 focus:border-red-500/80"
+                  : "border-(--border-subtle) focus:border-(--accent)",
+              ].join(" ")}
             />
             {descriptionError && (
-              <p className="text-[12px] text-red-400 mt-1.5 m-0">{descriptionError}</p>
+              <p className="text-[12px] text-red-400 mt-1.5 m-0">
+                {descriptionError}
+              </p>
             )}
           </div>
         </div>
@@ -139,7 +169,8 @@ const CreateGridModal = ({ onConfirm, onClose }: CreateGridModalProps) => {
 export const GridsLandingContent = () => {
   const { projectId } = useParams<{ projectId: string }>();
   const navigate = useNavigate();
-  const { gridsRefreshKey, onBumpGridsRefresh, onBumpVcRefresh, showToast } = useShell();
+  const { gridsRefreshKey, onBumpGridsRefresh, onBumpVcRefresh, showToast } =
+    useShell();
   const projectPath = projectId ? decodeProject(projectId) : null;
 
   const [grids, setGrids] = useState<GridSummary[]>([]);
@@ -149,7 +180,6 @@ export const GridsLandingContent = () => {
   useEffect(() => {
     if (!projectPath) return;
     let cancelled = false;
-    setLoading(true);
     listGrids(projectPath)
       .then((data) => {
         if (cancelled) return;
@@ -161,7 +191,9 @@ export const GridsLandingContent = () => {
         setGrids([]);
         setLoading(false);
       });
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [projectPath, gridsRefreshKey]);
 
   if (!projectPath) return <Navigate to="/" replace />;
@@ -173,9 +205,11 @@ export const GridsLandingContent = () => {
       onBumpVcRefresh();
       showToast(`Grid "${name}" created`);
       setShowCreate(false);
-      navigate(`/${encodeProject(projectPath)}/grids/${encodeURIComponent(name)}`);
+      navigate(
+        `/${encodeProject(projectPath)}/grids/${encodeURIComponent(name)}`,
+      );
     } catch {
-      showToast('Failed to create grid');
+      showToast("Failed to create grid");
     }
   };
 
@@ -191,14 +225,21 @@ export const GridsLandingContent = () => {
             className="flex items-center gap-1.75 px-4 py-2 rounded-lg border-none bg-white text-gray-900 text-[14px] font-semibold cursor-pointer shrink-0 transition-all duration-150 hover:bg-white/90"
           >
             <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
-              <path d="M6.5 1.5V11.5M1.5 6.5H11.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+              <path
+                d="M6.5 1.5V11.5M1.5 6.5H11.5"
+                stroke="currentColor"
+                strokeWidth="1.6"
+                strokeLinecap="round"
+              />
             </svg>
             New Grid
           </button>
         </div>
 
-        <p className="text-[14px] text-(--text-muted) mb-8 mt-0 max-w-[520px] leading-relaxed">
-          Grids are visual multi-agent orchestration systems. Connect agents and skills on a canvas to auto-generate an orchestrator agent that routes tasks intelligently.
+        <p className="text-[14px] text-(--text-muted) mb-8 mt-0 max-w-130 leading-relaxed">
+          Grids are visual multi-agent orchestration systems. Connect agents and
+          skills on a canvas to auto-generate an orchestrator agent that routes
+          tasks intelligently.
         </p>
 
         {!loading && grids.length === 0 && (
@@ -224,7 +265,9 @@ export const GridsLandingContent = () => {
                 grid={g}
                 isLast={i === grids.length - 1}
                 onClick={() =>
-                  navigate(`/${encodeProject(projectPath)}/grids/${encodeURIComponent(g.name)}`)
+                  navigate(
+                    `/${encodeProject(projectPath)}/grids/${encodeURIComponent(g.name)}`,
+                  )
                 }
               />
             ))}

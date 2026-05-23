@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import {
   useNodesState,
   useEdgesState,
@@ -123,14 +123,13 @@ export function useGridEditor(projectPath: string, gridName: string, onError?: (
   // Track current nodes/edges in a ref so snapshots can be taken synchronously
   const nodesRef = useRef<Node[]>([]);
   const edgesRef = useRef<Edge[]>([]);
-  nodesRef.current = nodes;
-  edgesRef.current = edges;
+  useLayoutEffect(() => {
+    nodesRef.current = nodes;
+    edgesRef.current = edges;
+  });
 
   useEffect(() => {
     let cancelled = false;
-    setLoading(true);
-    history.current = [];
-    setCanUndo(false);
     getGrid(projectPath, gridName)
       .then((data) => {
         if (cancelled) return;
@@ -138,6 +137,8 @@ export function useGridEditor(projectPath: string, gridName: string, onError?: (
         setEdges(data.edges.map(toFlowEdge));
         setGridDescription(data.description);
         setCreatedAt(data.createdAt);
+        history.current = [];
+        setCanUndo(false);
         setLoading(false);
       })
       .catch(() => {
@@ -151,6 +152,8 @@ export function useGridEditor(projectPath: string, gridName: string, onError?: (
         };
         setNodes([orchNode]);
         setEdges([]);
+        history.current = [];
+        setCanUndo(false);
         setLoading(false);
       });
     return () => { cancelled = true; };
@@ -202,7 +205,7 @@ export function useGridEditor(projectPath: string, gridName: string, onError?: (
     (changes: Parameters<typeof onNodesChange>[0]) => {
       // Only push history for meaningful changes (not selection/dimension updates)
       const meaningful = changes.some(
-        (c) => c.type === 'remove' || c.type === 'add' || c.type === 'position',
+        (c) => c.type === 'remove' || c.type === 'add',
       );
       if (meaningful) pushHistory();
       onNodesChange(changes);
