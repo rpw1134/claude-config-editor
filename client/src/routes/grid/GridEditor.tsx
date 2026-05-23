@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ReactFlowProvider, useReactFlow } from '@xyflow/react';
 import { useShell } from '../../contexts/ShellContext';
@@ -23,8 +23,7 @@ function GridEditorInner({
   const { screenToFlowPosition } = useReactFlow();
   const [activeTab, setActiveTab] = useState<GridTabId>('editor');
   const [nodesPanelRefreshKey, setNodesPanelRefreshKey] = useState(0);
-  const canvasRef = useRef<HTMLDivElement>(null);
-
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const {
     nodes,
     edges,
@@ -34,8 +33,6 @@ function GridEditorInner({
     canUndo,
     pendingConnection,
     gridCreatedAt,
-    historySnapshots,
-    historyVersion,
     onNodesChange,
     onEdgesChange,
     requestConnection,
@@ -44,12 +41,8 @@ function GridEditorInner({
     addNode,
     updateEdge,
     undo,
-    restoreTo,
     save,
   } = useGridEditor(projectPath, gridName, (msg) => showToast(msg, 'error'));
-
-  // historyVersion is consumed here so the history tab re-renders when it changes
-  void historyVersion;
 
   const handleSave = useCallback(async () => {
     try {
@@ -110,66 +103,73 @@ function GridEditorInner({
 
   if (loading) {
     return (
-      <div className="flex-1 flex items-center justify-center bg-(--bg-base)">
+      <div className="flex h-screen items-center justify-center bg-(--bg-base)">
         <div className="w-5 h-5 rounded-full border-2 border-(--accent)/30 border-t-(--accent) animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col h-screen bg-(--bg-base) overflow-hidden">
-      <GridTopBar
+    <div className="flex h-screen bg-(--bg-base) overflow-hidden">
+      {/* Sidebar — always visible, full height */}
+      <GridNodesPanel
         gridName={gridName}
-        dirty={dirty}
-        saving={saving}
-        canUndo={canUndo}
-        activeTab={activeTab}
-        onTabChange={setActiveTab}
+        projectPath={projectPath}
+        refreshKey={nodesPanelRefreshKey}
+        collapsed={sidebarCollapsed}
+        onCollapsedChange={setSidebarCollapsed}
         onBack={() => navigate(`/${encodeProject(projectPath)}/grids`)}
-        onSave={handleSave}
-        onUndo={undo}
+        onAgentCreated={() => setNodesPanelRefreshKey((k) => k + 1)}
+        onSkillCreated={() => setNodesPanelRefreshKey((k) => k + 1)}
+        showToast={showToast}
       />
 
-      {activeTab === 'editor' && (
-        <div className="flex flex-1 min-h-0" ref={canvasRef}>
-          <GridNodesPanel
+      {/* Right side: navbar + tab content */}
+      <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
+        <GridTopBar
+          dirty={dirty}
+          saving={saving}
+          canUndo={canUndo}
+          activeTab={activeTab}
+          sidebarCollapsed={sidebarCollapsed}
+          onTabChange={setActiveTab}
+          onBack={() => navigate(`/${encodeProject(projectPath)}/grids`)}
+          onSave={handleSave}
+          onUndo={undo}
+        />
+
+        {activeTab === 'editor' && (
+          <div className="flex flex-1 min-h-0">
+            <GridCanvas
+              nodes={nodes}
+              edges={edges}
+              onNodesChange={onNodesChange}
+              onEdgesChange={onEdgesChange}
+              onConnect={requestConnection}
+              onUpdateEdge={updateEdge}
+              onDrop={handleDrop}
+              onDragOver={handleDragOver}
+            />
+          </div>
+        )}
+
+        {activeTab === 'history' && (
+          <HistoryTab
             projectPath={projectPath}
-            refreshKey={nodesPanelRefreshKey}
-            onAgentCreated={() => setNodesPanelRefreshKey((k) => k + 1)}
-            onSkillCreated={() => setNodesPanelRefreshKey((k) => k + 1)}
+            gridName={gridName}
+          />
+        )}
+
+        {activeTab === 'settings' && (
+          <SettingsTab
+            projectPath={projectPath}
+            gridName={gridName}
+            createdAt={gridCreatedAt}
+            onDeleted={handleDeleted}
             showToast={showToast}
           />
-          <GridCanvas
-            nodes={nodes}
-            edges={edges}
-            onNodesChange={onNodesChange}
-            onEdgesChange={onEdgesChange}
-            onConnect={requestConnection}
-            onUpdateEdge={updateEdge}
-            onDrop={handleDrop}
-            onDragOver={handleDragOver}
-          />
-        </div>
-      )}
-
-      {activeTab === 'history' && (
-        <HistoryTab
-          snapshots={historySnapshots}
-          currentNodeCount={nodes.length}
-          currentEdgeCount={edges.length}
-          onRestore={restoreTo}
-        />
-      )}
-
-      {activeTab === 'settings' && (
-        <SettingsTab
-          projectPath={projectPath}
-          gridName={gridName}
-          createdAt={gridCreatedAt}
-          onDeleted={handleDeleted}
-          showToast={showToast}
-        />
-      )}
+        )}
+      </div>
 
       {pendingConnection && (
         <EdgeDescriptionModal

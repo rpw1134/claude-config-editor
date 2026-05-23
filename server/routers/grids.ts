@@ -9,15 +9,18 @@ import {
   readFileContent,
   writeFileEnsureDir,
 } from "../utils/fileIO.js";
-import { requireProjectPath, resolveHome } from "../utils/parsing.js";
+import { requireProjectPath } from "../utils/parsing.js";
 import { findRepoRoot, stageFiles } from "../services/versionControl.js";
+import { getConfigDir } from "../services/claudeConfig.js";
 
 const router: Router = express.Router();
 
-const AGENTS_GRIDS_DIR = resolveHome("~/.claude/agents/grids");
-
 function gridsDir(projectPath: string): string {
   return path.join(projectPath, ".stryde", "grids");
+}
+
+function agentsGridsDir(projectPath: string): string {
+  return path.join(getConfigDir(projectPath), "agents", "grids");
 }
 
 // ── Types ──────────────────────────────────────────────────────────────────────
@@ -65,8 +68,8 @@ function gridPath(dir: string, name: string): string {
   return path.join(dir, `${name}.json`);
 }
 
-function agentPath(name: string): string {
-  return path.join(AGENTS_GRIDS_DIR, `${name}.md`);
+function agentPath(projectPath: string, name: string): string {
+  return path.join(agentsGridsDir(projectPath), `${name}.md`);
 }
 
 function validateName(name: unknown, res: Response): string | null {
@@ -221,10 +224,10 @@ function buildFrontmatter(grid: GridJson): string {
   return `---\nname: ${grid.name}\ndescription: ${grid.description}\n---\n\n`;
 }
 
-async function writeAgentFile(grid: GridJson): Promise<void> {
-  await ensureDir(AGENTS_GRIDS_DIR);
+async function writeAgentFile(projectPath: string, grid: GridJson): Promise<void> {
+  await ensureDir(agentsGridsDir(projectPath));
   const content = buildOrchestratorPrompt(grid);
-  await writeFileEnsureDir(agentPath(grid.name), content);
+  await writeFileEnsureDir(agentPath(projectPath, grid.name), content);
 }
 
 // ── Routes ─────────────────────────────────────────────────────────────────────
@@ -315,13 +318,13 @@ router.post(
 
       const grid = buildInitialGrid(name, description);
       await writeFileEnsureDir(filePath, JSON.stringify(grid, null, 2));
-      await writeAgentFile(grid);
+      await writeAgentFile(projectPath, grid);
 
       const projectRepoRoot = await findRepoRoot(projectPath);
       if (projectRepoRoot) {
         await stageFiles(projectRepoRoot, [path.relative(projectRepoRoot, filePath)]);
       }
-      const agentFilePath = agentPath(name);
+      const agentFilePath = agentPath(projectPath, name);
       const agentRepoRoot = await findRepoRoot(path.dirname(agentFilePath));
       if (agentRepoRoot) {
         await stageFiles(agentRepoRoot, [path.relative(agentRepoRoot, agentFilePath)]);
@@ -359,7 +362,7 @@ router.put(
 
       const grid = data as GridJson;
       await writeFileEnsureDir(filePath, JSON.stringify(grid, null, 2));
-      await writeAgentFile(grid);
+      await writeAgentFile(projectPath, grid);
 
       res.status(200).json({ message: "Grid saved" });
     } catch (err) {
@@ -388,7 +391,7 @@ router.delete(
 
       await deleteFile(filePath);
 
-      const agentFilePath = agentPath(name);
+      const agentFilePath = agentPath(projectPath, name);
       if (await fileExists(agentFilePath)) {
         await deleteFile(agentFilePath);
       }

@@ -128,6 +128,7 @@ const CreateGridModal = ({ onConfirm, onClose }: CreateGridModalProps) => {
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSubmit(); }
                 if (e.key === "Escape") onClose();
               }}
               placeholder="What does this orchestrator do?"

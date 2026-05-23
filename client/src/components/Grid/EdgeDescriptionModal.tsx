@@ -26,7 +26,7 @@ export const EdgeDescriptionModal = ({
   };
 
   const handleKey = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleConfirm();
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleConfirm(); }
     if (e.key === 'Escape') onCancel();
   };
 

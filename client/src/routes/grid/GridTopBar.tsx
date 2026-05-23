@@ -14,11 +14,11 @@ const TABS: TabDef[] = [
 ];
 
 interface GridTopBarProps {
-  gridName: string;
   dirty: boolean;
   saving: boolean;
   canUndo: boolean;
   activeTab: GridTabId;
+  sidebarCollapsed: boolean;
   onTabChange: (tab: GridTabId) => void;
   onBack: () => void;
   onSave: () => void;
@@ -26,17 +26,17 @@ interface GridTopBarProps {
 }
 
 export const GridTopBar = ({
-  gridName,
   dirty,
   saving,
   canUndo,
   activeTab,
+  sidebarCollapsed,
   onTabChange,
   onBack,
   onSave,
   onUndo,
 }: GridTopBarProps) => (
-  <div className="shrink-0 flex items-stretch justify-between px-4 border-b border-(--border-faint) bg-(--bg-sidebar)">
+  <div className={`shrink-0 flex items-stretch justify-between px-4 transition-colors duration-250 ${sidebarCollapsed ? "bg-(--bg-base)" : "bg-(--bg-sidebar) border-b border-(--border-faint)"}`}>
     <div className="flex items-stretch gap-1">
       {/* Back button */}
       <button
@@ -46,18 +46,6 @@ export const GridTopBar = ({
       >
         <BackArrowIcon /> Grids
       </button>
-
-      {/* Grid name + unsaved badge */}
-      <div className="flex items-center gap-2 pr-4 mr-1 border-r border-(--border-faint)">
-        <span className="text-[15px] font-bold text-(--text-primary) tracking-tight font-['Bricolage_Grotesque',sans-serif]">
-          {gridName}
-        </span>
-        {dirty && (
-          <span className="text-[11px] font-medium text-(--text-muted) bg-white/5 px-2 py-0.5 rounded-full">
-            unsaved
-          </span>
-        )}
-      </div>
 
       {/* Tabs */}
       {TABS.map((tab) => {
@@ -82,7 +70,12 @@ export const GridTopBar = ({
 
     {/* Right actions — only visible on editor tab */}
     {activeTab === 'editor' && (
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-2">
+        {dirty && (
+          <span className="text-[11px] font-medium text-(--text-muted) bg-white/5 px-2 py-0.5 rounded-full">
+            unsaved
+          </span>
+        )}
         <button
           type="button"
           onClick={canUndo ? onUndo : undefined}

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   fetchAgents,
   fetchSkills,
@@ -7,10 +8,18 @@ import {
 } from "../../lib/api";
 import {
   AgentIcon,
+  GridsIcon,
   SkillIcon,
   SearchIcon,
   SidebarCloseIcon,
+  SidebarOpenIcon,
 } from "../../components/Icons";
+import {
+  LS_AGENTS_OPEN,
+  LS_COLLAPSED,
+  LS_SKILLS_OPEN,
+  readBool,
+} from "./gridSidebarState";
 
 // ── Chevron (local, tiny) ─────────────────────────────────────────────────────
 
@@ -77,7 +86,8 @@ interface NodeSectionProps {
   items: string[];
   type: "agent" | "skill";
   loading: boolean;
-  collapsed: boolean;
+  open: boolean;
+  onToggle: () => void;
   creating: boolean;
   onStartCreate: () => void;
   onCancelCreate: () => void;
@@ -90,110 +100,79 @@ const NodeSection = ({
   items,
   type,
   loading,
-  collapsed,
+  open,
+  onToggle,
   creating,
   onStartCreate,
   onCancelCreate,
   onSubmitCreate,
-}: NodeSectionProps) => {
-  // Section open/close state is independent of sidebar collapsed state
-  const [open, setOpen] = useState(true);
+}: NodeSectionProps) => (
+  <div>
+    <button
+      onClick={onToggle}
+      className="w-full flex items-center gap-1.5 mb-1 text-left bg-transparent border-none cursor-pointer"
+    >
+      <ChevronIcon open={open} />
+      <span className="text-[11px] font-semibold text-(--text-secondary) uppercase tracking-widest">
+        {label}{" "}
+        {!loading && <span className="opacity-50">({items.length})</span>}
+      </span>
+    </button>
 
-  return (
-    <div>
-      {/* Section header */}
-      <button
-        onClick={() => !collapsed && setOpen((v) => !v)}
-        title={collapsed ? label : undefined}
-        className="w-full flex items-center mb-1 text-left bg-transparent border-none cursor-pointer"
-        style={{ gap: collapsed ? 0 : 6 }}
-      >
-        {/* In collapsed mode the section header shows just the type icon */}
-        {collapsed ? (
-          <span className="w-full flex items-center justify-center py-1 text-(--text-muted)">
-            {icon}
-          </span>
-        ) : (
-          <>
-            <ChevronIcon open={open} />
-            <span className="text-[11px] font-semibold text-(--text-secondary) uppercase tracking-widest">
-              {label}{" "}
-              {!loading && (
-                <span className="opacity-50">({items.length})</span>
-              )}
-            </span>
-          </>
-        )}
-      </button>
+    {!loading && (
+      <div className="flex flex-col gap-1.5">
+        {open &&
+          items.map((name) => (
+            <DraggableItem key={name} name={name} type={type} icon={icon} />
+          ))}
 
-      {/* Items */}
-      {!loading && (
-        <div className="flex flex-col" style={{ gap: collapsed ? 2 : 6 }}>
-          {(collapsed || open) &&
-            items.map((name) =>
-              collapsed ? (
-                // Collapsed: icon-only, centered, not draggable
-                <div
-                  key={name}
-                  title={name}
-                  className="flex items-center justify-center h-8 rounded-lg text-(--text-muted) hover:text-(--text-secondary) hover:bg-(--bg-hover) transition-colors duration-120"
-                >
-                  {icon}
-                </div>
-              ) : (
-                // Expanded: full draggable item
-                <DraggableItem key={name} name={name} type={type} />
-              ),
-            )}
-
-          {/* Create button / inline form — hidden when collapsed */}
-          <div
-            className="overflow-hidden"
-            style={{
-              opacity: collapsed ? 0 : 1,
-              maxHeight: collapsed ? 0 : 200,
-              pointerEvents: collapsed ? "none" : "auto",
-              transition: "opacity 100ms ease, max-height 200ms ease 100ms",
-            }}
-          >
-            {open &&
-              (creating ? (
-                <InlineCreate
-                  label={label.slice(0, -1)} // "Agents" → "Agent", "Skills" → "Skill"
-                  onSubmit={onSubmitCreate}
-                  onCancel={onCancelCreate}
-                />
-              ) : (
-                <button
-                  onClick={onStartCreate}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium text-(--text-muted) hover:text-(--text-secondary) bg-transparent border border-dashed border-white/10 hover:border-white/20 cursor-pointer transition-all duration-120 mt-1 w-full"
-                >
-                  <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-                    <path
-                      d="M5 1.5V8.5M1.5 5H8.5"
-                      stroke="currentColor"
-                      strokeWidth="1.4"
-                      strokeLinecap="round"
-                    />
-                  </svg>
-                  New {label.replace(/s$/, "")}
-                </button>
-              ))}
-          </div>
+        <div
+          className="overflow-hidden"
+          style={{
+            opacity: open ? 1 : 0,
+            maxHeight: open ? 200 : 0,
+            pointerEvents: open ? "auto" : "none",
+            transition: "opacity 100ms ease, max-height 200ms ease 100ms",
+          }}
+        >
+          {open &&
+            (creating ? (
+              <InlineCreate
+                label={label.slice(0, -1)}
+                onSubmit={onSubmitCreate}
+                onCancel={onCancelCreate}
+              />
+            ) : (
+              <button
+                onClick={onStartCreate}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium text-(--text-muted) hover:text-(--text-secondary) bg-transparent border border-dashed border-white/10 hover:border-white/20 cursor-pointer transition-all duration-120 mt-1 w-full"
+              >
+                <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                  <path
+                    d="M5 1.5V8.5M1.5 5H8.5"
+                    stroke="currentColor"
+                    strokeWidth="1.4"
+                    strokeLinecap="round"
+                  />
+                </svg>
+                New {label.replace(/s$/, "")}
+              </button>
+            ))}
         </div>
-      )}
-    </div>
-  );
-};
+      </div>
+    )}
+  </div>
+);
 
 // ── DraggableItem ─────────────────────────────────────────────────────────────
 
 interface DraggableItemProps {
   name: string;
   type: "agent" | "skill";
+  icon: React.ReactNode;
 }
 
-const DraggableItem = ({ name, type }: DraggableItemProps) => {
+const DraggableItem = ({ name, type, icon }: DraggableItemProps) => {
   const handleDragStart = (e: React.DragEvent) => {
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
     const offsetX = e.clientX - rect.left;
@@ -220,7 +199,7 @@ const DraggableItem = ({ name, type }: DraggableItemProps) => {
       <span
         className={`shrink-0 ${type === "skill" ? "text-[#a78bfa]" : "text-(--text-muted)"}`}
       >
-        {type === "agent" ? <AgentIcon /> : <SkillIcon />}
+        {icon}
       </span>
       <span className="text-[12px] font-medium text-(--text-secondary) truncate">
         {name}
@@ -232,21 +211,34 @@ const DraggableItem = ({ name, type }: DraggableItemProps) => {
 // ── GridNodesPanel ─────────────────────────────────────────────────────────────
 
 interface GridNodesPanelProps {
+  gridName: string;
   projectPath: string;
   refreshKey: number;
   onAgentCreated: (name: string) => void;
   onSkillCreated: (name: string) => void;
+  onCollapsedChange: (collapsed: boolean) => void;
+  onBack: () => void;
+  collapsed: boolean;
   showToast: (msg: string) => void;
 }
 
 export const GridNodesPanel = ({
+  gridName,
   projectPath,
   refreshKey,
   onAgentCreated,
   onSkillCreated,
+  onCollapsedChange,
+  onBack,
+  collapsed,
   showToast,
 }: GridNodesPanelProps) => {
-  const [collapsed, setCollapsed] = useState(false);
+  const [agentsOpen, setAgentsOpen] = useState(() =>
+    readBool(LS_AGENTS_OPEN, true),
+  );
+  const [skillsOpen, setSkillsOpen] = useState(() =>
+    readBool(LS_SKILLS_OPEN, true),
+  );
   const [agents, setAgents] = useState<string[]>([]);
   const [skills, setSkills] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
@@ -254,6 +246,37 @@ export const GridNodesPanel = ({
   const [creatingSkill, setCreatingSkill] = useState(false);
   const [search, setSearch] = useState("");
   const searchRef = useRef<HTMLInputElement>(null);
+  const toggleBtnRef = useRef<HTMLButtonElement>(null);
+  const [tooltipVisible, setTooltipVisible] = useState(false);
+  const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
+
+  const handleToggleEnter = () => {
+    if (toggleBtnRef.current) {
+      const rect = toggleBtnRef.current.getBoundingClientRect();
+      setTooltipPos({ x: rect.right + 10, y: rect.top + rect.height / 2 });
+    }
+    setTooltipVisible(true);
+  };
+  const handleToggleLeave = () => setTooltipVisible(false);
+
+  const toggleAgents = () => {
+    setAgentsOpen((v) => {
+      localStorage.setItem(LS_AGENTS_OPEN, String(!v));
+      return !v;
+    });
+  };
+
+  const toggleSkills = () => {
+    setSkillsOpen((v) => {
+      localStorage.setItem(LS_SKILLS_OPEN, String(!v));
+      return !v;
+    });
+  };
+
+  const handleCollapse = (next: boolean) => {
+    localStorage.setItem(LS_COLLAPSED, String(next));
+    onCollapsedChange(next);
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -300,8 +323,12 @@ export const GridNodesPanel = ({
   };
 
   const q = search.trim().toLowerCase();
-  const filteredAgents = q ? agents.filter((n) => n.toLowerCase().includes(q)) : agents;
-  const filteredSkills = q ? skills.filter((n) => n.toLowerCase().includes(q)) : skills;
+  const filteredAgents = q
+    ? agents.filter((n) => n.toLowerCase().includes(q))
+    : agents;
+  const filteredSkills = q
+    ? skills.filter((n) => n.toLowerCase().includes(q))
+    : skills;
 
   return (
     <aside
@@ -318,16 +345,16 @@ export const GridNodesPanel = ({
           collapsed ? "gap-0" : "gap-2.5 pr-3 border-b border-(--border-faint)"
         }`}
       >
-        {/* Icon — clicking when collapsed re-opens */}
         <button
-          onClick={() => setCollapsed((v) => !v)}
-          title={collapsed ? "Open nodes panel" : undefined}
+          ref={toggleBtnRef}
+          onClick={collapsed ? () => handleCollapse(false) : onBack}
+          onMouseEnter={handleToggleEnter}
+          onMouseLeave={handleToggleLeave}
           className="w-9 h-9 shrink-0 rounded-lg bg-transparent flex items-center justify-center border-none cursor-pointer text-(--text-muted) hover:text-(--text-secondary) transition-colors duration-150"
         >
-          <AgentIcon />
+          {collapsed ? <SidebarOpenIcon /> : <GridsIcon />}
         </button>
 
-        {/* Title — fades out when collapsed */}
         <div
           className="flex-1 min-w-0 overflow-hidden"
           style={{
@@ -336,17 +363,13 @@ export const GridNodesPanel = ({
             transition: "opacity 100ms ease, max-width 200ms ease 100ms",
           }}
         >
-          <p className="text-[13px] font-semibold text-(--text-primary) whitespace-nowrap leading-[1.2]">
-            Nodes
-          </p>
-          <p className="text-[11px] text-(--text-muted) mt-0.5 leading-relaxed whitespace-nowrap">
-            Drag onto canvas
+          <p className="text-[20px] font-semibold font-['Bricolage_Grotesque',sans-serif] text-(--text-primary) leading-[1.2] whitespace-nowrap truncate overflow-hidden">
+            {gridName}
           </p>
         </div>
 
-        {/* Collapse button — fades out when collapsed (matches Sidebar exactly) */}
         <button
-          onClick={() => setCollapsed(true)}
+          onClick={() => handleCollapse(true)}
           title="Collapse panel"
           className="shrink-0 text-(--text-muted) bg-transparent border-none cursor-pointer p-1 rounded flex items-center transition-all duration-200 hover:text-(--text-secondary)"
           style={{
@@ -360,7 +383,7 @@ export const GridNodesPanel = ({
         </button>
       </div>
 
-      {/* Search — fades out when collapsed (matches Sidebar project picker pattern) */}
+      {/* Search */}
       <div
         className="shrink-0 overflow-hidden px-3"
         style={{
@@ -384,33 +407,48 @@ export const GridNodesPanel = ({
         </div>
       </div>
 
-      {/* Scrollable content */}
-      <div className="flex-1 min-h-0 overflow-y-auto px-3 pb-4 flex flex-col gap-4 pt-3">
-        <NodeSection
-          label="Agents"
-          icon={<AgentIcon />}
-          items={filteredAgents}
-          type="agent"
-          loading={loading}
-          collapsed={collapsed}
-          creating={creatingAgent}
-          onStartCreate={() => setCreatingAgent(true)}
-          onCancelCreate={() => setCreatingAgent(false)}
-          onSubmitCreate={handleCreateAgent}
-        />
-        <NodeSection
-          label="Skills"
-          icon={<SkillIcon />}
-          items={filteredSkills}
-          type="skill"
-          loading={loading}
-          collapsed={collapsed}
-          creating={creatingSkill}
-          onStartCreate={() => setCreatingSkill(true)}
-          onCancelCreate={() => setCreatingSkill(false)}
-          onSubmitCreate={handleCreateSkill}
-        />
-      </div>
+      {/* Scrollable content — hidden entirely when collapsed */}
+      {!collapsed && (
+        <div className="flex-1 min-h-0 overflow-y-auto px-3 pb-4 flex flex-col gap-4 pt-3">
+          <NodeSection
+            label="Agents"
+            icon={<AgentIcon />}
+            items={filteredAgents}
+            type="agent"
+            loading={loading}
+            open={agentsOpen}
+            onToggle={toggleAgents}
+            creating={creatingAgent}
+            onStartCreate={() => setCreatingAgent(true)}
+            onCancelCreate={() => setCreatingAgent(false)}
+            onSubmitCreate={handleCreateAgent}
+          />
+          <NodeSection
+            label="Skills"
+            icon={<SkillIcon />}
+            items={filteredSkills}
+            type="skill"
+            loading={loading}
+            open={skillsOpen}
+            onToggle={toggleSkills}
+            creating={creatingSkill}
+            onStartCreate={() => setCreatingSkill(true)}
+            onCancelCreate={() => setCreatingSkill(false)}
+            onSubmitCreate={handleCreateSkill}
+          />
+        </div>
+      )}
+
+      {tooltipVisible &&
+        createPortal(
+          <span
+            className="fixed z-9999 pointer-events-none -translate-y-1/2 px-2 py-1 rounded-md text-[11px] font-medium whitespace-nowrap bg-(--bg-elevated) border border-(--border-subtle) text-(--text-secondary) animate-[tooltipFadeIn_150ms_ease-in_both]"
+            style={{ left: tooltipPos.x, top: tooltipPos.y }}
+          >
+            {collapsed ? "Open sidebar" : "Back to Grids"}
+          </span>,
+          document.body,
+        )}
     </aside>
   );
 };
