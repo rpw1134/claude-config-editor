@@ -23,7 +23,7 @@ export interface ShellContextValue {
   onBumpGridsRefresh: () => void;
   vcRefreshKey: number;
   onBumpVcRefresh: () => void;
-  showToast: (message: string) => void;
+  showToast: (message: string, type?: import('../components/Shared/Toast').ToastType) => void;
 }
 
 export const ShellContext = createContext<ShellContextValue | null>(null);

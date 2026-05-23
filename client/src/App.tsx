@@ -81,12 +81,12 @@ export default function App() {
   >(null);
 
   // Toast
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ message: string; type: import('./components/Shared/Toast').ToastType } | null>(null);
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const showToast = useCallback((message: string) => {
-    setToastMessage(message);
+  const showToast = useCallback((message: string, type: import('./components/Shared/Toast').ToastType = 'success') => {
+    setToast({ message, type });
     if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
-    toastTimerRef.current = setTimeout(() => setToastMessage(null), 3000);
+    toastTimerRef.current = setTimeout(() => setToast(null), 3000);
   }, []);
 
   // Auto-load most recent project on mount
@@ -310,7 +310,7 @@ export default function App() {
           )}
         </VersionControlProvider>
       </ShellContext.Provider>
-      {toastMessage && <Toast message={toastMessage} />}
+      {toast && <Toast message={toast.message} type={toast.type} />}
     </>
   );
 }

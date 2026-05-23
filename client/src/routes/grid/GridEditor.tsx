@@ -42,7 +42,7 @@ function GridEditorInner({
     updateEdge,
     undo,
     save,
-  } = useGridEditor(projectPath, gridName);
+  } = useGridEditor(projectPath, gridName, (msg) => showToast(msg, 'error'));
 
   const handleSave = useCallback(async () => {
     try {

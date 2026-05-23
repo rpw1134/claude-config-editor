@@ -64,7 +64,48 @@ interface HistorySnapshot {
   edges: Edge[];
 }
 
-export function useGridEditor(projectPath: string, gridName: string) {
+// Undirected reachability — treats every edge as bidirectional
+function isConnected(edges: Edge[], nodeA: string, nodeB: string): boolean {
+  const visited = new Set<string>();
+  const queue = [nodeA];
+  while (queue.length > 0) {
+    const current = queue.shift()!;
+    if (current === nodeB) return true;
+    if (visited.has(current)) continue;
+    visited.add(current);
+    for (const e of edges) {
+      if (e.source === current) queue.push(e.target);
+      if (e.target === current) queue.push(e.source);
+    }
+  }
+  return false;
+}
+
+// Returns depth of each node from the orchestrator via undirected BFS
+function depthFromOrchestrator(nodes: Node[], edges: Edge[]): Map<string, number> {
+  const orch = nodes.find((n) => n.type === 'orchestrator');
+  if (!orch) return new Map();
+  const depth = new Map<string, number>();
+  const queue: [string, number][] = [[orch.id, 0]];
+  while (queue.length > 0) {
+    const [id, d] = queue.shift()!;
+    if (depth.has(id)) continue;
+    depth.set(id, d);
+    for (const e of edges) {
+      if (e.source === id && !depth.has(e.target)) queue.push([e.target, d + 1]);
+      if (e.target === id && !depth.has(e.source)) queue.push([e.source, d + 1]);
+    }
+  }
+  return depth;
+}
+
+function isDuplicate(edges: Edge[], a: string, b: string): boolean {
+  return edges.some(
+    (e) => (e.source === a && e.target === b) || (e.source === b && e.target === a),
+  );
+}
+
+export function useGridEditor(projectPath: string, gridName: string, onError?: (msg: string) => void) {
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
   const [loading, setLoading] = useState(true);
@@ -181,8 +222,25 @@ export function useGridEditor(projectPath: string, gridName: string) {
   );
 
   const requestConnection = useCallback((connection: Connection) => {
-    setPendingConnection({ connection });
-  }, []);
+    const src = connection.source ?? '';
+    const tgt = connection.target ?? '';
+    if (isDuplicate(edgesRef.current, src, tgt)) {
+      onError?.('These nodes are already connected.');
+      return;
+    }
+    if (isConnected(edgesRef.current, src, tgt)) {
+      onError?.('This connection would create a cycle.');
+      return;
+    }
+    // Orient edge away from orchestrator based on BFS depth
+    const depth = depthFromOrchestrator(nodesRef.current, edgesRef.current);
+    const srcDepth = depth.get(src) ?? Infinity;
+    const tgtDepth = depth.get(tgt) ?? Infinity;
+    const oriented: Connection = srcDepth <= tgtDepth
+      ? connection
+      : { ...connection, source: tgt, target: src, sourceHandle: connection.targetHandle, targetHandle: connection.sourceHandle };
+    setPendingConnection({ connection: oriented });
+  }, [onError]);
 
   const confirmConnection = useCallback(
     (description: string) => {
