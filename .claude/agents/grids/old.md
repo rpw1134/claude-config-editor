@@ -26,7 +26,15 @@ type Agent = {
 ## Agent Graph
 
 ```json
-[]
+[
+  {
+    "name": "test-agent",
+    "directory": "~/.claude/agents/test-agent.md",
+    "invocation_rule": "testing",
+    "agents": [],
+    "skills": []
+  }
+]
 ```
 
 ## Invocation Instructions
