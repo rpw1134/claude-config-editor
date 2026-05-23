@@ -4,7 +4,6 @@ import {
   postVcCommit,
   postVcGitignoreProtect,
   postVcGitignoreUnblock,
-  postVcGitignoreStryde,
 } from "../../lib/api";
 import type { ChangeEntry } from "../../lib/api";
 import { VCDiffViewer } from "./VCDiffViewer";
@@ -235,7 +234,6 @@ export const VCChangesPane = ({ projectPath }: VCChangesPaneProps) => {
   const [expandedSkill, setExpandedSkill] = useState<string | null>(null);
 
   const [localsPromptDismissed, setLocalsPromptDismissed] = useState(false);
-  const [strydeDecided, setStrydeDecided] = useState(false);
 
   if (!status) return null;
 
@@ -289,14 +287,7 @@ export const VCChangesPane = ({ projectPath }: VCChangesPaneProps) => {
     refresh();
   };
 
-  const handleStrydeIgnore = async (ignore: boolean) => {
-    await postVcGitignoreStryde(projectPath, ignore);
-    setStrydeDecided(true);
-    refresh();
-  };
-
   const showLocalsPrompt = !gitignore.localsProtected && !localsPromptDismissed;
-  const showStrydePrompt = !gitignore.strydeIgnored && !strydeDecided;
 
   return (
     <div className="flex-1 flex flex-col min-h-0 bg-(--bg-base)">
@@ -354,29 +345,6 @@ export const VCChangesPane = ({ projectPath }: VCChangesPaneProps) => {
         </Banner>
       )}
 
-      {showStrydePrompt && (
-        <Banner variant="blue">
-          <p className="m-0 text-[13px] text-(--text-primary)">
-            Track{" "}
-            <code className="font-['Fira_Code',monospace] text-[12px]">.stryde/</code>{" "}
-            settings with git?
-          </p>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => handleStrydeIgnore(true)}
-              className="text-[12px] font-medium text-blue-300 bg-blue-400/10 border border-blue-400/20 px-3 py-1 rounded cursor-pointer hover:bg-blue-400/15 transition-colors duration-150"
-            >
-              Ignore (recommended)
-            </button>
-            <button
-              onClick={() => handleStrydeIgnore(false)}
-              className="text-[12px] text-(--text-muted) bg-transparent border-none cursor-pointer hover:text-(--text-secondary) transition-colors duration-150"
-            >
-              Track with git
-            </button>
-          </div>
-        </Banner>
-      )}
 
       {/* ── Header ──────────────────────────────────────────────────── */}
       <div className="shrink-0 w-full px-14 pt-16 pb-6">

@@ -324,12 +324,6 @@ export async function postVcGitignoreUnblock(
   await post("/api/vc/gitignore/unblock", { projectPath, gitignorePath });
 }
 
-export async function postVcGitignoreStryde(
-  projectPath: string,
-  ignore: boolean
-): Promise<void> {
-  await post("/api/vc/gitignore/stryde", { projectPath, ignore });
-}
 
 export async function fetchVcDiffFiles(
   projectPath: string,
