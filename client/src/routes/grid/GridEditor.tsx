@@ -4,10 +4,11 @@ import { ReactFlowProvider, useReactFlow } from '@xyflow/react';
 import { useShell } from '../../contexts/ShellContext';
 import { decodeProject, encodeProject } from '../../lib/navigation';
 import { useGridEditor } from '../../hooks/useGridEditor';
-import { GridTopBar } from './GridTopBar';
+import { GridTopBar, type GridTabId } from './GridTopBar';
 import { GridNodesPanel } from './GridNodesPanel';
 import { GridCanvas } from './GridCanvas';
-import { GridPromptPreview } from './GridPromptPreview';
+import { HistoryTab } from './HistoryTab';
+import { SettingsTab } from './SettingsTab';
 import { EdgeDescriptionModal } from '../../components/Grid/EdgeDescriptionModal';
 
 function GridEditorInner({
@@ -20,7 +21,7 @@ function GridEditorInner({
   const navigate = useNavigate();
   const { showToast, onBumpGridsRefresh, onBumpVcRefresh } = useShell();
   const { screenToFlowPosition } = useReactFlow();
-  const [previewOpen, setPreviewOpen] = useState(true);
+  const [activeTab, setActiveTab] = useState<GridTabId>('editor');
   const [nodesPanelRefreshKey, setNodesPanelRefreshKey] = useState(0);
   const canvasRef = useRef<HTMLDivElement>(null);
 
@@ -32,7 +33,9 @@ function GridEditorInner({
     dirty,
     canUndo,
     pendingConnection,
-    generatedPrompt,
+    gridCreatedAt,
+    historySnapshots,
+    historyVersion,
     onNodesChange,
     onEdgesChange,
     requestConnection,
@@ -41,8 +44,12 @@ function GridEditorInner({
     addNode,
     updateEdge,
     undo,
+    restoreTo,
     save,
   } = useGridEditor(projectPath, gridName, (msg) => showToast(msg, 'error'));
+
+  // historyVersion is consumed here so the history tab re-renders when it changes
+  void historyVersion;
 
   const handleSave = useCallback(async () => {
     try {
@@ -55,14 +62,16 @@ function GridEditorInner({
     }
   }, [save, nodes, edges, onBumpGridsRefresh, onBumpVcRefresh, showToast]);
 
-  // CMD+S to save, CMD+Z to undo
+  // CMD+S to save, CMD+Z to undo (skip when focused on text inputs)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!e.metaKey) return;
+      const tag = document.activeElement?.tagName;
       if (e.key === 's') {
         e.preventDefault();
         if (dirty && !saving) handleSave();
       } else if (e.key === 'z') {
+        if (tag === 'INPUT' || tag === 'TEXTAREA') return;
         e.preventDefault();
         undo();
       }
@@ -84,17 +93,20 @@ function GridEditorInner({
       if (!type || !name) return;
 
       const offsetRaw = e.dataTransfer.getData('application/drag-offset');
-      const { offsetX = 0, offsetY = 0 } = offsetRaw ? (JSON.parse(offsetRaw) as { offsetX: number; offsetY: number }) : {};
+      const { offsetX = 0, offsetY = 0 } = offsetRaw
+        ? (JSON.parse(offsetRaw) as { offsetX: number; offsetY: number })
+        : {};
 
-      const position = screenToFlowPosition({
-        x: e.clientX - offsetX,
-        y: e.clientY - offsetY,
-      });
-
-      addNode(type, name, position);
+      addNode(type, name, screenToFlowPosition({ x: e.clientX - offsetX, y: e.clientY - offsetY }));
     },
     [screenToFlowPosition, addNode],
   );
+
+  const handleDeleted = useCallback(() => {
+    onBumpGridsRefresh();
+    onBumpVcRefresh();
+    navigate(`/${encodeProject(projectPath)}/grids`);
+  }, [onBumpGridsRefresh, onBumpVcRefresh, navigate, projectPath]);
 
   if (loading) {
     return (
@@ -111,35 +123,53 @@ function GridEditorInner({
         dirty={dirty}
         saving={saving}
         canUndo={canUndo}
-        previewOpen={previewOpen}
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
         onBack={() => navigate(`/${encodeProject(projectPath)}/grids`)}
         onSave={handleSave}
         onUndo={undo}
-        onTogglePreview={() => setPreviewOpen((v) => !v)}
       />
 
-      <div className="flex flex-1 min-h-0" ref={canvasRef}>
-        <GridNodesPanel
+      {activeTab === 'editor' && (
+        <div className="flex flex-1 min-h-0" ref={canvasRef}>
+          <GridNodesPanel
+            projectPath={projectPath}
+            refreshKey={nodesPanelRefreshKey}
+            onAgentCreated={() => setNodesPanelRefreshKey((k) => k + 1)}
+            onSkillCreated={() => setNodesPanelRefreshKey((k) => k + 1)}
+            showToast={showToast}
+          />
+          <GridCanvas
+            nodes={nodes}
+            edges={edges}
+            onNodesChange={onNodesChange}
+            onEdgesChange={onEdgesChange}
+            onConnect={requestConnection}
+            onUpdateEdge={updateEdge}
+            onDrop={handleDrop}
+            onDragOver={handleDragOver}
+          />
+        </div>
+      )}
+
+      {activeTab === 'history' && (
+        <HistoryTab
+          snapshots={historySnapshots}
+          currentNodeCount={nodes.length}
+          currentEdgeCount={edges.length}
+          onRestore={restoreTo}
+        />
+      )}
+
+      {activeTab === 'settings' && (
+        <SettingsTab
           projectPath={projectPath}
-          refreshKey={nodesPanelRefreshKey}
-          onAgentCreated={() => setNodesPanelRefreshKey((k) => k + 1)}
-          onSkillCreated={() => setNodesPanelRefreshKey((k) => k + 1)}
+          gridName={gridName}
+          createdAt={gridCreatedAt}
+          onDeleted={handleDeleted}
           showToast={showToast}
         />
-
-        <GridCanvas
-          nodes={nodes}
-          edges={edges}
-          onNodesChange={onNodesChange}
-          onEdgesChange={onEdgesChange}
-          onConnect={requestConnection}
-          onUpdateEdge={updateEdge}
-          onDrop={handleDrop}
-          onDragOver={handleDragOver}
-        />
-
-        {previewOpen && <GridPromptPreview prompt={generatedPrompt} />}
-      </div>
+      )}
 
       {pendingConnection && (
         <EdgeDescriptionModal

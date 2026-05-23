@@ -1,87 +1,38 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   fetchAgents,
   fetchSkills,
   createAgent,
   createSkill,
 } from "../../lib/api";
+import {
+  AgentIcon,
+  SkillIcon,
+  SearchIcon,
+  SidebarCloseIcon,
+} from "../../components/Icons";
 
-interface DraggableItemProps {
-  name: string;
-  type: "agent" | "skill";
-}
+// ── Chevron (local, tiny) ─────────────────────────────────────────────────────
 
-const DraggableItem = ({ name, type }: DraggableItemProps) => {
-  const handleDragStart = (e: React.DragEvent) => {
-    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-    const offsetX = e.clientX - rect.left;
-    const offsetY = e.clientY - rect.top;
-    e.dataTransfer.setData("application/grid-node-type", type);
-    e.dataTransfer.setData("application/grid-node-name", name);
-    e.dataTransfer.setData(
-      "application/drag-offset",
-      JSON.stringify({ offsetX, offsetY }),
-    );
-    e.dataTransfer.effectAllowed = "copy";
-  };
+const ChevronIcon = ({ open }: { open: boolean }) => (
+  <svg
+    width="10"
+    height="10"
+    viewBox="0 0 10 10"
+    fill="none"
+    className={`text-(--text-muted) transition-transform duration-150 shrink-0 ${open ? "rotate-90" : ""}`}
+  >
+    <path
+      d="M3 2L7 5L3 8"
+      stroke="currentColor"
+      strokeWidth="1.3"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
 
-  return (
-    <div
-      draggable
-      onDragStart={handleDragStart}
-      className={[
-        "flex items-center gap-2.5 px-3 py-2 rounded-lg cursor-grab active:cursor-grabbing",
-        "bg-white/3 border border-white/6 hover:bg-white/6 hover:border-white/12",
-        "transition-all duration-120 select-none",
-      ].join(" ")}
-    >
-      {type === "agent" ? (
-        <svg
-          width="12"
-          height="12"
-          viewBox="0 0 15 15"
-          fill="none"
-          className="text-(--text-muted) shrink-0"
-        >
-          <circle
-            cx="7.5"
-            cy="5"
-            r="3"
-            stroke="currentColor"
-            strokeWidth="1.3"
-            fill="none"
-          />
-          <path
-            d="M2 13C2 10.24 4.46 8 7.5 8C10.54 8 13 10.24 13 13"
-            stroke="currentColor"
-            strokeWidth="1.3"
-            strokeLinecap="round"
-            fill="none"
-          />
-        </svg>
-      ) : (
-        <svg
-          width="12"
-          height="12"
-          viewBox="0 0 15 15"
-          fill="none"
-          className="text-[#a78bfa] shrink-0"
-        >
-          <path
-            d="M7.5 1L9.18 5.27L13.5 5.64L10.35 8.38L11.35 12.59L7.5 10.2L3.65 12.59L4.65 8.38L1.5 5.64L5.82 5.27L7.5 1Z"
-            stroke="currentColor"
-            strokeWidth="1.3"
-            fill="none"
-            strokeLinejoin="round"
-          />
-        </svg>
-      )}
-      <span className="text-[12px] font-medium text-(--text-secondary) truncate">
-        {name}
-      </span>
-    </div>
-  );
-};
+// ── InlineCreate ──────────────────────────────────────────────────────────────
 
 interface InlineCreateProps {
   label: string;
@@ -118,6 +69,168 @@ const InlineCreate = ({ label, onSubmit, onCancel }: InlineCreateProps) => {
   );
 };
 
+// ── NodeSection ───────────────────────────────────────────────────────────────
+
+interface NodeSectionProps {
+  label: string;
+  icon: React.ReactNode;
+  items: string[];
+  type: "agent" | "skill";
+  loading: boolean;
+  collapsed: boolean;
+  creating: boolean;
+  onStartCreate: () => void;
+  onCancelCreate: () => void;
+  onSubmitCreate: (name: string) => void;
+}
+
+const NodeSection = ({
+  label,
+  icon,
+  items,
+  type,
+  loading,
+  collapsed,
+  creating,
+  onStartCreate,
+  onCancelCreate,
+  onSubmitCreate,
+}: NodeSectionProps) => {
+  // Section open/close state is independent of sidebar collapsed state
+  const [open, setOpen] = useState(true);
+
+  return (
+    <div>
+      {/* Section header */}
+      <button
+        onClick={() => !collapsed && setOpen((v) => !v)}
+        title={collapsed ? label : undefined}
+        className="w-full flex items-center mb-1 text-left bg-transparent border-none cursor-pointer"
+        style={{ gap: collapsed ? 0 : 6 }}
+      >
+        {/* In collapsed mode the section header shows just the type icon */}
+        {collapsed ? (
+          <span className="w-full flex items-center justify-center py-1 text-(--text-muted)">
+            {icon}
+          </span>
+        ) : (
+          <>
+            <ChevronIcon open={open} />
+            <span className="text-[11px] font-semibold text-(--text-secondary) uppercase tracking-widest">
+              {label}{" "}
+              {!loading && (
+                <span className="opacity-50">({items.length})</span>
+              )}
+            </span>
+          </>
+        )}
+      </button>
+
+      {/* Items */}
+      {!loading && (
+        <div className="flex flex-col" style={{ gap: collapsed ? 2 : 6 }}>
+          {(collapsed || open) &&
+            items.map((name) =>
+              collapsed ? (
+                // Collapsed: icon-only, centered, not draggable
+                <div
+                  key={name}
+                  title={name}
+                  className="flex items-center justify-center h-8 rounded-lg text-(--text-muted) hover:text-(--text-secondary) hover:bg-(--bg-hover) transition-colors duration-120"
+                >
+                  {icon}
+                </div>
+              ) : (
+                // Expanded: full draggable item
+                <DraggableItem key={name} name={name} type={type} />
+              ),
+            )}
+
+          {/* Create button / inline form — hidden when collapsed */}
+          <div
+            className="overflow-hidden"
+            style={{
+              opacity: collapsed ? 0 : 1,
+              maxHeight: collapsed ? 0 : 200,
+              pointerEvents: collapsed ? "none" : "auto",
+              transition: "opacity 100ms ease, max-height 200ms ease 100ms",
+            }}
+          >
+            {open &&
+              (creating ? (
+                <InlineCreate
+                  label={label.slice(0, -1)} // "Agents" → "Agent", "Skills" → "Skill"
+                  onSubmit={onSubmitCreate}
+                  onCancel={onCancelCreate}
+                />
+              ) : (
+                <button
+                  onClick={onStartCreate}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium text-(--text-muted) hover:text-(--text-secondary) bg-transparent border border-dashed border-white/10 hover:border-white/20 cursor-pointer transition-all duration-120 mt-1 w-full"
+                >
+                  <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                    <path
+                      d="M5 1.5V8.5M1.5 5H8.5"
+                      stroke="currentColor"
+                      strokeWidth="1.4"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                  New {label.replace(/s$/, "")}
+                </button>
+              ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ── DraggableItem ─────────────────────────────────────────────────────────────
+
+interface DraggableItemProps {
+  name: string;
+  type: "agent" | "skill";
+}
+
+const DraggableItem = ({ name, type }: DraggableItemProps) => {
+  const handleDragStart = (e: React.DragEvent) => {
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    const offsetX = e.clientX - rect.left;
+    const offsetY = e.clientY - rect.top;
+    e.dataTransfer.setData("application/grid-node-type", type);
+    e.dataTransfer.setData("application/grid-node-name", name);
+    e.dataTransfer.setData(
+      "application/drag-offset",
+      JSON.stringify({ offsetX, offsetY }),
+    );
+    e.dataTransfer.effectAllowed = "copy";
+  };
+
+  return (
+    <div
+      draggable
+      onDragStart={handleDragStart}
+      className={[
+        "flex items-center gap-2.5 px-3 py-2 rounded-lg cursor-grab active:cursor-grabbing",
+        "bg-white/3 border border-white/6 hover:bg-white/6 hover:border-white/12",
+        "transition-all duration-120 select-none",
+      ].join(" ")}
+    >
+      <span
+        className={`shrink-0 ${type === "skill" ? "text-[#a78bfa]" : "text-(--text-muted)"}`}
+      >
+        {type === "agent" ? <AgentIcon /> : <SkillIcon />}
+      </span>
+      <span className="text-[12px] font-medium text-(--text-secondary) truncate">
+        {name}
+      </span>
+    </div>
+  );
+};
+
+// ── GridNodesPanel ─────────────────────────────────────────────────────────────
+
 interface GridNodesPanelProps {
   projectPath: string;
   refreshKey: number;
@@ -133,13 +246,14 @@ export const GridNodesPanel = ({
   onSkillCreated,
   showToast,
 }: GridNodesPanelProps) => {
+  const [collapsed, setCollapsed] = useState(false);
   const [agents, setAgents] = useState<string[]>([]);
   const [skills, setSkills] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
-  const [agentsOpen, setAgentsOpen] = useState(true);
-  const [skillsOpen, setSkillsOpen] = useState(true);
   const [creatingAgent, setCreatingAgent] = useState(false);
   const [creatingSkill, setCreatingSkill] = useState(false);
+  const [search, setSearch] = useState("");
+  const searchRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -185,136 +299,118 @@ export const GridNodesPanel = ({
     setCreatingSkill(false);
   };
 
+  const q = search.trim().toLowerCase();
+  const filteredAgents = q ? agents.filter((n) => n.toLowerCase().includes(q)) : agents;
+  const filteredSkills = q ? skills.filter((n) => n.toLowerCase().includes(q)) : skills;
+
   return (
-    <div className="w-50 shrink-0 flex flex-col border-r border-(--border-faint) bg-(--bg-sidebar) overflow-y-auto">
-      <div className="px-4 pt-5 pb-3 shrink-0">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-(--text-muted) m-0">
-          Nodes
-        </p>
-        <p className="text-[11px] text-(--text-muted) mt-1 m-0 leading-relaxed">
-          Drag onto the canvas to add
-        </p>
-      </div>
+    <aside
+      className={`shrink-0 flex flex-col h-full overflow-hidden transition-[width,background-color] duration-250 ease-in-out ${
+        collapsed
+          ? "bg-(--bg-base)"
+          : "bg-(--bg-sidebar) border-r border-(--border-faint)"
+      }`}
+      style={{ width: collapsed ? 52 : 260 }}
+    >
+      {/* Header */}
+      <div
+        className={`pt-4 pb-3 min-h-17 shrink-0 flex items-center pl-2 ${
+          collapsed ? "gap-0" : "gap-2.5 pr-3 border-b border-(--border-faint)"
+        }`}
+      >
+        {/* Icon — clicking when collapsed re-opens */}
+        <button
+          onClick={() => setCollapsed((v) => !v)}
+          title={collapsed ? "Open nodes panel" : undefined}
+          className="w-9 h-9 shrink-0 rounded-lg bg-transparent flex items-center justify-center border-none cursor-pointer text-(--text-muted) hover:text-(--text-secondary) transition-colors duration-150"
+        >
+          <AgentIcon />
+        </button>
 
-      <div className="flex-1 px-3 pb-4 flex flex-col gap-4 min-h-0">
-        <div>
-          <button
-            onClick={() => setAgentsOpen((v) => !v)}
-            className="w-full flex items-center gap-1.5 mb-2 text-left bg-transparent border-none cursor-pointer group"
-          >
-            <svg
-              width="10"
-              height="10"
-              viewBox="0 0 10 10"
-              fill="none"
-              className={`text-(--text-muted) transition-transform duration-150 ${agentsOpen ? "rotate-90" : ""}`}
-            >
-              <path
-                d="M3 2L7 5L3 8"
-                stroke="currentColor"
-                strokeWidth="1.3"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-            <span className="text-[11px] font-semibold text-(--text-secondary) uppercase tracking-widest">
-              Agents{" "}
-              {!loading && (
-                <span className="opacity-50">({agents.length})</span>
-              )}
-            </span>
-          </button>
-
-          {agentsOpen && !loading && (
-            <div className="flex flex-col gap-1.5">
-              {agents.map((name) => (
-                <DraggableItem key={name} name={name} type="agent" />
-              ))}
-              {creatingAgent ? (
-                <InlineCreate
-                  label="Agent"
-                  onSubmit={handleCreateAgent}
-                  onCancel={() => setCreatingAgent(false)}
-                />
-              ) : (
-                <button
-                  onClick={() => setCreatingAgent(true)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium text-(--text-muted) hover:text-(--text-secondary) bg-transparent border border-dashed border-white/10 hover:border-white/20 cursor-pointer transition-all duration-120 mt-1"
-                >
-                  <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-                    <path
-                      d="M5 1.5V8.5M1.5 5H8.5"
-                      stroke="currentColor"
-                      strokeWidth="1.4"
-                      strokeLinecap="round"
-                    />
-                  </svg>
-                  New Agent
-                </button>
-              )}
-            </div>
-          )}
+        {/* Title — fades out when collapsed */}
+        <div
+          className="flex-1 min-w-0 overflow-hidden"
+          style={{
+            opacity: collapsed ? 0 : 1,
+            maxWidth: collapsed ? 0 : 300,
+            transition: "opacity 100ms ease, max-width 200ms ease 100ms",
+          }}
+        >
+          <p className="text-[13px] font-semibold text-(--text-primary) whitespace-nowrap leading-[1.2]">
+            Nodes
+          </p>
+          <p className="text-[11px] text-(--text-muted) mt-0.5 leading-relaxed whitespace-nowrap">
+            Drag onto canvas
+          </p>
         </div>
 
-        <div>
-          <button
-            onClick={() => setSkillsOpen((v) => !v)}
-            className="w-full flex items-center gap-1.5 mb-2 text-left bg-transparent border-none cursor-pointer group"
-          >
-            <svg
-              width="10"
-              height="10"
-              viewBox="0 0 10 10"
-              fill="none"
-              className={`text-(--text-muted) transition-transform duration-150 ${skillsOpen ? "rotate-90" : ""}`}
-            >
-              <path
-                d="M3 2L7 5L3 8"
-                stroke="currentColor"
-                strokeWidth="1.3"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-            <span className="text-[11px] font-semibold text-(--text-secondary) uppercase tracking-widest">
-              Skills{" "}
-              {!loading && (
-                <span className="opacity-50">({skills.length})</span>
-              )}
-            </span>
-          </button>
+        {/* Collapse button — fades out when collapsed (matches Sidebar exactly) */}
+        <button
+          onClick={() => setCollapsed(true)}
+          title="Collapse panel"
+          className="shrink-0 text-(--text-muted) bg-transparent border-none cursor-pointer p-1 rounded flex items-center transition-all duration-200 hover:text-(--text-secondary)"
+          style={{
+            opacity: collapsed ? 0 : 1,
+            pointerEvents: collapsed ? "none" : "auto",
+            width: collapsed ? 0 : undefined,
+            transition: "opacity 100ms ease, width 200ms ease 100ms",
+          }}
+        >
+          <SidebarCloseIcon />
+        </button>
+      </div>
 
-          {skillsOpen && !loading && (
-            <div className="flex flex-col gap-1.5">
-              {skills.map((name) => (
-                <DraggableItem key={name} name={name} type="skill" />
-              ))}
-              {creatingSkill ? (
-                <InlineCreate
-                  label="Skill"
-                  onSubmit={handleCreateSkill}
-                  onCancel={() => setCreatingSkill(false)}
-                />
-              ) : (
-                <button
-                  onClick={() => setCreatingSkill(true)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium text-(--text-muted) hover:text-(--text-secondary) bg-transparent border border-dashed border-white/10 hover:border-white/20 cursor-pointer transition-all duration-120 mt-1"
-                >
-                  <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-                    <path
-                      d="M5 1.5V8.5M1.5 5H8.5"
-                      stroke="currentColor"
-                      strokeWidth="1.4"
-                      strokeLinecap="round"
-                    />
-                  </svg>
-                  New Skill
-                </button>
-              )}
-            </div>
-          )}
+      {/* Search — fades out when collapsed (matches Sidebar project picker pattern) */}
+      <div
+        className="shrink-0 overflow-hidden px-3"
+        style={{
+          opacity: collapsed ? 0 : 1,
+          maxHeight: collapsed ? 0 : 80,
+          pointerEvents: collapsed ? "none" : "auto",
+          transition: "opacity 100ms ease, max-height 200ms ease 100ms",
+        }}
+      >
+        <div className="relative mt-3 mb-1">
+          <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-(--text-muted) pointer-events-none">
+            <SearchIcon />
+          </span>
+          <input
+            ref={searchRef}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search agents & skills…"
+            className="w-full bg-(--bg-surface) border border-(--border-subtle) rounded-lg pl-8 pr-3 py-1.5 text-[13px] text-(--text-primary) outline-none focus:outline-none focus:border-(--accent) transition-colors duration-120"
+          />
         </div>
       </div>
-    </div>
+
+      {/* Scrollable content */}
+      <div className="flex-1 min-h-0 overflow-y-auto px-3 pb-4 flex flex-col gap-4 pt-3">
+        <NodeSection
+          label="Agents"
+          icon={<AgentIcon />}
+          items={filteredAgents}
+          type="agent"
+          loading={loading}
+          collapsed={collapsed}
+          creating={creatingAgent}
+          onStartCreate={() => setCreatingAgent(true)}
+          onCancelCreate={() => setCreatingAgent(false)}
+          onSubmitCreate={handleCreateAgent}
+        />
+        <NodeSection
+          label="Skills"
+          icon={<SkillIcon />}
+          items={filteredSkills}
+          type="skill"
+          loading={loading}
+          collapsed={collapsed}
+          creating={creatingSkill}
+          onStartCreate={() => setCreatingSkill(true)}
+          onCancelCreate={() => setCreatingSkill(false)}
+          onSubmitCreate={handleCreateSkill}
+        />
+      </div>
+    </aside>
   );
 };

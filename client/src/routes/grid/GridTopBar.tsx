@@ -1,15 +1,28 @@
 import { BackArrowIcon } from '../../components/Icons';
 
+export type GridTabId = 'editor' | 'history' | 'settings';
+
+interface TabDef {
+  id: GridTabId;
+  label: string;
+}
+
+const TABS: TabDef[] = [
+  { id: 'editor', label: 'Editor' },
+  { id: 'history', label: 'History' },
+  { id: 'settings', label: 'Settings' },
+];
+
 interface GridTopBarProps {
   gridName: string;
   dirty: boolean;
   saving: boolean;
   canUndo: boolean;
-  previewOpen: boolean;
+  activeTab: GridTabId;
+  onTabChange: (tab: GridTabId) => void;
   onBack: () => void;
   onSave: () => void;
   onUndo: () => void;
-  onTogglePreview: () => void;
 }
 
 export const GridTopBar = ({
@@ -17,82 +30,94 @@ export const GridTopBar = ({
   dirty,
   saving,
   canUndo,
-  previewOpen,
+  activeTab,
+  onTabChange,
   onBack,
   onSave,
   onUndo,
-  onTogglePreview,
 }: GridTopBarProps) => (
-  <div className="h-14 shrink-0 flex items-center gap-4 px-5 border-b border-(--border-faint) bg-(--bg-sidebar)">
-    <button
-      onClick={onBack}
-      className="flex items-center gap-2 text-(--text-muted) hover:text-(--text-primary) transition-colors duration-150 bg-transparent border-none cursor-pointer text-[13px] font-medium py-1 px-2 rounded-lg hover:bg-white/5"
-    >
-      <BackArrowIcon />
-      <span>Grids</span>
-    </button>
+  <div className="shrink-0 flex items-stretch justify-between px-4 border-b border-(--border-faint) bg-(--bg-sidebar)">
+    <div className="flex items-stretch gap-1">
+      {/* Back button */}
+      <button
+        type="button"
+        onClick={onBack}
+        className="flex items-center gap-1.5 pt-6 pb-5 text-[14px] text-(--text-secondary) hover:text-(--text-primary) bg-transparent border-none cursor-pointer transition-colors duration-150 pr-3 mr-2"
+      >
+        <BackArrowIcon /> Grids
+      </button>
 
-    <div className="w-px h-5 bg-(--border-faint)" />
+      {/* Grid name + unsaved badge */}
+      <div className="flex items-center gap-2 pr-4 mr-1 border-r border-(--border-faint)">
+        <span className="text-[15px] font-bold text-(--text-primary) tracking-tight font-['Bricolage_Grotesque',sans-serif]">
+          {gridName}
+        </span>
+        {dirty && (
+          <span className="text-[11px] font-medium text-(--text-muted) bg-white/5 px-2 py-0.5 rounded-full">
+            unsaved
+          </span>
+        )}
+      </div>
 
-    <h1 className="text-[15px] font-bold text-(--text-primary) tracking-tight m-0 font-['Bricolage_Grotesque',sans-serif]">
-      {gridName}
-    </h1>
+      {/* Tabs */}
+      {TABS.map((tab) => {
+        const isActive = tab.id === activeTab;
+        return (
+          <button
+            key={tab.id}
+            type="button"
+            onClick={() => onTabChange(tab.id)}
+            className={[
+              'pt-6 pb-5 px-3 bg-transparent border-none relative transition-colors duration-150',
+              isActive
+                ? 'cursor-default text-[15px] font-semibold text-(--text-primary) after:absolute after:bottom-0 after:left-0 after:right-0 after:h-px after:bg-(--accent)'
+                : 'cursor-pointer text-[14px] text-(--text-secondary) hover:text-(--text-primary)',
+            ].join(' ')}
+          >
+            {tab.label}
+          </button>
+        );
+      })}
+    </div>
 
-    {dirty && (
-      <span className="text-[11px] font-medium text-(--text-muted) bg-white/5 px-2 py-0.5 rounded-full">
-        unsaved
-      </span>
+    {/* Right actions — only visible on editor tab */}
+    {activeTab === 'editor' && (
+      <div className="flex items-center gap-1">
+        <button
+          type="button"
+          onClick={canUndo ? onUndo : undefined}
+          disabled={!canUndo}
+          title="Undo (⌘Z)"
+          className={[
+            'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-medium border-none transition-colors duration-150',
+            canUndo
+              ? 'text-(--text-secondary) bg-transparent cursor-pointer hover:bg-white/5 hover:text-(--text-primary)'
+              : 'text-(--text-muted) bg-transparent cursor-not-allowed opacity-40',
+          ].join(' ')}
+        >
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <path d="M2 5H8.5C10.43 5 12 6.57 12 8.5C12 10.43 10.43 12 8.5 12H4"
+              stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+            <path d="M4.5 2.5L2 5L4.5 7.5"
+              stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          Undo
+        </button>
+
+        <button
+          type="button"
+          onClick={dirty && !saving ? onSave : undefined}
+          disabled={!dirty || saving}
+          className={[
+            'flex items-center gap-2 px-4 py-1.5 rounded-lg text-[13px] border-none transition-colors duration-150',
+            dirty && !saving
+              ? 'text-(--accent) font-semibold cursor-pointer hover:bg-(--accent)/8 bg-transparent'
+              : 'bg-(--bg-surface) text-(--text-muted) opacity-50 cursor-not-allowed font-medium',
+          ].join(' ')}
+        >
+          {saving ? 'Saving…' : 'Save'}
+        </button>
+      </div>
     )}
-
-    <div className="flex-1" />
-
-    <button
-      onClick={onTogglePreview}
-      className={[
-        'flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-[12px] font-semibold border transition-colors duration-150 cursor-pointer',
-        previewOpen
-          ? 'bg-(--accent)/12 border-(--accent)/30 text-(--accent)'
-          : 'bg-transparent border-(--border-subtle) text-(--text-secondary) hover:text-(--text-primary) hover:border-(--border-default)',
-      ].join(' ')}
-    >
-      <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
-        <rect x="1" y="2" width="5" height="9" rx="1" stroke="currentColor" strokeWidth="1.2" />
-        <rect x="7" y="2" width="5" height="9" rx="1" stroke="currentColor" strokeWidth="1.2" />
-      </svg>
-      Preview
-    </button>
-
-    <button
-      onClick={canUndo ? onUndo : undefined}
-      disabled={!canUndo}
-      title="Undo (⌘Z)"
-      className={[
-        'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-medium border-none transition-colors duration-150',
-        canUndo
-          ? 'text-(--text-secondary) bg-transparent cursor-pointer hover:bg-white/5 hover:text-(--text-primary)'
-          : 'text-(--text-muted) bg-transparent cursor-not-allowed opacity-40',
-      ].join(' ')}
-    >
-      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-        <path d="M2 5H8.5C10.43 5 12 6.57 12 8.5C12 10.43 10.43 12 8.5 12H4"
-          stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
-        <path d="M4.5 2.5L2 5L4.5 7.5"
-          stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-      Undo
-    </button>
-
-    <button
-      onClick={dirty && !saving ? onSave : undefined}
-      disabled={!dirty || saving}
-      className={[
-        'flex items-center gap-2 px-4 py-1.5 rounded-lg text-[13px] border-none transition-colors duration-150',
-        dirty && !saving
-          ? 'text-(--accent) font-semibold cursor-pointer hover:bg-(--accent)/8 bg-transparent'
-          : 'bg-(--bg-surface) text-(--text-muted) opacity-50 cursor-not-allowed font-medium',
-      ].join(' ')}
-    >
-      {saving ? 'Saving…' : 'Save'}
-    </button>
   </div>
 );

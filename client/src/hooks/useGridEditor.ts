@@ -59,9 +59,10 @@ interface PendingConnection {
   connection: Connection;
 }
 
-interface HistorySnapshot {
+export interface HistorySnapshot {
   nodes: Node[];
   edges: Edge[];
+  timestamp: number;
 }
 
 // Undirected reachability — treats every edge as bidirectional
@@ -119,6 +120,8 @@ export function useGridEditor(projectPath: string, gridName: string, onError?: (
   // Undo history — array of past { nodes, edges } snapshots
   const history = useRef<HistorySnapshot[]>([]);
   const [canUndo, setCanUndo] = useState(false);
+  // Incrementing counter so consumers re-render when history changes
+  const [historyVersion, setHistoryVersion] = useState(0);
 
   // Track current nodes/edges in a ref so snapshots can be taken synchronously
   const nodesRef = useRef<Node[]>([]);
@@ -163,9 +166,11 @@ export function useGridEditor(projectPath: string, gridName: string, onError?: (
     const snapshot: HistorySnapshot = {
       nodes: nodesRef.current,
       edges: edgesRef.current,
+      timestamp: Date.now(),
     };
     history.current = [...history.current.slice(-HISTORY_LIMIT + 1), snapshot];
     setCanUndo(true);
+    setHistoryVersion((v) => v + 1);
   }, []);
 
   const undo = useCallback(() => {
@@ -174,6 +179,7 @@ export function useGridEditor(projectPath: string, gridName: string, onError?: (
     const snapshot = stack[stack.length - 1];
     history.current = stack.slice(0, -1);
     setCanUndo(history.current.length > 0);
+    setHistoryVersion((v) => v + 1);
     setNodes(snapshot.nodes);
     setEdges(snapshot.edges);
     setDirty(true);
@@ -302,6 +308,21 @@ export function useGridEditor(projectPath: string, gridName: string, onError?: (
     [setEdges, markDirty, pushHistory],
   );
 
+  const restoreTo = useCallback(
+    (index: number) => {
+      const stack = history.current;
+      if (index < 0 || index >= stack.length) return;
+      const snapshot = stack[index];
+      history.current = stack.slice(0, index);
+      setCanUndo(history.current.length > 0);
+      setHistoryVersion((v) => v + 1);
+      setNodes(snapshot.nodes);
+      setEdges(snapshot.edges);
+      setDirty(true);
+    },
+    [setNodes, setEdges],
+  );
+
   const save = useCallback(
     async (
       currentNodes: Node[],
@@ -338,6 +359,9 @@ export function useGridEditor(projectPath: string, gridName: string, onError?: (
     canUndo,
     pendingConnection,
     generatedPrompt,
+    gridCreatedAt: createdAt,
+    historySnapshots: history.current,
+    historyVersion,
     onNodesChange: handleNodesChange,
     onEdgesChange: handleEdgesChange,
     requestConnection,
@@ -346,6 +370,7 @@ export function useGridEditor(projectPath: string, gridName: string, onError?: (
     addNode,
     updateEdge,
     undo,
+    restoreTo,
     save,
   };
 }
