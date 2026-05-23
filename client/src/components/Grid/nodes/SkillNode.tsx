@@ -5,11 +5,15 @@ interface SkillNodeProps {
   selected?: boolean;
 }
 
+// Opacity is controlled entirely by CSS rules in index.css — no Tailwind opacity here.
+const srcClass =
+  '!w-2.5 !h-2.5 !rounded-full !bg-(--accent) !border-2 !border-(--bg-base) transition-opacity';
+
 export const SkillNode = ({ data, selected }: SkillNodeProps) => (
   <div
     className={[
       'skill-node relative flex items-center gap-2.5 px-4 py-2.5 rounded-full transition-all duration-150',
-      selected ? 'ring-1 ring-[#7c3aed]/60' : '',
+      selected ? '' : '',
     ].join(' ')}
   >
     <div className="w-5 h-5 flex items-center justify-center text-[#a78bfa] shrink-0">
@@ -23,10 +27,10 @@ export const SkillNode = ({ data, selected }: SkillNodeProps) => (
     <span className="text-[12px] font-semibold text-[#e9d5ff] whitespace-nowrap">
       {data.label}
     </span>
-    <Handle
-      type="target"
-      position={Position.Top}
-      className="!w-2.5 !h-2.5 !bg-[#7c3aed] !border-2 !border-(--bg-base) !rounded-full"
-    />
+
+    <Handle type="source" position={Position.Top}    id="top"    className={srcClass} />
+    <Handle type="source" position={Position.Right}  id="right"  className={srcClass} />
+    <Handle type="source" position={Position.Bottom} id="bottom" className={srcClass} />
+    <Handle type="source" position={Position.Left}   id="left"   className={srcClass} />
   </div>
 );

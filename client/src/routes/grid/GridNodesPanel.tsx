@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { fetchAgents, fetchSkills, createAgent } from '../../lib/api';
+import { fetchAgents, fetchSkills, createAgent, createSkill } from '../../lib/api';
 
 interface DraggableItemProps {
   name: string;
@@ -8,8 +8,12 @@ interface DraggableItemProps {
 
 const DraggableItem = ({ name, type }: DraggableItemProps) => {
   const handleDragStart = (e: React.DragEvent) => {
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    const offsetX = e.clientX - rect.left;
+    const offsetY = e.clientY - rect.top;
     e.dataTransfer.setData('application/grid-node-type', type);
     e.dataTransfer.setData('application/grid-node-name', name);
+    e.dataTransfer.setData('application/drag-offset', JSON.stringify({ offsetX, offsetY }));
     e.dataTransfer.effectAllowed = 'copy';
   };
 
@@ -61,7 +65,7 @@ const InlineCreate = ({ label, onSubmit, onCancel }: InlineCreateProps) => {
         onChange={(e) => setValue(e.target.value)}
         onKeyDown={handleKey}
         placeholder={`${label} name…`}
-        className="flex-1 min-w-0 bg-(--bg-surface) border border-(--border-subtle) rounded-lg px-2.5 py-1.5 text-[12px] text-(--text-primary) outline-none focus:border-(--accent)/50 transition-colors duration-120"
+        className="flex-1 min-w-0 bg-(--bg-surface) border border-(--border-subtle) rounded-lg px-2.5 py-1.5 text-[12px] text-(--text-primary) outline-none focus:outline-none focus:border-(--accent) transition-colors duration-120"
       />
       <button
         onClick={() => value.trim() && onSubmit(value.trim())}
@@ -86,6 +90,7 @@ export const GridNodesPanel = ({
   projectPath,
   refreshKey,
   onAgentCreated,
+  onSkillCreated,
   showToast,
 }: GridNodesPanelProps) => {
   const [agents, setAgents] = useState<string[]>([]);
@@ -94,6 +99,7 @@ export const GridNodesPanel = ({
   const [agentsOpen, setAgentsOpen] = useState(true);
   const [skillsOpen, setSkillsOpen] = useState(true);
   const [creatingAgent, setCreatingAgent] = useState(false);
+  const [creatingSkill, setCreatingSkill] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -123,6 +129,19 @@ export const GridNodesPanel = ({
       showToast('Failed to create agent');
     }
     setCreatingAgent(false);
+  };
+
+  const handleCreateSkill = async (name: string) => {
+    const content = `---\nname: ${name}\ndescription: Skill created from Grids editor.\n---\n\n# ${name}\n`;
+    try {
+      await createSkill(projectPath, name, content);
+      setSkills((prev) => [...prev, name]);
+      onSkillCreated(name);
+      showToast(`Skill "${name}" created — edit it in the Skills tab.`);
+    } catch {
+      showToast('Failed to create skill');
+    }
+    setCreatingSkill(false);
   };
 
   return (
@@ -200,6 +219,23 @@ export const GridNodesPanel = ({
               {skills.map((name) => (
                 <DraggableItem key={name} name={name} type="skill" />
               ))}
+              {creatingSkill ? (
+                <InlineCreate
+                  label="Skill"
+                  onSubmit={handleCreateSkill}
+                  onCancel={() => setCreatingSkill(false)}
+                />
+              ) : (
+                <button
+                  onClick={() => setCreatingSkill(true)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium text-(--text-muted) hover:text-(--text-secondary) bg-transparent border border-dashed border-white/10 hover:border-white/20 cursor-pointer transition-all duration-120 mt-1"
+                >
+                  <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                    <path d="M5 1.5V8.5M1.5 5H8.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+                  </svg>
+                  New Skill
+                </button>
+              )}
             </div>
           )}
         </div>

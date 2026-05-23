@@ -5,12 +5,14 @@ import {
   BackgroundVariant,
   Controls,
   MiniMap,
+  ConnectionMode,
   addEdge,
   useNodesState,
   useEdgesState,
   type Node,
   type Edge,
   type Connection,
+  type IsValidConnection,
   type NodeTypes,
   type EdgeTypes,
   type OnNodesChange,
@@ -32,21 +34,13 @@ const edgeTypes: EdgeTypes = {
   gridEdge: GridEdgeComponent as unknown as EdgeTypes[string],
 };
 
-function isValidConnection(source: Node | null, target: Node | null): boolean {
-  if (!source || !target) return false;
-  const s = source.type;
-  const t = target.type;
-  if (s === 'orchestrator' && t === 'agent') return true;
-  if (s === 'agent' && t === 'skill') return true;
-  return false;
-}
-
 interface GridCanvasProps {
   nodes: Node[];
   edges: Edge[];
   onNodesChange: OnNodesChange;
   onEdgesChange: OnEdgesChange;
   onConnect: (connection: Connection) => void;
+  onUpdateEdge: (edgeId: string, description: string) => void;
   onDrop: (event: React.DragEvent<HTMLDivElement>) => void;
   onDragOver: (event: React.DragEvent<HTMLDivElement>) => void;
 }
@@ -57,32 +51,55 @@ export const GridCanvas = ({
   onNodesChange,
   onEdgesChange,
   onConnect,
+  onUpdateEdge,
   onDrop,
   onDragOver,
 }: GridCanvasProps) => {
   const nodeMap = useRef<Map<string, Node>>(new Map());
   nodeMap.current = new Map(nodes.map((n) => [n.id, n]));
 
+  // React Flow v12: isValidConnection receives Connection | Edge (not two Node args).
+  // We resolve source/target types from our nodeMap ref here.
+  const checkConnection = useCallback<IsValidConnection>(
+    (connectionOrEdge) => {
+      const src = nodeMap.current.get(connectionOrEdge.source ?? '') ?? null;
+      const tgt = nodeMap.current.get(connectionOrEdge.target ?? '') ?? null;
+      if (!src || !tgt) return false;
+      if (src.id === tgt.id) return false;
+      const types = new Set([src.type, tgt.type]);
+      if (types.has('orchestrator') && types.has('agent')) return true;
+      if (types.has('agent') && types.has('skill')) return true;
+      if (src.type === 'agent' && tgt.type === 'agent') return true;
+      return false;
+    },
+    [],
+  );
+
   const handleConnect = useCallback(
     (connection: Connection) => {
-      const src = nodeMap.current.get(connection.source ?? '') ?? null;
-      const tgt = nodeMap.current.get(connection.target ?? '') ?? null;
-      if (!isValidConnection(src, tgt)) return;
       onConnect(connection);
     },
     [onConnect],
   );
 
+  // Inject the onUpdateEdge callback into each edge's data so GridEdgeComponent can call it
+  const edgesWithCallback = edges.map((e) => ({
+    ...e,
+    data: { ...(e.data ?? {}), onUpdateEdge },
+  }));
+
   return (
     <div className="flex-1 relative" onDrop={onDrop} onDragOver={onDragOver}>
       <ReactFlow
         nodes={nodes}
-        edges={edges}
+        edges={edgesWithCallback}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={handleConnect}
+        isValidConnection={checkConnection}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
+        connectionMode={ConnectionMode.Loose}
         defaultEdgeOptions={{ type: 'gridEdge', animated: false }}
         fitView
         fitViewOptions={{ padding: 0.3 }}

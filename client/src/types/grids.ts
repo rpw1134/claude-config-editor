@@ -9,6 +9,8 @@ export interface GridEdge {
   id: string;
   source: string;
   target: string;
+  sourceHandle?: string | null;
+  targetHandle?: string | null;
   data: { description: string };
 }
 

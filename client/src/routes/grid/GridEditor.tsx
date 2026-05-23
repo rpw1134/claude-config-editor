@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ReactFlowProvider, useReactFlow } from '@xyflow/react';
 import { useShell } from '../../contexts/ShellContext';
@@ -18,7 +18,7 @@ function GridEditorInner({
   gridName: string;
 }) {
   const navigate = useNavigate();
-  const { showToast, onBumpGridsRefresh } = useShell();
+  const { showToast, onBumpGridsRefresh, onBumpVcRefresh } = useShell();
   const { screenToFlowPosition } = useReactFlow();
   const [previewOpen, setPreviewOpen] = useState(true);
   const [nodesPanelRefreshKey, setNodesPanelRefreshKey] = useState(0);
@@ -30,6 +30,7 @@ function GridEditorInner({
     loading,
     saving,
     dirty,
+    canUndo,
     pendingConnection,
     generatedPrompt,
     onNodesChange,
@@ -38,6 +39,8 @@ function GridEditorInner({
     confirmConnection,
     cancelConnection,
     addNode,
+    updateEdge,
+    undo,
     save,
   } = useGridEditor(projectPath, gridName);
 
@@ -45,11 +48,28 @@ function GridEditorInner({
     try {
       await save(nodes, edges);
       onBumpGridsRefresh();
+      onBumpVcRefresh();
       showToast('Grid saved');
     } catch {
       showToast('Save failed');
     }
   }, [save, nodes, edges, onBumpGridsRefresh, showToast]);
+
+  // CMD+S to save, CMD+Z to undo
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!e.metaKey) return;
+      if (e.key === 's') {
+        e.preventDefault();
+        if (dirty && !saving) handleSave();
+      } else if (e.key === 'z') {
+        e.preventDefault();
+        undo();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handleSave, undo, dirty, saving]);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -63,10 +83,12 @@ function GridEditorInner({
       const name = e.dataTransfer.getData('application/grid-node-name');
       if (!type || !name) return;
 
-      const bounds = (e.currentTarget as HTMLDivElement).getBoundingClientRect();
+      const offsetRaw = e.dataTransfer.getData('application/drag-offset');
+      const { offsetX = 0, offsetY = 0 } = offsetRaw ? (JSON.parse(offsetRaw) as { offsetX: number; offsetY: number }) : {};
+
       const position = screenToFlowPosition({
-        x: e.clientX - bounds.left,
-        y: e.clientY - bounds.top,
+        x: e.clientX - offsetX,
+        y: e.clientY - offsetY,
       });
 
       addNode(type, name, position);
@@ -88,9 +110,11 @@ function GridEditorInner({
         gridName={gridName}
         dirty={dirty}
         saving={saving}
+        canUndo={canUndo}
         previewOpen={previewOpen}
         onBack={() => navigate(`/${encodeProject(projectPath)}/grids`)}
         onSave={handleSave}
+        onUndo={undo}
         onTogglePreview={() => setPreviewOpen((v) => !v)}
       />
 
@@ -109,6 +133,7 @@ function GridEditorInner({
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
           onConnect={requestConnection}
+          onUpdateEdge={updateEdge}
           onDrop={handleDrop}
           onDragOver={handleDragOver}
         />

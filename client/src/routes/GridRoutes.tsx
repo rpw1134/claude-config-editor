@@ -48,9 +48,14 @@ interface CreateGridModalProps {
 const CreateGridModal = ({ onConfirm, onClose }: CreateGridModalProps) => {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
+  const [submitted, setSubmitted] = useState(false);
+
+  const nameError = submitted && !name.trim() ? 'Name is required' : null;
+  const descriptionError = submitted && !description.trim() ? 'Description is required' : null;
 
   const handleSubmit = () => {
-    if (name.trim()) onConfirm(name.trim(), description.trim());
+    setSubmitted(true);
+    if (name.trim() && description.trim()) onConfirm(name.trim(), description.trim());
   };
 
   return (
@@ -82,20 +87,33 @@ const CreateGridModal = ({ onConfirm, onClose }: CreateGridModalProps) => {
               onChange={(e) => setName(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter') handleSubmit(); if (e.key === 'Escape') onClose(); }}
               placeholder="my-orchestration"
-              className="w-full bg-(--bg-surface) border border-(--border-subtle) rounded-xl px-3.5 py-2.5 text-[14px] text-(--text-primary) outline-none focus:border-(--accent)/50 transition-colors duration-120 placeholder:text-(--text-muted) font-mono"
+              className={[
+                'w-full bg-(--bg-surface) border rounded-xl px-3.5 py-2.5 text-[14px] text-(--text-primary) outline-none focus:outline-none transition-colors duration-120 placeholder:text-(--text-muted) font-mono',
+                nameError ? 'border-red-500/60 focus:border-red-500/80' : 'border-(--border-subtle) focus:border-(--accent)',
+              ].join(' ')}
             />
+            {nameError && (
+              <p className="text-[12px] text-red-400 mt-1.5 m-0">{nameError}</p>
+            )}
           </div>
           <div>
             <label className="text-[12px] font-semibold text-(--text-secondary) uppercase tracking-[0.08em] block mb-1.5">
-              Description <span className="normal-case font-normal opacity-60">(optional)</span>
+              Description
             </label>
-            <input
+            <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              onKeyDown={(e) => { if (e.key === 'Enter') handleSubmit(); if (e.key === 'Escape') onClose(); }}
-              placeholder="What does this orchestration system do?"
-              className="w-full bg-(--bg-surface) border border-(--border-subtle) rounded-xl px-3.5 py-2.5 text-[14px] text-(--text-primary) outline-none focus:border-(--accent)/50 transition-colors duration-120 placeholder:text-(--text-muted)"
+              onKeyDown={(e) => { if (e.key === 'Escape') onClose(); }}
+              placeholder="What does this orchestrator do?"
+              rows={3}
+              className={[
+                'w-full bg-(--bg-surface) border rounded-xl px-3.5 py-2.5 text-[14px] text-(--text-primary) outline-none focus:outline-none transition-colors duration-120 placeholder:text-(--text-muted) resize-none',
+                descriptionError ? 'border-red-500/60 focus:border-red-500/80' : 'border-(--border-subtle) focus:border-(--accent)',
+              ].join(' ')}
             />
+            {descriptionError && (
+              <p className="text-[12px] text-red-400 mt-1.5 m-0">{descriptionError}</p>
+            )}
           </div>
         </div>
 
@@ -108,8 +126,7 @@ const CreateGridModal = ({ onConfirm, onClose }: CreateGridModalProps) => {
           </button>
           <button
             onClick={handleSubmit}
-            disabled={!name.trim()}
-            className="px-5 py-2 rounded-lg text-[13px] font-semibold text-(--bg-base) bg-(--accent) border-none cursor-pointer hover:bg-(--accent-hover) transition-colors duration-120 disabled:opacity-40 disabled:cursor-not-allowed"
+            className="px-5 py-2 rounded-lg text-[13px] font-semibold text-(--bg-base) bg-(--accent) border-none cursor-pointer hover:bg-(--accent-hover) transition-colors duration-120"
           >
             Create Grid
           </button>
@@ -122,7 +139,7 @@ const CreateGridModal = ({ onConfirm, onClose }: CreateGridModalProps) => {
 export const GridsLandingContent = () => {
   const { projectId } = useParams<{ projectId: string }>();
   const navigate = useNavigate();
-  const { gridsRefreshKey, onBumpGridsRefresh, showToast } = useShell();
+  const { gridsRefreshKey, onBumpGridsRefresh, onBumpVcRefresh, showToast } = useShell();
   const projectPath = projectId ? decodeProject(projectId) : null;
 
   const [grids, setGrids] = useState<GridSummary[]>([]);
@@ -153,6 +170,7 @@ export const GridsLandingContent = () => {
     try {
       await createGrid(projectPath, name, description);
       onBumpGridsRefresh();
+      onBumpVcRefresh();
       showToast(`Grid "${name}" created`);
       setShowCreate(false);
       navigate(`/${encodeProject(projectPath)}/grids/${encodeURIComponent(name)}`);

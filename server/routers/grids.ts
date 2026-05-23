@@ -9,14 +9,15 @@ import {
   readFileContent,
   writeFileEnsureDir,
 } from "../utils/fileIO.js";
-import { resolveHome } from "../utils/parsing.js";
+import { requireProjectPath, resolveHome } from "../utils/parsing.js";
 
 const router: Router = express.Router();
 
-// App repo root — one level up from server/
-const APP_ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), "../..");
-const GRIDS_DIR = path.join(APP_ROOT, ".stryde", "grids");
 const AGENTS_GRIDS_DIR = resolveHome("~/.claude/agents/grids");
+
+function gridsDir(projectPath: string): string {
+  return path.join(projectPath, ".stryde", "grids");
+}
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -59,8 +60,8 @@ interface GridJson {
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
-function gridPath(name: string): string {
-  return path.join(GRIDS_DIR, `${name}.json`);
+function gridPath(dir: string, name: string): string {
+  return path.join(dir, `${name}.json`);
 }
 
 function agentPath(name: string): string {
@@ -96,60 +97,116 @@ function buildInitialGrid(name: string, description: string): GridJson {
   };
 }
 
-function buildOrchestratorPrompt(grid: GridJson): string {
-  const agentEdges = grid.edges.filter((e) => e.source === "orchestrator");
+// ── Typed graph for structured prompt output ──────────────────────────────────
 
-  if (agentEdges.length === 0) {
-    return buildFrontmatter(grid) + noAgentsBody();
+interface SkillEntry {
+  name: string;
+  directory: string;
+  invocation_rule: string;
+}
+
+interface AgentEntry {
+  name: string;
+  directory: string;
+  invocation_rule: string;
+  agents: AgentEntry[];
+  skills: SkillEntry[];
+}
+
+function buildAgentEntry(
+  nodeId: string,
+  invocationRule: string,
+  nodes: GridNode[],
+  edges: GridEdge[],
+  visited: Set<string>,
+): AgentEntry | null {
+  if (visited.has(nodeId)) return null;
+  visited.add(nodeId);
+
+  const node = nodes.find((n) => n.id === nodeId);
+  if (!node || node.type !== "agent") return null;
+
+  const name = node.data.agentName ?? node.data.label;
+  const childEdges = edges.filter((e) => e.source === nodeId);
+
+  const childAgents: AgentEntry[] = [];
+  const childSkills: SkillEntry[] = [];
+
+  for (const edge of childEdges) {
+    const child = nodes.find((n) => n.id === edge.target);
+    if (!child) continue;
+    const rule = edge.data.description ?? "Use when appropriate";
+
+    if (child.type === "agent") {
+      const entry = buildAgentEntry(child.id, rule, nodes, edges, new Set(visited));
+      if (entry) childAgents.push(entry);
+    } else if (child.type === "skill") {
+      const skillName = child.data.skillName ?? child.data.label;
+      childSkills.push({
+        name: skillName,
+        directory: `~/.claude/skills/${skillName}/`,
+        invocation_rule: rule,
+      });
+    }
   }
 
-  const agentSections = agentEdges.map((edge) => {
-    const targetNode = grid.nodes.find((n) => n.id === edge.target);
-    if (!targetNode || targetNode.type !== "agent") return null;
+  visited.delete(nodeId);
 
-    const agentName = targetNode.data.agentName ?? targetNode.data.label;
-    const whenToUse = edge.data.description ?? "Use when appropriate";
+  return {
+    name,
+    directory: `~/.claude/agents/${name}.md`,
+    invocation_rule: invocationRule,
+    agents: childAgents,
+    skills: childSkills,
+  };
+}
 
-    const skillEdges = grid.edges.filter((e) => e.source === targetNode.id);
-    const skillLines = skillEdges
-      .map((se) => {
-        const skillNode = grid.nodes.find((n) => n.id === se.target);
-        if (!skillNode) return null;
-        const skillName = skillNode.data.skillName ?? skillNode.data.label;
-        const desc = se.data.description ?? "Use when appropriate";
-        return `- For ${skillName}: ${desc}`;
-      })
-      .filter((l): l is string => l !== null);
+const TYPE_DEFINITIONS = `\`\`\`
+type Skill = {
+  name: string
+  directory: string
+  invocation_rule: string
+}
 
-    const skillBlock =
-      skillLines.length > 0
-        ? `\n**When invoking this agent, append these directions:**\n${skillLines.join("\n")}`
-        : "";
+type Agent = {
+  name: string
+  directory: string
+  invocation_rule: string
+  agents: Agent[]
+  skills: Skill[]
+}
+\`\`\``;
 
-    return `### ${agentName}\n**When to use:** ${whenToUse}${skillBlock}`;
-  });
+function buildOrchestratorPrompt(grid: GridJson): string {
+  const orchEdges = grid.edges.filter((e) => e.source === "orchestrator");
+  const agentTree: AgentEntry[] = [];
 
-  const validSections = agentSections.filter((s): s is string => s !== null);
+  for (const edge of orchEdges) {
+    const target = grid.nodes.find((n) => n.id === edge.target);
+    if (!target || target.type !== "agent") continue;
+    const rule = edge.data.description ?? "Use when appropriate";
+    const entry = buildAgentEntry(target.id, rule, grid.nodes, grid.edges, new Set(["orchestrator"]));
+    if (entry) agentTree.push(entry);
+  }
+
+  const graphBlock =
+    "```json\n" + JSON.stringify(agentTree, null, 2) + "\n```";
 
   const body =
-    `You are an orchestrator agent. Your sole responsibility is to route incoming requests ` +
-    `to the appropriate specialist agent. Do not attempt to fulfill requests yourself — ` +
-    `analyze what is being asked and delegate to the correct agent.\n\n` +
-    `## Available Agents\n\n` +
-    validSections.join("\n\n");
+    `You are an orchestrator. Analyze each request and invoke the correct agent. Do not fulfill requests yourself.\n\n` +
+    `## Invocation Rule\n\n` +
+    `When invoking any agent, copy their complete entry from the Agent Graph below verbatim into your invocation message. ` +
+    `This passes the agent its full operational context — sub-agents and skills included.\n\n` +
+    `## Type Definitions\n\n` +
+    TYPE_DEFINITIONS +
+    `\n\n## Agent Graph\n\n` +
+    graphBlock;
 
   return buildFrontmatter(grid) + body;
 }
 
 function buildFrontmatter(grid: GridJson): string {
   return `---\nname: ${grid.name}\ndescription: ${grid.description}\n---\n\n`;
-}
-
-function noAgentsBody(): string {
-  return (
-    "You are an orchestrator agent. No agents are connected to this grid yet. " +
-    "Add agent nodes in the Grids editor to enable routing."
-  );
 }
 
 async function writeAgentFile(grid: GridJson): Promise<void> {
@@ -163,15 +220,19 @@ async function writeAgentFile(grid: GridJson): Promise<void> {
 // GET /api/grids → [{ name, description, createdAt }]
 router.get(
   "/",
-  async (_req: Request, res: Response, next: NextFunction) => {
+  async (req: Request, res: Response, next: NextFunction) => {
+    const projectPath = requireProjectPath(req.query.projectPath, res);
+    if (projectPath === null) return;
+
+    const dir = gridsDir(projectPath);
     try {
-      await ensureDir(GRIDS_DIR);
-      const listing = await listDir(GRIDS_DIR);
+      await ensureDir(dir);
+      const listing = await listDir(dir);
       const files = (listing?.files ?? []).filter((f) => f.endsWith(".json"));
 
       const grids = await Promise.all(
         files.map(async (file) => {
-          const raw = await readFileContent(path.join(GRIDS_DIR, file));
+          const raw = await readFileContent(path.join(dir, file));
           const data = JSON.parse(raw) as GridJson;
           return { name: data.name, description: data.description, createdAt: data.createdAt };
         }),
@@ -191,8 +252,13 @@ router.get(
     const name = validateName(req.params.name, res);
     if (name === null) return;
 
+    const projectPath = requireProjectPath(req.query.projectPath, res);
+    if (projectPath === null) return;
+
+    const dir = gridsDir(projectPath);
     try {
-      const filePath = gridPath(name);
+      await ensureDir(dir);
+      const filePath = gridPath(dir, name);
       if (!(await fileExists(filePath))) {
         return res.status(404).json({ message: "Grid not found" });
       }
@@ -204,24 +270,32 @@ router.get(
   },
 );
 
-// POST /api/grids  body: { name, description } → 201
+// POST /api/grids  body: { projectPath, name, description } → 201
 router.post(
   "/",
   async (req: Request, res: Response, next: NextFunction) => {
     const { name: rawName, description: rawDescription } = req.body as {
+      projectPath?: unknown;
       name?: unknown;
       description?: unknown;
     };
 
+    const projectPath = requireProjectPath((req.body as { projectPath?: unknown }).projectPath, res);
+    if (projectPath === null) return;
+
     const name = validateName(rawName, res);
     if (name === null) return;
 
-    const description =
-      typeof rawDescription === "string" ? rawDescription : "";
+    if (typeof rawDescription !== "string" || !rawDescription.trim()) {
+      res.status(400).json({ error: "description is required" });
+      return;
+    }
+    const description = rawDescription.trim();
 
+    const dir = gridsDir(projectPath);
     try {
-      await ensureDir(GRIDS_DIR);
-      const filePath = gridPath(name);
+      await ensureDir(dir);
+      const filePath = gridPath(dir, name);
 
       if (await fileExists(filePath)) {
         return res.status(409).json({ message: "Grid already exists" });
@@ -238,20 +312,25 @@ router.post(
   },
 );
 
-// PUT /api/grids/:name  body: { data } → 200
+// PUT /api/grids/:name  body: { projectPath, data } → 200
 router.put(
   "/:name",
   async (req: Request, res: Response, next: NextFunction) => {
     const name = validateName(req.params.name, res);
     if (name === null) return;
 
+    const projectPath = requireProjectPath((req.body as { projectPath?: unknown }).projectPath, res);
+    if (projectPath === null) return;
+
     const { data } = req.body as { data?: unknown };
     if (typeof data !== "object" || data === null) {
       return res.status(400).json({ message: "data must be a non-null object" });
     }
 
+    const dir = gridsDir(projectPath);
     try {
-      const filePath = gridPath(name);
+      await ensureDir(dir);
+      const filePath = gridPath(dir, name);
       if (!(await fileExists(filePath))) {
         return res.status(404).json({ message: "Grid not found" });
       }
@@ -274,8 +353,13 @@ router.delete(
     const name = validateName(req.params.name, res);
     if (name === null) return;
 
+    const projectPath = requireProjectPath(req.query.projectPath, res);
+    if (projectPath === null) return;
+
+    const dir = gridsDir(projectPath);
     try {
-      const filePath = gridPath(name);
+      await ensureDir(dir);
+      const filePath = gridPath(dir, name);
       if (!(await fileExists(filePath))) {
         return res.status(404).json({ message: "Grid not found" });
       }

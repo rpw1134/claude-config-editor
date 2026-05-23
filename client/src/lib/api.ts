@@ -347,22 +347,22 @@ export async function fetchVcDiffFiles(
 import type { GridData, GridSummary } from '../types/grids';
 export type { GridData, GridSummary };
 
-export async function listGrids(_projectPath: string): Promise<GridSummary[]> {
-  return get<GridSummary[]>('/api/grids');
+export async function listGrids(projectPath: string): Promise<GridSummary[]> {
+  return get<GridSummary[]>(`/api/grids?projectPath=${encodeURIComponent(projectPath)}`);
 }
 
-export async function getGrid(_projectPath: string, name: string): Promise<GridData> {
-  return get<GridData>(`/api/grids/${encodeURIComponent(name)}`);
+export async function getGrid(projectPath: string, name: string): Promise<GridData> {
+  return get<GridData>(`/api/grids/${encodeURIComponent(name)}?projectPath=${encodeURIComponent(projectPath)}`);
 }
 
-export async function createGrid(_projectPath: string, name: string, description: string): Promise<void> {
-  await post('/api/grids', { name, description });
+export async function createGrid(projectPath: string, name: string, description: string): Promise<void> {
+  await post('/api/grids', { projectPath, name, description });
 }
 
-export async function updateGrid(_projectPath: string, name: string, data: GridData): Promise<void> {
-  await put(`/api/grids/${encodeURIComponent(name)}`, { data });
+export async function updateGrid(projectPath: string, name: string, data: GridData): Promise<void> {
+  await put(`/api/grids/${encodeURIComponent(name)}`, { projectPath, data });
 }
 
-export async function deleteGrid(_projectPath: string, name: string): Promise<void> {
-  await del(`/api/grids/${encodeURIComponent(name)}`);
+export async function deleteGrid(projectPath: string, name: string): Promise<void> {
+  await del(`/api/grids/${encodeURIComponent(name)}?projectPath=${encodeURIComponent(projectPath)}`);
 }

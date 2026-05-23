@@ -4,9 +4,11 @@ interface GridTopBarProps {
   gridName: string;
   dirty: boolean;
   saving: boolean;
+  canUndo: boolean;
   previewOpen: boolean;
   onBack: () => void;
   onSave: () => void;
+  onUndo: () => void;
   onTogglePreview: () => void;
 }
 
@@ -14,9 +16,11 @@ export const GridTopBar = ({
   gridName,
   dirty,
   saving,
+  canUndo,
   previewOpen,
   onBack,
   onSave,
+  onUndo,
   onTogglePreview,
 }: GridTopBarProps) => (
   <div className="h-14 shrink-0 flex items-center gap-4 px-5 border-b border-(--border-faint) bg-(--bg-sidebar)">
@@ -59,9 +63,34 @@ export const GridTopBar = ({
     </button>
 
     <button
-      onClick={onSave}
-      disabled={saving}
-      className="flex items-center gap-2 px-4 py-1.5 rounded-lg text-[13px] font-semibold bg-(--accent) text-(--bg-base) border-none cursor-pointer hover:bg-(--accent-hover) transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
+      onClick={canUndo ? onUndo : undefined}
+      disabled={!canUndo}
+      title="Undo (⌘Z)"
+      className={[
+        'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-medium border-none transition-colors duration-150',
+        canUndo
+          ? 'text-(--text-secondary) bg-transparent cursor-pointer hover:bg-white/5 hover:text-(--text-primary)'
+          : 'text-(--text-muted) bg-transparent cursor-not-allowed opacity-40',
+      ].join(' ')}
+    >
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+        <path d="M2 5H8.5C10.43 5 12 6.57 12 8.5C12 10.43 10.43 12 8.5 12H4"
+          stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+        <path d="M4.5 2.5L2 5L4.5 7.5"
+          stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+      Undo
+    </button>
+
+    <button
+      onClick={dirty && !saving ? onSave : undefined}
+      disabled={!dirty || saving}
+      className={[
+        'flex items-center gap-2 px-4 py-1.5 rounded-lg text-[13px] border-none transition-colors duration-150',
+        dirty && !saving
+          ? 'text-(--accent) font-semibold cursor-pointer hover:bg-(--accent)/8 bg-transparent'
+          : 'bg-(--bg-surface) text-(--text-muted) opacity-50 cursor-not-allowed font-medium',
+      ].join(' ')}
     >
       {saving ? 'Saving…' : 'Save'}
     </button>

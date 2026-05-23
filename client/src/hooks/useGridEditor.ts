@@ -11,6 +11,8 @@ import { getGrid, updateGrid } from '../lib/api';
 import { generateOrchestratorPrompt } from '../lib/gridPrompt';
 import type { GridNode, GridEdge } from '../types/grids';
 
+const HISTORY_LIMIT = 50;
+
 function toFlowNode(n: GridNode): Node {
   return {
     id: n.id,
@@ -26,6 +28,8 @@ function toFlowEdge(e: GridEdge): Edge {
     id: e.id,
     source: e.source,
     target: e.target,
+    sourceHandle: e.sourceHandle ?? null,
+    targetHandle: e.targetHandle ?? null,
     type: 'gridEdge',
     data: e.data,
   };
@@ -45,12 +49,19 @@ function fromFlowEdge(e: Edge): GridEdge {
     id: e.id,
     source: e.source,
     target: e.target,
+    sourceHandle: e.sourceHandle ?? null,
+    targetHandle: e.targetHandle ?? null,
     data: (e.data ?? { description: '' }) as GridEdge['data'],
   };
 }
 
 interface PendingConnection {
   connection: Connection;
+}
+
+interface HistorySnapshot {
+  nodes: Node[];
+  edges: Edge[];
 }
 
 export function useGridEditor(projectPath: string, gridName: string) {
@@ -64,9 +75,21 @@ export function useGridEditor(projectPath: string, gridName: string) {
   const [createdAt, setCreatedAt] = useState('');
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Undo history — array of past { nodes, edges } snapshots
+  const history = useRef<HistorySnapshot[]>([]);
+  const [canUndo, setCanUndo] = useState(false);
+
+  // Track current nodes/edges in a ref so snapshots can be taken synchronously
+  const nodesRef = useRef<Node[]>([]);
+  const edgesRef = useRef<Edge[]>([]);
+  nodesRef.current = nodes;
+  edgesRef.current = edges;
+
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
+    history.current = [];
+    setCanUndo(false);
     getGrid(projectPath, gridName)
       .then((data) => {
         if (cancelled) return;
@@ -92,6 +115,26 @@ export function useGridEditor(projectPath: string, gridName: string) {
     return () => { cancelled = true; };
   }, [projectPath, gridName, setNodes, setEdges]);
 
+  const pushHistory = useCallback(() => {
+    const snapshot: HistorySnapshot = {
+      nodes: nodesRef.current,
+      edges: edgesRef.current,
+    };
+    history.current = [...history.current.slice(-HISTORY_LIMIT + 1), snapshot];
+    setCanUndo(true);
+  }, []);
+
+  const undo = useCallback(() => {
+    const stack = history.current;
+    if (stack.length === 0) return;
+    const snapshot = stack[stack.length - 1];
+    history.current = stack.slice(0, -1);
+    setCanUndo(history.current.length > 0);
+    setNodes(snapshot.nodes);
+    setEdges(snapshot.edges);
+    setDirty(true);
+  }, [setNodes, setEdges]);
+
   const markDirty = useCallback(() => {
     setDirty(true);
     if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
@@ -116,18 +159,25 @@ export function useGridEditor(projectPath: string, gridName: string) {
 
   const handleNodesChange = useCallback(
     (changes: Parameters<typeof onNodesChange>[0]) => {
+      // Only push history for meaningful changes (not selection/dimension updates)
+      const meaningful = changes.some(
+        (c) => c.type === 'remove' || c.type === 'add' || c.type === 'position',
+      );
+      if (meaningful) pushHistory();
       onNodesChange(changes);
       markDirty();
     },
-    [onNodesChange, markDirty],
+    [onNodesChange, markDirty, pushHistory],
   );
 
   const handleEdgesChange = useCallback(
     (changes: Parameters<typeof onEdgesChange>[0]) => {
+      const meaningful = changes.some((c) => c.type === 'remove' || c.type === 'add');
+      if (meaningful) pushHistory();
       onEdgesChange(changes);
       markDirty();
     },
-    [onEdgesChange, markDirty],
+    [onEdgesChange, markDirty, pushHistory],
   );
 
   const requestConnection = useCallback((connection: Connection) => {
@@ -137,10 +187,14 @@ export function useGridEditor(projectPath: string, gridName: string) {
   const confirmConnection = useCallback(
     (description: string) => {
       if (!pendingConnection) return;
+      pushHistory();
+      const conn = pendingConnection.connection;
       const newEdge: Edge = {
-        id: `e-${pendingConnection.connection.source}-${pendingConnection.connection.target}-${Date.now()}`,
-        source: pendingConnection.connection.source ?? '',
-        target: pendingConnection.connection.target ?? '',
+        id: `e-${conn.source}-${conn.target}-${Date.now()}`,
+        source: conn.source ?? '',
+        target: conn.target ?? '',
+        sourceHandle: conn.sourceHandle ?? null,
+        targetHandle: conn.targetHandle ?? null,
         type: 'gridEdge',
         data: { description },
       };
@@ -148,7 +202,7 @@ export function useGridEditor(projectPath: string, gridName: string) {
       setPendingConnection(null);
       markDirty();
     },
-    [pendingConnection, setEdges, markDirty],
+    [pendingConnection, setEdges, markDirty, pushHistory],
   );
 
   const cancelConnection = useCallback(() => {
@@ -157,6 +211,7 @@ export function useGridEditor(projectPath: string, gridName: string) {
 
   const addNode = useCallback(
     (type: 'agent' | 'skill', name: string, position: { x: number; y: number }) => {
+      pushHistory();
       const node: Node = {
         id: `${type}-${name}-${Date.now()}`,
         type,
@@ -169,7 +224,21 @@ export function useGridEditor(projectPath: string, gridName: string) {
       setNodes((nds) => [...nds, node]);
       markDirty();
     },
-    [setNodes, markDirty],
+    [setNodes, markDirty, pushHistory],
+  );
+
+  // Update the description on an existing edge (used by inline label click)
+  const updateEdge = useCallback(
+    (edgeId: string, description: string) => {
+      pushHistory();
+      setEdges((eds) =>
+        eds.map((e) =>
+          e.id === edgeId ? { ...e, data: { ...(e.data ?? {}), description } } : e,
+        ),
+      );
+      markDirty();
+    },
+    [setEdges, markDirty, pushHistory],
   );
 
   const save = useCallback(
@@ -204,6 +273,7 @@ export function useGridEditor(projectPath: string, gridName: string) {
     loading,
     saving,
     dirty,
+    canUndo,
     pendingConnection,
     generatedPrompt,
     onNodesChange: handleNodesChange,
@@ -212,6 +282,8 @@ export function useGridEditor(projectPath: string, gridName: string) {
     confirmConnection,
     cancelConnection,
     addNode,
+    updateEdge,
+    undo,
     save,
   };
 }
