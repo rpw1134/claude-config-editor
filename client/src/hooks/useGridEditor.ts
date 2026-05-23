@@ -263,6 +263,7 @@ export function useGridEditor(projectPath: string, gridName: string) {
 
   const generatedPrompt = generateOrchestratorPrompt(
     gridName,
+    gridDescription,
     nodes.map(fromFlowNode),
     edges.map(fromFlowEdge),
   );
