@@ -10,6 +10,7 @@ import {
   writeFileEnsureDir,
 } from "../utils/fileIO.js";
 import { requireProjectPath, resolveHome } from "../utils/parsing.js";
+import { findRepoRoot, stageFiles } from "../services/versionControl.js";
 
 const router: Router = express.Router();
 
@@ -315,6 +316,16 @@ router.post(
       const grid = buildInitialGrid(name, description);
       await writeFileEnsureDir(filePath, JSON.stringify(grid, null, 2));
       await writeAgentFile(grid);
+
+      const projectRepoRoot = await findRepoRoot(projectPath);
+      if (projectRepoRoot) {
+        await stageFiles(projectRepoRoot, [path.relative(projectRepoRoot, filePath)]);
+      }
+      const agentFilePath = agentPath(name);
+      const agentRepoRoot = await findRepoRoot(path.dirname(agentFilePath));
+      if (agentRepoRoot) {
+        await stageFiles(agentRepoRoot, [path.relative(agentRepoRoot, agentFilePath)]);
+      }
 
       res.status(201).json({ message: "Grid created", grid });
     } catch (err) {
