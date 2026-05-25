@@ -37,6 +37,7 @@ import {
 } from "./routes/SkillRoutes";
 import { VCContent } from "./routes/VCRoutes";
 import { GridsLandingContent, GridEditor } from "./routes/GridRoutes";
+import { AIDraftContent } from "./routes/AIDraftRoutes";
 import { ShellContext } from "./contexts/ShellContext";
 import { VersionControlProvider } from "./contexts/VersionControlContext";
 import type { ShellContextValue } from "./contexts/ShellContext";
@@ -268,6 +269,9 @@ export default function App() {
 
               {/* Grids list — inside Shell */}
               <Route path="/:projectId/grids" element={<GridsLandingContent />} />
+
+              {/* AI Draft */}
+              <Route path="/:projectId/ai-draft" element={<AIDraftContent />} />
             </Route>
 
             {/* Grid canvas editor — full-page, outside Shell */}

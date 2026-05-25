@@ -16,6 +16,8 @@ import projectsRouter from "./routers/projects.js";
 import hooksRouter from "./routers/hooks.js";
 import vcRouter from "./routers/versionControl.js";
 import gridsRouter from "./routers/grids.js";
+import profileRouter from "./routers/profile.js";
+import aiDraftRouter from "./routers/aiDraft.js";
 
 const app = express();
 const PORT = 3000;
@@ -36,6 +38,8 @@ app.use("/api/projects", projectsRouter);
 app.use("/api/hooks", hooksRouter);
 app.use("/api/vc", vcRouter);
 app.use("/api/grids", gridsRouter);
+app.use("/api/profile", profileRouter);
+app.use("/api/ai-draft", aiDraftRouter);
 
 // Dummy routes so I remember how express works 💀
 app.get("/api/health", (req, res) => {

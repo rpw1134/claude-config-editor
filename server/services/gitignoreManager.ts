@@ -6,6 +6,7 @@ export interface GitignoreCheckResult {
   claudeIgnoredBy: string | null;
   localsProtected: boolean;
   strydeIgnored: boolean;
+  profileProtected: boolean;
 }
 
 const CLAUDE_IGNORE_PATTERNS = new Set([
@@ -19,6 +20,11 @@ const CLAUDE_IGNORE_PATTERNS = new Set([
 const LOCAL_PROTECT_PATTERNS = new Set([
   ".claude/settings.local.json",
   ".claude/*.local.json",
+]);
+
+const PROFILE_PROTECT_PATTERNS = new Set([
+  ".stryde/profile.local.json",
+  ".stryde/*.local.json",
 ]);
 
 function isContentLine(line: string): boolean {
@@ -48,6 +54,7 @@ export async function checkGitignore(
     claudeIgnoredBy: null,
     localsProtected: false,
     strydeIgnored: false,
+    profileProtected: false,
   };
 
   const gitignorePaths = collectGitignorePaths(claudeDir, repoRoot);
@@ -76,6 +83,10 @@ export async function checkGitignore(
         result.localsProtected = true;
       }
 
+      if (!result.profileProtected && PROFILE_PROTECT_PATTERNS.has(trimmed)) {
+        result.profileProtected = true;
+      }
+
       if (!result.strydeIgnored && (trimmed === ".stryde" || trimmed === ".stryde/")) {
         result.strydeIgnored = true;
       }
@@ -101,6 +112,12 @@ export async function ensureLocalProtection(repoRoot: string): Promise<void> {
   }
   if (!existing.includes(".claude/*.local.json")) {
     linesToAdd.push(".claude/*.local.json");
+  }
+  if (!existing.includes(".stryde/profile.local.json")) {
+    linesToAdd.push(".stryde/profile.local.json");
+  }
+  if (!existing.includes(".stryde/*.local.json")) {
+    linesToAdd.push(".stryde/*.local.json");
   }
 
   if (linesToAdd.length === 0) return;

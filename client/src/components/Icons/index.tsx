@@ -376,6 +376,38 @@ export const GridsIcon = ({ size = 20 }: { size?: number }) => (
   </svg>
 );
 
+// ── AI Draft icons ────────────────────────────────────────────────────────────
+
+export const AIDraftIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M7.5 2L8.6 5.4H12.2L9.3 7.5L10.4 10.9L7.5 8.8L4.6 10.9L5.7 7.5L2.8 5.4H6.4L7.5 2Z" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+    <path d="M12.5 1.5V3.5M13.5 2.5H11.5" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round"/>
+    <path d="M2 12.5L3.5 13.5M3.5 11L2 12L3.5 13" stroke="currentColor" strokeWidth="1.05" strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>
+);
+
+export const ArtifactsIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect x="3" y="4" width="9" height="9.5" rx="1.2" stroke="currentColor" strokeWidth="1.2"/>
+    <path d="M5 4V2.8C5 2.36 5.36 2 5.8 2H11.2C11.64 2 12 2.36 12 2.8V10.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+    <path d="M5.5 7.5H9.5M5.5 9.5H8" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round"/>
+  </svg>
+);
+
+export const SendIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M2 2L13 7.5L2 13V9L9.5 7.5L2 6V2Z" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>
+);
+
+export const LockIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect x="2.5" y="6.5" width="10" height="7" rx="1.2" stroke="currentColor" strokeWidth="1.2"/>
+    <path d="M5 6.5V4.5C5 3.12 6.12 2 7.5 2C8.88 2 10 3.12 10 4.5V6.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+    <circle cx="7.5" cy="10" r="1" fill="currentColor"/>
+  </svg>
+);
+
 export const StrydeLogoIcon = ({ size = 20 }: { size?: number }) => (
   <svg
     width={size}

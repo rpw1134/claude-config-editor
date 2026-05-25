@@ -13,6 +13,7 @@ import {
   HooksIcon,
   VersionControlIcon,
   GridsIcon,
+  AIDraftIcon,
   PlusIcon,
   SettingsIcon,
   SidebarCloseIcon,
@@ -98,6 +99,7 @@ export const Sidebar = ({
     if (pathname.startsWith(`${base}/claude-md`)) return "claude-md";
     if (pathname.startsWith(`${base}/settings`)) return "settings";
     if (pathname.startsWith(`${base}/grids`)) return "grids";
+    if (pathname.startsWith(`${base}/ai-draft`)) return "ai-draft";
     return "welcome";
   })();
 
@@ -112,6 +114,7 @@ export const Sidebar = ({
     else if (tab === "version-control") navigate(`${base}/version-control`);
     else if (tab === "settings") navigate(`${base}/settings`);
     else if (tab === "grids") navigate(`${base}/grids`);
+    else if (tab === "ai-draft") navigate(`${base}/ai-draft`);
     else navigate(base);
   };
 
@@ -341,6 +344,14 @@ export const Sidebar = ({
           disabled={!hasProject}
           collapsed={collapsed}
           onClick={() => navigateTo("grids")}
+        />
+        <NavButton
+          icon={<AIDraftIcon />}
+          label="AI Draft"
+          active={activeTab === "ai-draft"}
+          disabled={!hasProject}
+          collapsed={collapsed}
+          onClick={() => navigateTo("ai-draft")}
         />
       </div>
 

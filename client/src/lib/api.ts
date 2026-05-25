@@ -336,6 +336,16 @@ export async function fetchVcDiffFiles(
   return data.files;
 }
 
+// ── Profile ───────────────────────────────────────────────────────────────────
+
+export async function fetchProfile(): Promise<{ apiKey: string | null }> {
+  return get<{ apiKey: string | null }>('/api/profile');
+}
+
+export async function updateProfile(apiKey: string): Promise<void> {
+  await put('/api/profile', { apiKey });
+}
+
 // ── Grids ──────────────────────────────────────────────────────────────────────
 
 import type { GridData, GridSummary } from '../types/grids';
