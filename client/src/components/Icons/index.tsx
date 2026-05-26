@@ -410,15 +410,18 @@ export const StrydeLogoMark = ({ size = 32 }: { size?: number }) => (
   <svg
     width={size}
     height={size}
-    viewBox="0 0 48 48"
+    viewBox="0 0 40 40"
     fill="none"
     xmlns="http://www.w3.org/2000/svg"
     aria-hidden="true"
   >
-    {/* Rotated square (diamond) with inner diamond — clean geometric mark */}
-    <rect x="24" y="4" width="28.28" height="28.28" rx="3.5" transform="rotate(45 24 24)" stroke="currentColor" strokeWidth="1.8" />
-    <rect x="24" y="14" width="14.14" height="14.14" rx="1.5" transform="rotate(45 24 24)" stroke="currentColor" strokeWidth="1.4" opacity="0.55" />
-    <circle cx="24" cy="24" r="2.5" fill="currentColor" />
+    <polygon
+      points="20,3 37,20 20,37 3,20"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinejoin="round"
+      fill="none"
+    />
   </svg>
 );
 

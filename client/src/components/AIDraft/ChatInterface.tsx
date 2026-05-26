@@ -3,54 +3,182 @@ import { useNavigate } from "react-router-dom";
 import { useAIDraft } from "../../contexts/AIDraftContext";
 import { useShell } from "../../contexts/ShellContext";
 import { encodeProject } from "../../lib/navigation";
-import { LockIcon, SendIcon, StrydeLogoMark } from "../Icons";
+import { LockIcon, SendIcon, StrydeLogoMark, XIcon } from "../Icons";
 import { MessageBubble } from "./MessageBubble";
 import { StreamingDots } from "./StreamingDots";
 
-// ── Suggestion chips ──────────────────────────────────────────────────────────
+// ── Greetings ─────────────────────────────────────────────────────────────────
 
-const SUGGESTIONS = [
-  "A code review agent",
-  "A deploy skill",
-  "A security auditor agent",
-  "CLAUDE.md for a React project",
+const GREETINGS = [
+  "Hey hey hey!",
+  "Let's build something.",
+  "What are we making?",
+  "Ready when you are.",
+  "Hello there!",
+  "Good to see you.",
+  "What's the plan?",
+  "Let's get to work.",
+  "What'll it be?",
+  "Hey, you're back!",
+  "What are we cooking?",
+  "Let's make something great.",
+  "Hi! What do you need?",
+  "Okay, let's do this.",
+  "What's on your mind?",
 ] as const;
 
-// ── Empty state ───────────────────────────────────────────────────────────────
+const greeting = GREETINGS[Math.floor(Math.random() * GREETINGS.length)];
 
-interface EmptyStateProps {
-  onSuggest: (text: string) => void;
+// ── Prompt tokens ─────────────────────────────────────────────────────────────
+
+const PROMPT_CATEGORIES: Record<string, string[]> = {
+  Agents: [
+    "A code review agent",
+    "A TypeScript debugging agent",
+    "A security auditor agent",
+    "A documentation writer agent",
+    "A test writer agent",
+    "An accessibility reviewer agent",
+    "A performance profiler agent",
+    "A refactoring assistant agent",
+    "A PR reviewer agent",
+    "A dependency auditor agent",
+    "A log analyzer agent",
+    "A database query optimizer agent",
+  ],
+  Skills: [
+    "A git commit skill",
+    "A deploy to production skill",
+    "A run tests skill",
+    "A lint and format skill",
+    "A changelog generator skill",
+    "A database migration skill",
+    "A Docker build skill",
+    "A branch cleanup skill",
+    "An API health check skill",
+    "A npm publish skill",
+    "A stash and restore skill",
+    "A coverage report skill",
+  ],
+  "CLAUDE.md": [
+    "CLAUDE.md for a React project",
+    "CLAUDE.md for a Node.js API",
+    "CLAUDE.md for a Python CLI",
+    "CLAUDE.md for a monorepo",
+    "CLAUDE.md for a Go service",
+    "CLAUDE.md for a data science project",
+    "CLAUDE.md for a Rust project",
+    "CLAUDE.md for an open-source library",
+    "CLAUDE.md for a startup codebase",
+    "CLAUDE.md with strict security rules",
+    "CLAUDE.md for a team of 10+",
+    "CLAUDE.md for a mobile app",
+  ],
+  Hooks: [
+    "A pre-commit code formatter",
+    "A pre-push test runner",
+    "A commit message validator",
+    "A secrets scanner hook",
+    "A lint check on save",
+    "A post-commit notification",
+    "A branch name enforcer",
+    "A file size checker",
+    "A TODO comment reminder",
+    "A license header checker",
+  ],
+  MCP: [
+    "MCP server for GitHub",
+    "MCP server for Jira",
+    "MCP server for Slack",
+    "MCP server for Postgres",
+    "MCP server for Notion",
+    "MCP server for Linear",
+    "MCP server for AWS S3",
+    "MCP server for Stripe",
+    "MCP server for Figma",
+    "MCP server for Datadog",
+    "MCP server for PagerDuty",
+  ],
+};
+
+function pickRandom<T>(arr: T[], n: number): T[] {
+  return [...arr].sort(() => Math.random() - 0.5).slice(0, n);
 }
 
-const EmptyState = ({ onSuggest }: EmptyStateProps) => (
-  <div className="flex-1 flex flex-col items-center justify-center px-8 text-center">
-    {/* Logo mark */}
-    <div className="text-(--accent) opacity-75 mb-7 drop-shadow-[0_0_12px_rgba(0,229,255,0.35)]">
-      <StrydeLogoMark size={48} />
-    </div>
+interface PromptTokensProps {
+  onSelect: (text: string) => void;
+}
 
-    {/* Heading + subtitle */}
-    <h1 className="text-[46px] font-bold text-(--text-primary) leading-[1.05] tracking-[-0.03em] mb-4">
-      What would you like to build?
-    </h1>
-    <p className="text-[17px] text-(--text-secondary) leading-relaxed max-w-sm mb-10">
-      Describe an agent, skill, or project guide.
-    </p>
+const PromptTokens = ({ onSelect }: PromptTokensProps) => {
+  const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const [shownPrompts, setShownPrompts] = useState<string[]>([]);
+  const isOpen = activeCategory !== null;
 
-    {/* Suggestion chips */}
-    <div className="grid grid-cols-2 gap-2">
-      {SUGGESTIONS.map((suggestion) => (
-        <button
-          key={suggestion}
-          onClick={() => onSuggest(suggestion)}
-          className="px-4 py-2 rounded-full text-[13px] font-medium text-(--text-muted) border border-(--border-subtle) bg-transparent hover:border-(--accent)/35 hover:text-(--accent)/80 hover:bg-(--accent)/5 transition-all duration-150 cursor-pointer whitespace-nowrap"
-        >
-          {suggestion}
-        </button>
-      ))}
+  const handleCategory = (cat: string) => {
+    if (activeCategory === cat) {
+      setActiveCategory(null);
+    } else {
+      setActiveCategory(cat);
+      setShownPrompts(pickRandom(PROMPT_CATEGORIES[cat], 3));
+    }
+  };
+
+  const handleClose = () => setActiveCategory(null);
+
+  return (
+    <div className="w-full">
+      {/* Category pills — slide up + fade when panel opens */}
+      <div
+        className="overflow-hidden transition-all duration-250 ease-in-out"
+        style={{ maxHeight: isOpen ? 0 : 56, opacity: isOpen ? 0 : 1 }}
+      >
+        <div className="flex justify-center gap-3 pb-1">
+          {Object.keys(PROMPT_CATEGORIES).map((cat) => (
+            <button
+              key={cat}
+              onClick={() => handleCategory(cat)}
+              className="px-5 py-2.5 rounded-full text-[14px] font-medium text-(--text-muted) border border-(--border-subtle) bg-transparent hover:border-(--border-default) hover:text-(--text-secondary) transition-colors duration-150 cursor-pointer whitespace-nowrap"
+            >
+              {cat}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Prompt panel — slides down + fades in */}
+      <div
+        className="overflow-hidden transition-all duration-300 ease-in-out"
+        style={{ maxHeight: isOpen ? 400 : 0, opacity: isOpen ? 1 : 0 }}
+      >
+        <div className="bg-(--bg-elevated) border border-(--border-subtle) rounded-2xl overflow-hidden">
+          <div className="flex items-center justify-between px-5 py-2.5 border-b border-(--border-faint)">
+            <span className="text-[13px] font-medium text-(--text-muted) tracking-wide uppercase">
+              {activeCategory}
+            </span>
+            <button
+              onClick={handleClose}
+              className="text-(--text-muted) hover:text-(--text-primary) transition-colors cursor-pointer"
+            >
+              <XIcon />
+            </button>
+          </div>
+          {shownPrompts.map((prompt, i) => (
+            <button
+              key={i}
+              onClick={() => { onSelect(prompt); handleClose(); }}
+              className={[
+                "w-full text-left px-5 py-3 text-[14px] text-(--text-secondary) hover:text-(--text-primary) hover:bg-(--bg-hover) transition-colors cursor-pointer",
+                i < shownPrompts.length - 1 ? "border-b border-(--border-faint)" : "",
+              ].join(" ")}
+            >
+              {prompt}
+            </button>
+          ))}
+        </div>
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 // ── No API key state ──────────────────────────────────────────────────────────
 
@@ -66,7 +194,7 @@ const NoApiKeyState = ({ projectPath }: NoApiKeyStateProps) => {
         <LockIcon />
       </div>
       <div>
-        <p className='text-[18px] font-["Bricolage_Grotesque",sans-serif] font-semibold text-(--text-primary) mb-1.5'>
+        <p className="text-[18px] font-semibold text-(--text-primary) mb-1.5">
           API key required
         </p>
         <p className="text-[15px] text-(--text-muted) max-w-xs leading-relaxed">
@@ -83,25 +211,25 @@ const NoApiKeyState = ({ projectPath }: NoApiKeyStateProps) => {
   );
 };
 
-// ── Input bar ─────────────────────────────────────────────────────────────────
+// ── Input field ───────────────────────────────────────────────────────────────
 
-interface InputBarProps {
+interface InputFieldProps {
   onSend: (text: string) => void;
   disabled: boolean;
   prefill?: string;
   onPrefillConsumed?: () => void;
+  onHasText?: (hasText: boolean) => void;
 }
 
-const InputBar = ({ onSend, disabled, prefill, onPrefillConsumed }: InputBarProps) => {
+const InputField = ({ onSend, disabled, prefill, onPrefillConsumed, onHasText }: InputFieldProps) => {
   const [value, setValue] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Consume prefill from suggestion chips
   useEffect(() => {
     if (prefill) {
       setValue(prefill);
       onPrefillConsumed?.();
-      setTimeout(() => textareaRef.current?.focus(), 0);
+      requestAnimationFrame(() => textareaRef.current?.focus());
     }
   }, [prefill, onPrefillConsumed]);
 
@@ -122,55 +250,50 @@ const InputBar = ({ onSend, disabled, prefill, onPrefillConsumed }: InputBarProp
       if (value.trim() && !disabled) {
         onSend(value.trim());
         setValue("");
+        onHasText?.(false);
       }
-    }
-  };
-
-  const handleSubmit = () => {
-    if (value.trim() && !disabled) {
-      onSend(value.trim());
-      setValue("");
     }
   };
 
   const canSend = value.trim().length > 0 && !disabled;
 
+  const handleSubmit = () => {
+    if (canSend) {
+      onSend(value.trim());
+      setValue("");
+      onHasText?.(false);
+    }
+  };
+
   return (
-    <div className="shrink-0 px-6 pb-7 pt-3">
-      <div className="max-w-2xl mx-auto flex flex-col gap-2">
-        <div className="flex items-end gap-3 bg-(--bg-elevated) border border-(--border-subtle) rounded-3xl px-5 py-4 shadow-lg shadow-black/30 transition-colors duration-150 focus-within:border-(--border-default)">
-          <textarea
-            ref={textareaRef}
-            value={value}
-            onChange={(e) => setValue(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Describe an agent, skill, or project guide…"
-            disabled={disabled}
-            rows={1}
-            className="flex-1 bg-transparent border-none outline-none ring-0 resize-none text-[15.5px] text-(--text-primary) placeholder:text-(--text-muted) leading-[1.65] py-0.5 min-h-6 disabled:opacity-50"
-            style={{ maxHeight: 180, overflowY: "auto" }}
-          />
-          <button
-            onClick={handleSubmit}
-            disabled={!canSend}
-            className={[
-              "shrink-0 w-8 h-8 rounded-xl flex items-center justify-center transition-all duration-150 border-none mb-0.5",
-              canSend
-                ? "bg-(--accent) text-black cursor-pointer hover:opacity-85 active:scale-95"
-                : "bg-(--bg-base) text-(--text-muted) cursor-not-allowed opacity-40",
-            ].join(" ")}
-          >
-            {disabled
-              ? <span className="w-3.5 h-3.5 rounded-full border-2 border-current border-t-transparent animate-spin" />
-              : <SendIcon />}
-          </button>
-        </div>
-        <p className="text-[11.5px] text-(--text-muted) text-center">
-          <kbd className="font-mono bg-(--bg-elevated) border border-(--border-faint) rounded px-1 py-0.5 text-[10.5px]">↵ Enter</kbd>
-          {" "}to send&ensp;·&ensp;
-          <kbd className="font-mono bg-(--bg-elevated) border border-(--border-faint) rounded px-1 py-0.5 text-[10.5px]">⇧ Enter</kbd>
-          {" "}for newline
-        </p>
+    <div className="w-full bg-(--bg-elevated) border border-(--border-subtle) rounded-3xl p-4 shadow-lg shadow-black/30 focus-within:border-(--border-default) transition-colors duration-150">
+      <textarea
+        ref={textareaRef}
+        value={value}
+        onChange={(e) => { setValue(e.target.value); onHasText?.(e.target.value.length > 0); }}
+        onKeyDown={handleKeyDown}
+        placeholder="Describe an agent or skill…"
+        disabled={disabled}
+        rows={1}
+        className="w-full bg-transparent border-none outline-none ring-0 resize-none text-[16px] text-(--text-primary) placeholder:text-(--text-muted) leading-[1.65] min-h-13 disabled:opacity-50"
+        style={{ maxHeight: 180, overflowY: "auto" }}
+      />
+      <div className="flex justify-end mt-2">
+        <button
+          onClick={handleSubmit}
+          disabled={!canSend}
+          aria-label="Send"
+          className={[
+            "w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-200 border-none cursor-pointer",
+            canSend
+              ? "bg-(--accent) text-black opacity-100 hover:opacity-85 active:scale-95"
+              : "opacity-0 pointer-events-none",
+          ].join(" ")}
+        >
+          {disabled
+            ? <span className="w-3.5 h-3.5 rounded-full border-2 border-current border-t-transparent animate-spin" />
+            : <SendIcon />}
+        </button>
       </div>
     </div>
   );
@@ -187,57 +310,93 @@ export const ChatInterface = ({ projectPath }: ChatInterfaceProps) => {
   const bottomRef = useRef<HTMLDivElement>(null);
   const { selectedProjectPath } = useShell();
   const [prefill, setPrefill] = useState<string | undefined>(undefined);
+  const [hasText, setHasText] = useState(false);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  const handleSuggest = useCallback((text: string) => {
-    setPrefill(text);
-  }, []);
-
   const showEmpty = messages.length === 0 && !noApiKey;
 
+  // ── Empty landing ──────────────────────────────────────────────────────────
+  if (showEmpty) {
+    return (
+      <div className="flex flex-col flex-1 min-h-0 items-center px-8">
+        {/* Top spacer — mirrors bottom spacer so content stays centered */}
+        <div className="flex-1" />
+
+        {/* Fixed content: logo + heading + input — never moves */}
+        <div className="w-full max-w-2xl flex flex-col items-center gap-8">
+          <div className="flex flex-col items-center gap-5 text-center">
+            <div className="text-(--accent) drop-shadow-[0_0_14px_rgba(0,229,255,0.35)]">
+              <StrydeLogoMark size={44} />
+            </div>
+            <h1 className="text-[52px] font-bold text-(--text-primary) leading-[1.05] tracking-[-0.03em]">
+              {greeting}
+            </h1>
+          </div>
+          <InputField
+            onSend={sendMessage}
+            disabled={isStreaming}
+            prefill={prefill}
+            onPrefillConsumed={() => setPrefill(undefined)}
+            onHasText={setHasText}
+          />
+        </div>
+
+        {/* Bottom spacer — tokens expand here, never pushes input */}
+        <div className="flex-1 w-full max-w-2xl pt-6 min-h-0">
+          <div
+            className="overflow-hidden transition-all duration-300 ease-in-out"
+            style={{ maxHeight: hasText ? 0 : 500, opacity: hasText ? 0 : 1 }}
+          >
+            <PromptTokens onSelect={setPrefill} />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── No API key ─────────────────────────────────────────────────────────────
+  if (noApiKey) {
+    return (
+      <div className="flex flex-col flex-1 min-h-0">
+        <NoApiKeyState projectPath={selectedProjectPath ?? projectPath} />
+      </div>
+    );
+  }
+
+  // ── Active conversation ────────────────────────────────────────────────────
   return (
     <div className="flex flex-col flex-1 min-h-0">
-      {/* Message area */}
-      <div className="flex-1 min-h-0 overflow-y-auto flex flex-col">
-        {showEmpty && <EmptyState onSuggest={handleSuggest} />}
-        {noApiKey && messages.length === 0 && (
-          <NoApiKeyState projectPath={selectedProjectPath ?? projectPath} />
-        )}
-        {messages.length > 0 && (
-          <div className="max-w-2xl mx-auto w-full px-6 py-10 flex flex-col gap-8">
-            {messages.map((msg) => (
-              <MessageBubble key={msg.id} message={msg} />
-            ))}
-            {isStreaming && messages[messages.length - 1]?.role === "user" && !buildingArtifact && (
-              <StreamingDots />
-            )}
-            {buildingArtifact && (
-              <div className="flex items-center gap-3 py-1">
-                <div className="flex gap-1 shrink-0">
-                  <span className="w-1.5 h-1.5 rounded-full bg-(--accent) animate-bounce [animation-delay:0ms]" />
-                  <span className="w-1.5 h-1.5 rounded-full bg-(--accent) animate-bounce [animation-delay:150ms]" />
-                  <span className="w-1.5 h-1.5 rounded-full bg-(--accent) animate-bounce [animation-delay:300ms]" />
-                </div>
-                <span className="text-[14px] text-(--text-muted)">
-                  Drafting <span className="text-(--text-primary) font-medium">{buildingArtifact.name}</span>…
-                </span>
+      <div className="flex-1 min-h-0 overflow-y-auto">
+        <div className="max-w-2xl mx-auto w-full px-6 py-10 flex flex-col gap-8">
+          {messages.map((msg) => (
+            <MessageBubble key={msg.id} message={msg} />
+          ))}
+          {isStreaming && messages[messages.length - 1]?.role === "user" && !buildingArtifact && (
+            <StreamingDots />
+          )}
+          {buildingArtifact && (
+            <div className="flex items-center gap-3 py-1">
+              <div className="flex gap-1 shrink-0">
+                <span className="w-1.5 h-1.5 rounded-full bg-(--accent) animate-bounce [animation-delay:0ms]" />
+                <span className="w-1.5 h-1.5 rounded-full bg-(--accent) animate-bounce [animation-delay:150ms]" />
+                <span className="w-1.5 h-1.5 rounded-full bg-(--accent) animate-bounce [animation-delay:300ms]" />
               </div>
-            )}
-          </div>
-        )}
-        <div ref={bottomRef} />
+              <span className="text-[14px] text-(--text-muted)">
+                Drafting <span className="text-(--text-primary) font-medium">{buildingArtifact.name}</span>…
+              </span>
+            </div>
+          )}
+          <div ref={bottomRef} />
+        </div>
       </div>
-
-      {/* Input */}
-      <InputBar
-        onSend={sendMessage}
-        disabled={isStreaming}
-        prefill={prefill}
-        onPrefillConsumed={() => setPrefill(undefined)}
-      />
+      <div className="shrink-0 px-8 pb-8 pt-2">
+        <div className="max-w-2xl mx-auto">
+          <InputField onSend={sendMessage} disabled={isStreaming} />
+        </div>
+      </div>
     </div>
   );
 };
