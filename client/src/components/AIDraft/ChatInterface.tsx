@@ -219,9 +219,10 @@ interface InputFieldProps {
   prefill?: string;
   onPrefillConsumed?: () => void;
   onHasText?: (hasText: boolean) => void;
+  compact?: boolean;
 }
 
-const InputField = ({ onSend, disabled, prefill, onPrefillConsumed, onHasText }: InputFieldProps) => {
+const InputField = ({ onSend, disabled, prefill, onPrefillConsumed, onHasText, compact }: InputFieldProps) => {
   const [value, setValue] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -266,7 +267,7 @@ const InputField = ({ onSend, disabled, prefill, onPrefillConsumed, onHasText }:
   };
 
   return (
-    <div className="w-full bg-(--bg-elevated) border border-(--border-subtle) rounded-3xl p-4 shadow-lg shadow-black/30 focus-within:border-(--border-default) transition-colors duration-150">
+    <div className={`w-full bg-(--bg-elevated) border border-(--border-subtle) rounded-3xl shadow-lg shadow-black/30 focus-within:border-(--border-default) transition-colors duration-150 ${compact ? "p-3" : "p-4"}`}>
       <textarea
         ref={textareaRef}
         value={value}
@@ -275,7 +276,7 @@ const InputField = ({ onSend, disabled, prefill, onPrefillConsumed, onHasText }:
         placeholder="Describe an agent or skill…"
         disabled={disabled}
         rows={1}
-        className="w-full bg-transparent border-none outline-none ring-0 resize-none text-[16px] text-(--text-primary) placeholder:text-(--text-muted) leading-[1.65] min-h-13 disabled:opacity-50"
+        className={`w-full bg-transparent border-none outline-none ring-0 resize-none text-[16px] text-(--text-primary) placeholder:text-(--text-muted) leading-[1.65] disabled:opacity-50 ${compact ? "min-h-8" : "min-h-13"}`}
         style={{ maxHeight: 180, overflowY: "auto" }}
       />
       <div className="flex justify-end mt-2">
@@ -392,9 +393,9 @@ export const ChatInterface = ({ projectPath }: ChatInterfaceProps) => {
           <div ref={bottomRef} />
         </div>
       </div>
-      <div className="shrink-0 px-8 pb-8 pt-2">
-        <div className="w-[80%] mx-auto">
-          <InputField onSend={sendMessage} disabled={isStreaming} />
+      <div className="shrink-0 px-4 pb-6 pt-2">
+        <div className="w-[88%] mx-auto chat-input-enter">
+          <InputField onSend={sendMessage} disabled={isStreaming} compact />
         </div>
       </div>
     </div>
