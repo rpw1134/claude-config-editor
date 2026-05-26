@@ -370,7 +370,7 @@ export const ChatInterface = ({ projectPath }: ChatInterfaceProps) => {
   return (
     <div className="flex flex-col flex-1 min-h-0">
       <div className="flex-1 min-h-0 overflow-y-auto">
-        <div className="max-w-2xl mx-auto w-full px-6 py-10 flex flex-col gap-8">
+        <div className="w-[80%] mx-auto py-10 flex flex-col gap-8">
           {messages.map((msg) => (
             <MessageBubble key={msg.id} message={msg} />
           ))}
@@ -393,7 +393,7 @@ export const ChatInterface = ({ projectPath }: ChatInterfaceProps) => {
         </div>
       </div>
       <div className="shrink-0 px-8 pb-8 pt-2">
-        <div className="max-w-2xl mx-auto">
+        <div className="w-[80%] mx-auto">
           <InputField onSend={sendMessage} disabled={isStreaming} />
         </div>
       </div>
