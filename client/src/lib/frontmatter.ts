@@ -29,7 +29,8 @@ function isEmpty(value: unknown): boolean {
 }
 
 export function parseFrontmatter(content: string): { frontmatter: AgentFrontmatter; body: string } {
-  const match = FRONTMATTER_RE.exec(content);
+  const trimmed = content.trimStart();
+  const match = FRONTMATTER_RE.exec(trimmed);
   if (!match) {
     return { frontmatter: {}, body: content };
   }
@@ -40,7 +41,7 @@ export function parseFrontmatter(content: string): { frontmatter: AgentFrontmatt
       return { frontmatter: {}, body: content };
     }
     const frontmatter = parsed as AgentFrontmatter;
-    const body = content.slice(match[0].length);
+    const body = trimmed.slice(match[0].length);
     return { frontmatter, body };
   } catch {
     return { frontmatter: {}, body: content };
@@ -64,7 +65,8 @@ export interface SkillFrontmatter {
 const SKILL_PRIORITY_KEYS: (keyof SkillFrontmatter)[] = ['name', 'description'];
 
 export function parseSkillFrontmatter(content: string): { frontmatter: SkillFrontmatter; body: string } {
-  const match = FRONTMATTER_RE.exec(content);
+  const trimmed = content.trimStart();
+  const match = FRONTMATTER_RE.exec(trimmed);
   if (!match) {
     return { frontmatter: {}, body: content };
   }
@@ -74,7 +76,7 @@ export function parseSkillFrontmatter(content: string): { frontmatter: SkillFron
       return { frontmatter: {}, body: content };
     }
     const frontmatter = parsed as SkillFrontmatter;
-    const body = content.slice(match[0].length);
+    const body = trimmed.slice(match[0].length);
     return { frontmatter, body };
   } catch {
     return { frontmatter: {}, body: content };

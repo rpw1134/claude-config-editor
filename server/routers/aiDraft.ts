@@ -163,12 +163,21 @@ function processTextChunk(
 
     const tagStart = chatBuffer.indexOf("<artifact");
     if (tagStart === -1) {
-      // No artifact tag in sight — flush all but the last 9 chars (length of "<artifact")
-      // to guard against a split tag across chunks.
-      const safeLen = Math.max(0, chatBuffer.length - 9);
-      if (safeLen > 0) {
-        sendEvent(res, "token", { text: chatBuffer.slice(0, safeLen) });
-        chatBuffer = chatBuffer.slice(safeLen);
+      // No full artifact tag — check if the end of the buffer could be a partial "<artifact" prefix.
+      // Only hold back the minimum needed to guard against a tag split across chunks.
+      const lastAngle = chatBuffer.lastIndexOf("<");
+      if (lastAngle !== -1 && "<artifact".startsWith(chatBuffer.slice(lastAngle))) {
+        // Could be the start of an artifact tag — flush up to lastAngle, hold the rest.
+        if (lastAngle > 0) {
+          sendEvent(res, "token", { text: chatBuffer.slice(0, lastAngle) });
+          chatBuffer = chatBuffer.slice(lastAngle);
+        }
+      } else {
+        // Definitely not an artifact tag — flush everything immediately.
+        if (chatBuffer.length > 0) {
+          sendEvent(res, "token", { text: chatBuffer });
+          chatBuffer = "";
+        }
       }
       return { state, artifactBuffer, chatBuffer, artifactType, artifactName };
     }
@@ -247,7 +256,7 @@ function processBufferingState(
     return { state, artifactBuffer, chatBuffer, artifactType, artifactName };
   }
 
-  const content = artifactBuffer.slice(0, closeIdx);
+  const content = artifactBuffer.slice(0, closeIdx).trim();
   sendEvent(res, "artifact-end", { type: artifactType, name: artifactName, content });
 
   const remaining = artifactBuffer.slice(closeIdx + closeTag.length);

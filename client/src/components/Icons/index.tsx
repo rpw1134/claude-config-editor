@@ -379,10 +379,8 @@ export const GridsIcon = ({ size = 20 }: { size?: number }) => (
 // ── AI Draft icons ────────────────────────────────────────────────────────────
 
 export const AIDraftIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M7.5 2L8.6 5.4H12.2L9.3 7.5L10.4 10.9L7.5 8.8L4.6 10.9L5.7 7.5L2.8 5.4H6.4L7.5 2Z" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
-    <path d="M12.5 1.5V3.5M13.5 2.5H11.5" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round"/>
-    <path d="M2 12.5L3.5 13.5M3.5 11L2 12L3.5 13" stroke="currentColor" strokeWidth="1.05" strokeLinecap="round" strokeLinejoin="round"/>
+  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <polygon points="8,1.5 14.5,8 8,14.5 1.5,8" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/>
   </svg>
 );
 
@@ -405,6 +403,22 @@ export const LockIcon = () => (
     <rect x="2.5" y="6.5" width="10" height="7" rx="1.2" stroke="currentColor" strokeWidth="1.2"/>
     <path d="M5 6.5V4.5C5 3.12 6.12 2 7.5 2C8.88 2 10 3.12 10 4.5V6.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
     <circle cx="7.5" cy="10" r="1" fill="currentColor"/>
+  </svg>
+);
+
+export const StrydeLogoMark = ({ size = 32 }: { size?: number }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 48 48"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    aria-hidden="true"
+  >
+    {/* Rotated square (diamond) with inner diamond — clean geometric mark */}
+    <rect x="24" y="4" width="28.28" height="28.28" rx="3.5" transform="rotate(45 24 24)" stroke="currentColor" strokeWidth="1.8" />
+    <rect x="24" y="14" width="14.14" height="14.14" rx="1.5" transform="rotate(45 24 24)" stroke="currentColor" strokeWidth="1.4" opacity="0.55" />
+    <circle cx="24" cy="24" r="2.5" fill="currentColor" />
   </svg>
 );
 

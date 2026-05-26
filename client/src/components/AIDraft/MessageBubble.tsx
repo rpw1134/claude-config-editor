@@ -1,3 +1,4 @@
+import Markdown from "react-markdown";
 import type { ChatMessage } from "../../types/aiDraft";
 import { StreamingDots } from "./StreamingDots";
 
@@ -5,15 +6,15 @@ import { StreamingDots } from "./StreamingDots";
 
 function humanizeToolName(tool: string): string {
   const map: Record<string, string> = {
-    list_agents: "Listing agents…",
-    get_agent: "Looking up agent…",
-    list_skills: "Listing skills…",
-    get_skill: "Looking up skill…",
-    read_file: "Reading file…",
-    write_file: "Writing file…",
-    list_files: "Listing files…",
+    list_agents: "Listing agents",
+    get_agent: "Looking up agent",
+    list_skills: "Listing skills",
+    get_skill: "Looking up skill",
+    read_file: "Reading file",
+    write_file: "Writing file",
+    list_files: "Listing files",
   };
-  return map[tool] ?? `${tool.replace(/_/g, " ")}…`;
+  return map[tool] ?? tool.replace(/_/g, " ");
 }
 
 interface ToolChipProps {
@@ -22,15 +23,15 @@ interface ToolChipProps {
 }
 
 const ToolChip = ({ tool, done }: ToolChipProps) => (
-  <span className="inline-flex items-center gap-1.5 bg-(--bg-elevated) border border-(--border-subtle) rounded-lg px-2.5 py-1 text-[12px] text-(--text-muted) my-1">
+  <span className="inline-flex items-center gap-1.5 bg-(--bg-elevated) border border-(--border-subtle) rounded-full px-3 py-1 text-[12px] text-(--text-muted)">
     {done ? (
-      <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
+      <svg width="10" height="10" viewBox="0 0 12 12" fill="none">
         <path d="M2 6L5 9L10 3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
     ) : (
-      <span className="w-2 h-2 rounded-full border border-(--text-muted) animate-spin border-t-transparent" />
+      <span className="w-2 h-2 rounded-full border border-(--text-muted) animate-spin border-t-transparent shrink-0" />
     )}
-    {done ? tool.replace(/_/g, " ") : humanizeToolName(tool)}
+    {humanizeToolName(tool)}
   </span>
 );
 
@@ -46,17 +47,17 @@ export const MessageBubble = ({ message }: MessageBubbleProps) => {
 
   if (isUser) {
     return (
-      <div className="flex justify-end px-4 py-1">
-        <div className="bg-(--accent)/15 border border-(--accent)/20 rounded-2xl rounded-tr-sm px-4 py-2.5 max-w-[80%] text-[14px] text-(--text-primary) whitespace-pre-wrap leading-relaxed">
+      <div className="flex justify-end w-full">
+        <div className="bg-(--bg-elevated) border border-(--border-subtle) rounded-3xl rounded-br-md px-5 py-3 max-w-[75%] text-[16px] text-(--text-primary) whitespace-pre-wrap leading-[1.65]">
           {message.content}
         </div>
       </div>
     );
   }
 
-  // Assistant message
+  // Assistant message — no bubble, just clean text
   return (
-    <div className="flex flex-col gap-1.5 px-4 py-1 max-w-[85%]">
+    <div className="flex flex-col gap-2 w-full">
       {/* Tool calls */}
       {(message.toolCalls ?? []).length > 0 && (
         <div className="flex flex-wrap gap-1.5 mb-1">
@@ -68,12 +69,27 @@ export const MessageBubble = ({ message }: MessageBubbleProps) => {
 
       {/* Content */}
       {!isEmpty && (
-        <p className="m-0 text-[14px] text-(--text-primary) leading-relaxed whitespace-pre-wrap">
-          {message.content}
-        </p>
+        <div className="text-[16px] text-(--text-primary) leading-[1.7] font-sans
+          prose prose-invert max-w-none
+          **:font-sans
+          prose-p:my-3 prose-p:leading-[1.7]
+          prose-headings:text-(--text-primary) prose-headings:font-semibold prose-headings:mt-6 prose-headings:mb-2
+          prose-h1:text-[20px] prose-h2:text-[18px] prose-h3:text-[16px]
+          prose-code:text-[13.5px] prose-code:bg-(--bg-elevated) prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md prose-code:text-(--text-primary) prose-code:font-['Fira_Code',monospace] prose-code:before:content-none prose-code:after:content-none
+          prose-pre:bg-(--bg-elevated) prose-pre:border prose-pre:border-(--border-subtle) prose-pre:rounded-xl prose-pre:p-4 prose-pre:text-[13px] prose-pre:overflow-x-auto
+          prose-li:my-1.5 prose-ul:my-3 prose-ol:my-3 prose-ul:pl-5 prose-ol:pl-5
+          prose-strong:text-(--text-primary) prose-strong:font-semibold
+          prose-blockquote:border-l-2 prose-blockquote:border-(--border-default) prose-blockquote:pl-4 prose-blockquote:text-(--text-secondary) prose-blockquote:not-italic prose-blockquote:my-3
+          prose-hr:border-(--border-subtle) prose-hr:my-5
+        ">
+          <Markdown>{message.content}</Markdown>
+          {message.isStreaming && (
+            <span className="inline-block w-0.5 h-[1em] bg-(--text-primary) opacity-70 ml-0.5 animate-[caret-blink_1s_ease-in-out_infinite] align-baseline" />
+          )}
+        </div>
       )}
 
-      {/* Streaming indicator */}
+      {/* Streaming indicator — only when no content yet */}
       {message.isStreaming && !message.content && <StreamingDots />}
     </div>
   );

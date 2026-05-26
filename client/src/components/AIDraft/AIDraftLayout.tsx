@@ -1,7 +1,7 @@
-import { useCallback, useState } from "react";
+import { useCallback } from "react";
 import { useBlocker } from "react-router-dom";
 import { useAIDraft } from "../../contexts/AIDraftContext";
-import { UnsavedModal } from "../Shared/UnsavedModal";
+import { AIDraftUnsavedModal } from "./AIDraftUnsavedModal";
 import { ArtifactBadge } from "./ArtifactBadge";
 import { ArtifactSidebar } from "./ArtifactSidebar";
 import { ChatInterface } from "./ChatInterface";
@@ -13,8 +13,7 @@ interface AIDraftLayoutProps {
 }
 
 export const AIDraftLayout = ({ projectPath }: AIDraftLayoutProps) => {
-  const { unsavedCount, clearSession } = useAIDraft();
-  const [showModal, setShowModal] = useState(false);
+  const { artifacts, unsavedCount, clearSession } = useAIDraft();
 
   const blocker = useBlocker(
     useCallback(
@@ -30,12 +29,10 @@ export const AIDraftLayout = ({ projectPath }: AIDraftLayoutProps) => {
   const handleLeave = () => {
     clearSession();
     blocker.proceed?.();
-    setShowModal(false);
   };
 
   const handleKeep = () => {
     blocker.reset?.();
-    setShowModal(false);
   };
 
   return (
@@ -51,13 +48,8 @@ export const AIDraftLayout = ({ projectPath }: AIDraftLayoutProps) => {
 
       {/* Navigation blocker modal */}
       {isBlocking && (
-        <UnsavedModal
-          onLeave={handleLeave}
-          onKeep={handleKeep}
-        />
-      )}
-      {showModal && (
-        <UnsavedModal
+        <AIDraftUnsavedModal
+          unsavedArtifacts={artifacts.filter((a) => !a.saved && !a.discarded)}
           onLeave={handleLeave}
           onKeep={handleKeep}
         />

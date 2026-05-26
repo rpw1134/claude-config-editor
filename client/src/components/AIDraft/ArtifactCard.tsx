@@ -1,24 +1,7 @@
 import { useState } from "react";
 import type { Artifact } from "../../types/aiDraft";
 import { useAIDraft } from "../../contexts/AIDraftContext";
-
-// ── Frontmatter parser ────────────────────────────────────────────────────────
-
-function parseFrontmatter(content: string): { frontmatter: Record<string, string>; body: string } {
-  const parts = content.split("---").filter((p) => p.trim().length > 0);
-  if (parts.length < 1) return { frontmatter: {}, body: content };
-  const fmRaw = parts[0];
-  const body = parts.slice(1).join("---").trim();
-  const frontmatter: Record<string, string> = {};
-  for (const line of fmRaw.split("\n")) {
-    const colon = line.indexOf(": ");
-    if (colon === -1) continue;
-    const key = line.slice(0, colon).trim();
-    const val = line.slice(colon + 2).trim().replace(/^["']|["']$/g, "");
-    if (key) frontmatter[key] = val;
-  }
-  return { frontmatter, body };
-}
+import { parseFrontmatter, parseSkillFrontmatter } from "../../lib/frontmatter";
 
 // ── Type badge ────────────────────────────────────────────────────────────────
 
@@ -44,33 +27,61 @@ const TypeBadge = ({ type }: TypeBadgeProps) => (
   </span>
 );
 
-// ── Fields tab content ────────────────────────────────────────────────────────
+// ── Field definitions ─────────────────────────────────────────────────────────
 
-const AGENT_FIELDS = ["name", "description", "model", "tools"];
-const SKILL_FIELDS = ["name", "description", "tags", "version"];
-const CLAUDE_FIELDS = ["project", "description"];
+const AGENT_FIELDS: Array<{ key: string; label: string }> = [
+  { key: "name", label: "Name" },
+  { key: "description", label: "Description" },
+  { key: "model", label: "Model" },
+  { key: "tools", label: "Tools" },
+];
 
-function fieldsForType(type: Artifact["type"]): string[] {
+const SKILL_FIELDS: Array<{ key: string; label: string }> = [
+  { key: "name", label: "Name" },
+  { key: "description", label: "Description" },
+  { key: "author", label: "Author" },
+  { key: "tags", label: "Tags" },
+];
+
+function fieldsForType(type: Artifact["type"]) {
   if (type === "agent") return AGENT_FIELDS;
   if (type === "skill") return SKILL_FIELDS;
-  return CLAUDE_FIELDS;
+  return null; // claude-md has no frontmatter
 }
+
+function bodyLabelForType(type: Artifact["type"]): string {
+  if (type === "agent") return "System Prompt";
+  if (type === "skill") return "Instructions";
+  return "Content";
+}
+
+// ── Field row ─────────────────────────────────────────────────────────────────
 
 interface FieldRowProps {
   label: string;
-  value: string;
+  value: unknown;
 }
 
-const FieldRow = ({ label, value }: FieldRowProps) => (
-  <div className="flex flex-col gap-0.5">
-    <span className="text-[11px] font-semibold uppercase tracking-[0.1em] text-(--text-muted)">
-      {label}
-    </span>
-    <span className="text-[13px] text-(--text-primary) break-words">
-      {value || <span className="text-(--text-muted) italic">—</span>}
-    </span>
-  </div>
-);
+const FieldRow = ({ label, value }: FieldRowProps) => {
+  const display = Array.isArray(value)
+    ? value.join(", ")
+    : value != null && value !== ""
+      ? String(value)
+      : null;
+
+  return (
+    <div className="flex flex-col gap-1">
+      <span className="text-[11px] font-semibold uppercase tracking-widest text-(--text-muted)">
+        {label}
+      </span>
+      {display ? (
+        <span className="text-[13px] text-(--text-primary) wrap-break-word">{display}</span>
+      ) : (
+        <span className="text-[13px] text-(--text-muted) italic">—</span>
+      )}
+    </div>
+  );
+};
 
 // ── ArtifactCard ──────────────────────────────────────────────────────────────
 
@@ -83,8 +94,11 @@ export const ArtifactCard = ({ artifact }: ArtifactCardProps) => {
   const [tab, setTab] = useState<"preview" | "fields">("preview");
   const [saving, setSaving] = useState(false);
 
-  const { frontmatter, body } = parseFrontmatter(artifact.content);
-  const fieldKeys = fieldsForType(artifact.type);
+  const parsed = artifact.type === "skill"
+    ? parseSkillFrontmatter(artifact.content)
+    : parseFrontmatter(artifact.content);
+  const { frontmatter, body } = parsed;
+  const fields = fieldsForType(artifact.type);
 
   const handleSave = async () => {
     setSaving(true);
@@ -110,13 +124,13 @@ export const ArtifactCard = ({ artifact }: ArtifactCardProps) => {
             </span>
           )}
           {artifact.discarded && (
-            <span className="text-[11px] text-(--text-muted) font-semibold line-through">
+            <span className="text-[11px] text-(--text-muted) font-semibold">
               Discarded
             </span>
           )}
         </div>
         <h3 className='m-0 text-[15px] font-["Bricolage_Grotesque",sans-serif] font-semibold text-(--text-primary) leading-snug'>
-          {artifact.name}
+          {(frontmatter as Record<string, unknown>).name ? String((frontmatter as Record<string, unknown>).name) : artifact.name}
         </h3>
       </div>
 
@@ -127,9 +141,9 @@ export const ArtifactCard = ({ artifact }: ArtifactCardProps) => {
             key={t}
             onClick={() => setTab(t)}
             className={[
-              "flex-1 py-2.5 text-[13px] font-medium border-none bg-transparent cursor-pointer transition-colors duration-150 capitalize",
+              "flex-1 py-2.5 text-[13px] font-medium border-none bg-transparent cursor-pointer transition-colors duration-150 capitalize relative",
               tab === t
-                ? "text-(--text-primary) border-b-2 border-(--accent) -mb-px"
+                ? "text-(--text-primary) after:absolute after:bottom-0 after:left-0 after:right-0 after:h-px after:bg-(--accent)"
                 : "text-(--text-secondary) hover:text-(--text-primary)",
             ].join(" ")}
           >
@@ -138,33 +152,46 @@ export const ArtifactCard = ({ artifact }: ArtifactCardProps) => {
         ))}
       </div>
 
-      {/* Tab content */}
+      {/* Tab content — scrollable */}
       <div className="flex-1 min-h-0 overflow-y-auto p-4">
         {tab === "preview" && (
-          <pre className="m-0 text-[12px] font-['Fira_Code',monospace] text-(--text-secondary) bg-(--bg-base) rounded-lg p-4 overflow-auto whitespace-pre-wrap break-words leading-relaxed">
+          <pre className="m-0 text-[12px] font-['Fira_Code',monospace] text-(--text-secondary) bg-(--bg-base) rounded-lg p-4 whitespace-pre-wrap wrap-break-word leading-relaxed">
             {artifact.content}
           </pre>
         )}
+
         {tab === "fields" && (
-          <div className="flex flex-col gap-4">
-            {fieldKeys.map((key) => (
-              <FieldRow
-                key={key}
-                label={key}
-                value={frontmatter[key] ?? ""}
-              />
-            ))}
-            {body && (
-              <div className="flex flex-col gap-0.5">
-                <span className="text-[11px] font-semibold uppercase tracking-[0.1em] text-(--text-muted)">
-                  Body
-                </span>
-                <p className="m-0 text-[13px] text-(--text-secondary) leading-relaxed whitespace-pre-wrap">
-                  {body.slice(0, 300)}{body.length > 300 ? "…" : ""}
+          <>
+            {fields === null ? (
+              // claude-md has no frontmatter
+              <div className="flex flex-col gap-2">
+                <p className="text-[13px] text-(--text-muted) leading-relaxed">
+                  CLAUDE.md is a plain markdown file — use the Preview tab to read the full content.
                 </p>
+                {body && (
+                  <pre className="m-0 text-[12px] font-['Fira_Code',monospace] text-(--text-secondary) bg-(--bg-base) rounded-lg p-4 whitespace-pre-wrap wrap-break-word leading-relaxed mt-2">
+                    {body}
+                  </pre>
+                )}
+              </div>
+            ) : (
+              <div className="flex flex-col gap-5">
+                {fields.map(({ key, label }) => (
+                  <FieldRow key={key} label={label} value={(frontmatter as Record<string, unknown>)[key] ?? ""} />
+                ))}
+                {body && (
+                  <div className="flex flex-col gap-1">
+                    <span className="text-[11px] font-semibold uppercase tracking-widest text-(--text-muted)">
+                      {bodyLabelForType(artifact.type)}
+                    </span>
+                    <p className="m-0 text-[13px] text-(--text-secondary) leading-relaxed whitespace-pre-wrap wrap-break-word">
+                      {body}
+                    </p>
+                  </div>
+                )}
               </div>
             )}
-          </div>
+          </>
         )}
       </div>
 
@@ -174,13 +201,13 @@ export const ArtifactCard = ({ artifact }: ArtifactCardProps) => {
           <button
             onClick={handleSave}
             disabled={saving}
-            className="bg-(--accent) text-white rounded-lg px-4 py-2 text-[13px] font-semibold hover:opacity-90 transition-opacity duration-150 cursor-pointer disabled:opacity-60 border-none"
+            className="bg-(--accent) text-black rounded-lg px-4 py-2 text-[13px] font-semibold hover:opacity-90 transition-opacity duration-150 cursor-pointer disabled:opacity-60 border-none"
           >
             {saving ? "Saving…" : "Save to project"}
           </button>
           <button
             onClick={() => discardArtifact(artifact.id)}
-            className="text-(--text-muted) text-[13px] hover:text-(--text-primary) bg-transparent border-none cursor-pointer transition-colors duration-150"
+            className="text-red-400/70 text-[13px] hover:text-red-400 bg-transparent border-none cursor-pointer transition-colors duration-150"
           >
             Discard
           </button>

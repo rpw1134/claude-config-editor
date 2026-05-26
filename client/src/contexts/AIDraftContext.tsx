@@ -5,6 +5,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { flushSync } from "react-dom";
 import type { ReactNode } from "react";
 import type { Artifact, ChatMessage, ToolCall } from "../types/aiDraft";
 import { useShell } from "./ShellContext";
@@ -17,6 +18,7 @@ interface AIDraftContextValue {
   messages: ChatMessage[];
   artifacts: Artifact[];
   isStreaming: boolean;
+  buildingArtifact: { type: string; name: string } | null;
   sidebarOpen: boolean;
   activeArtifactIndex: number;
   noApiKey: boolean;
@@ -78,17 +80,19 @@ export const AIDraftProvider = ({ children, projectPath }: AIDraftProviderProps)
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [artifacts, setArtifacts] = useState<Artifact[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
+  const [buildingArtifact, setBuildingArtifact] = useState<{ type: string; name: string } | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeArtifactIndex, setActiveArtifactIndex] = useState(0);
   const [noApiKey, setNoApiKey] = useState(false);
 
-  // Track the pending artifact being built during a stream
+  // Ref for synchronous access inside the stream loop
   const pendingArtifactRef = useRef<{ type: string; name: string } | null>(null);
 
   const clearSession = useCallback(() => {
     setMessages([]);
     setArtifacts([]);
     setIsStreaming(false);
+    setBuildingArtifact(null);
     setSidebarOpen(false);
     setActiveArtifactIndex(0);
     setNoApiKey(false);
@@ -165,16 +169,20 @@ export const AIDraftProvider = ({ children, projectPath }: AIDraftProviderProps)
 
             if (event.type === "token") {
               const text = (event.data.text as string) ?? "";
-              setMessages((prev) =>
-                prev.map((m) =>
-                  m.id === assistantMsg.id ? { ...m, content: m.content + text } : m
-                )
-              );
+              flushSync(() => {
+                setMessages((prev) =>
+                  prev.map((m) =>
+                    m.id === assistantMsg.id ? { ...m, content: m.content + text } : m
+                  )
+                );
+              });
             } else if (event.type === "artifact-start") {
-              pendingArtifactRef.current = {
+              const pending = {
                 type: (event.data.type as string) ?? "agent",
                 name: (event.data.name as string) ?? "Untitled",
               };
+              pendingArtifactRef.current = pending;
+              setBuildingArtifact(pending);
             } else if (event.type === "artifact-end") {
               const pending = pendingArtifactRef.current;
               const artifactType = ((event.data.type as string) ?? pending?.type ?? "agent") as Artifact["type"];
@@ -195,6 +203,7 @@ export const AIDraftProvider = ({ children, projectPath }: AIDraftProviderProps)
               });
               setSidebarOpen(true);
               pendingArtifactRef.current = null;
+              setBuildingArtifact(null);
             } else if (event.type === "tool-call") {
               const toolCall: ToolCall = {
                 tool: (event.data.tool as string) ?? "unknown",
@@ -239,6 +248,7 @@ export const AIDraftProvider = ({ children, projectPath }: AIDraftProviderProps)
                   )
                 );
               }
+              setBuildingArtifact(null);
               setIsStreaming(false);
               return;
             } else if (event.type === "done") {
@@ -248,6 +258,7 @@ export const AIDraftProvider = ({ children, projectPath }: AIDraftProviderProps)
         }
       } catch (err) {
         const msg = err instanceof Error ? err.message : "Unknown error";
+        setBuildingArtifact(null);
         setMessages((prev) =>
           prev.map((m) =>
             m.id === assistantMsg.id
@@ -256,6 +267,7 @@ export const AIDraftProvider = ({ children, projectPath }: AIDraftProviderProps)
           )
         );
       } finally {
+        setBuildingArtifact(null);
         setMessages((prev) =>
           prev.map((m) =>
             m.id === assistantMsg.id ? { ...m, isStreaming: false } : m
@@ -317,6 +329,7 @@ export const AIDraftProvider = ({ children, projectPath }: AIDraftProviderProps)
         messages,
         artifacts,
         isStreaming,
+        buildingArtifact,
         sidebarOpen,
         activeArtifactIndex,
         noApiKey,
