@@ -308,14 +308,41 @@ interface ChatInterfaceProps {
 
 export const ChatInterface = ({ projectPath }: ChatInterfaceProps) => {
   const { messages, isStreaming, buildingArtifact, sendMessage, noApiKey } = useAIDraft();
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const { selectedProjectPath } = useShell();
   const [prefill, setPrefill] = useState<string | undefined>(undefined);
   const [hasText, setHasText] = useState(false);
 
+  // Scroll the latest user message to the top only when a new exchange is added.
+  // Never auto-scroll during streaming — the user controls the viewport.
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+    if (messages.length < 2) return;
+    const lastUserMsg = messages[messages.length - 2];
+    if (lastUserMsg?.role !== "user") return;
+
+    // Two rAFs: first fires after React commits, second fires after the browser
+    // has done a full reflow, so getBoundingClientRect reflects the new layout.
+    let raf1: number;
+    let raf2: number;
+    raf1 = requestAnimationFrame(() => {
+      raf2 = requestAnimationFrame(() => {
+        const el = document.getElementById(`msg-${lastUserMsg.id}`);
+        const container = scrollContainerRef.current;
+        if (!el || !container) return;
+
+        // Walk the offsetParent chain to get el's top relative to the scroll container.
+        let offsetTop = 0;
+        let node: HTMLElement | null = el;
+        while (node && node !== container) {
+          offsetTop += node.offsetTop;
+          node = node.offsetParent as HTMLElement | null;
+        }
+
+        container.scrollTo({ top: offsetTop - 64, behavior: "smooth" });
+      });
+    });
+    return () => { cancelAnimationFrame(raf1); cancelAnimationFrame(raf2); };
+  }, [messages.length]);
 
   const showEmpty = messages.length === 0 && !noApiKey;
 
@@ -367,35 +394,58 @@ export const ChatInterface = ({ projectPath }: ChatInterfaceProps) => {
     );
   }
 
+  // Group messages into [user, assistant?] pairs so each exchange can
+  // occupy min-h-[85vh], guaranteeing enough scroll room to push old content off-screen.
+  const pairs: { user: typeof messages[0]; assistant?: typeof messages[0] }[] = [];
+  for (let i = 0; i < messages.length; i++) {
+    if (messages[i].role === "user") {
+      const assistant = messages[i + 1]?.role === "assistant" ? messages[i + 1] : undefined;
+      pairs.push({ user: messages[i], assistant });
+      if (assistant) i++;
+    }
+  }
+  const lastPairIdx = pairs.length - 1;
+
   // ── Active conversation ────────────────────────────────────────────────────
   return (
     <div className="flex flex-col flex-1 min-h-0">
-      <div className="flex-1 min-h-0 overflow-y-auto">
-        <div className="w-[80%] mx-auto py-10 flex flex-col gap-8">
-          {messages.map((msg) => (
-            <MessageBubble key={msg.id} message={msg} />
-          ))}
-          {isStreaming && messages[messages.length - 1]?.role === "user" && !buildingArtifact && (
-            <StreamingDots />
-          )}
-          {buildingArtifact && (
-            <div className="flex items-center gap-3 py-1">
-              <div className="flex gap-1 shrink-0">
-                <span className="w-1.5 h-1.5 rounded-full bg-(--accent) animate-bounce [animation-delay:0ms]" />
-                <span className="w-1.5 h-1.5 rounded-full bg-(--accent) animate-bounce [animation-delay:150ms]" />
-                <span className="w-1.5 h-1.5 rounded-full bg-(--accent) animate-bounce [animation-delay:300ms]" />
+      <div ref={scrollContainerRef} className="flex-1 min-h-0 overflow-y-auto">
+        <div className="w-[80%] mx-auto">
+          {pairs.map(({ user, assistant }, idx) => (
+            <div key={user.id} className={`${idx < lastPairIdx ? "min-h-[85vh]" : ""} flex flex-col gap-8 pt-16 pb-8`}>
+              <div id={`msg-${user.id}`}>
+                <MessageBubble message={user} />
               </div>
-              <span className="text-[14px] text-(--text-muted)">
-                Drafting <span className="text-(--text-primary) font-medium">{buildingArtifact.name}</span>…
-              </span>
+              {assistant && (
+                <div id={`msg-${assistant.id}`}>
+                  <MessageBubble message={assistant} />
+                </div>
+              )}
+              {idx === lastPairIdx && isStreaming && !assistant && !buildingArtifact && (
+                <StreamingDots />
+              )}
+              {idx === lastPairIdx && buildingArtifact && (
+                <div className="flex items-center gap-3 py-1">
+                  <div className="flex gap-1 shrink-0">
+                    <span className="w-1.5 h-1.5 rounded-full bg-(--accent) animate-bounce [animation-delay:0ms]" />
+                    <span className="w-1.5 h-1.5 rounded-full bg-(--accent) animate-bounce [animation-delay:150ms]" />
+                    <span className="w-1.5 h-1.5 rounded-full bg-(--accent) animate-bounce [animation-delay:300ms]" />
+                  </div>
+                  <span className="text-[14px] text-(--text-muted)">
+                    Drafting <span className="text-(--text-primary) font-medium">{buildingArtifact.name}</span>…
+                  </span>
+                </div>
+              )}
             </div>
-          )}
-          <div ref={bottomRef} />
+          ))}
         </div>
       </div>
-      <div className="shrink-0 px-4 pb-6 pt-2">
-        <div className="w-[88%] mx-auto chat-input-enter">
-          <InputField onSend={sendMessage} disabled={isStreaming} compact />
+      <div className="shrink-0 relative">
+        <div className="absolute -top-10 left-0 right-0 h-10 bg-linear-to-b from-transparent to-(--bg-base) pointer-events-none" />
+        <div className="bg-(--bg-base) px-4 pb-6 pt-2">
+          <div className="w-[88%] mx-auto chat-input-enter">
+            <InputField onSend={sendMessage} disabled={isStreaming} compact />
+          </div>
         </div>
       </div>
     </div>

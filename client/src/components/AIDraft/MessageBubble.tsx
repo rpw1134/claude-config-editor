@@ -69,10 +69,10 @@ export const MessageBubble = ({ message }: MessageBubbleProps) => {
 
       {/* Content */}
       {!isEmpty && (
-        <div className="text-[16px] text-(--text-primary) leading-[1.7] font-sans
+        <div className="text-[18px] text-(--text-primary) leading-[1.7] font-sans
           prose prose-invert max-w-none
           **:font-sans
-          prose-p:my-3 prose-p:leading-[1.7]
+          prose-p:my-5 prose-p:leading-[1.7]
           prose-headings:text-(--text-primary) prose-headings:font-semibold prose-headings:mt-6 prose-headings:mb-2
           prose-h1:text-[20px] prose-h2:text-[18px] prose-h3:text-[16px]
           prose-code:text-[13.5px] prose-code:bg-(--bg-elevated) prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md prose-code:text-(--text-primary) prose-code:font-['Fira_Code',monospace] prose-code:before:content-none prose-code:after:content-none

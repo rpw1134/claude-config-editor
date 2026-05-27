@@ -297,7 +297,7 @@ async function runStream(
   const stream = client.messages.stream({
     model: "claude-opus-4-7",
     max_tokens: 4096,
-    system: SYSTEM_PROMPT,
+    system: [{ type: "text", text: SYSTEM_PROMPT, cache_control: { type: "ephemeral" } }],
     messages,
     tools: TOOLS,
   });

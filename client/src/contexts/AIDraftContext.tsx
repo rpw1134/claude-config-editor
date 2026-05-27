@@ -5,7 +5,6 @@ import {
   useRef,
   useState,
 } from "react";
-import { flushSync } from "react-dom";
 import type { ReactNode } from "react";
 import type { Artifact, ChatMessage, ToolCall } from "../types/aiDraft";
 import { useShell } from "./ShellContext";
@@ -88,6 +87,13 @@ export const AIDraftProvider = ({ children, projectPath }: AIDraftProviderProps)
   // Ref for synchronous access inside the stream loop
   const pendingArtifactRef = useRef<{ type: string; name: string } | null>(null);
 
+  // Word-by-word drain
+  const contentBufferRef = useRef("");
+  const displayedLengthRef = useRef(0);
+  const drainRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const streamingMsgIdRef = useRef<string | null>(null);
+  const streamDoneRef = useRef(false);
+
   const clearSession = useCallback(() => {
     setMessages([]);
     setArtifacts([]);
@@ -99,9 +105,56 @@ export const AIDraftProvider = ({ children, projectPath }: AIDraftProviderProps)
     pendingArtifactRef.current = null;
   }, []);
 
+  const stopDrain = useCallback(() => {
+    if (drainRef.current) {
+      clearInterval(drainRef.current);
+      drainRef.current = null;
+    }
+  }, []);
+
+  const startDrain = useCallback(() => {
+    if (drainRef.current) return;
+    drainRef.current = setInterval(() => {
+      const buffer = contentBufferRef.current;
+      const displayed = displayedLengthRef.current;
+
+      if (displayed >= buffer.length) {
+        if (streamDoneRef.current) {
+          clearInterval(drainRef.current!);
+          drainRef.current = null;
+          const id = streamingMsgIdRef.current;
+          if (id) setMessages(prev => prev.map(m => m.id === id ? { ...m, isStreaming: false } : m));
+          setIsStreaming(false);
+        }
+        return;
+      }
+
+      // Advance to next whitespace boundary
+      let end = -1;
+      for (let i = displayed; i < buffer.length; i++) {
+        const ch = buffer[i];
+        if (ch === " " || ch === "\n" || ch === "\t") { end = i + 1; break; }
+      }
+      if (end === -1) {
+        if (!streamDoneRef.current) return; // wait for more
+        end = buffer.length;
+      }
+
+      displayedLengthRef.current = end;
+      const id = streamingMsgIdRef.current;
+      if (id) setMessages(prev => prev.map(m => m.id === id ? { ...m, content: buffer.slice(0, end) } : m));
+    }, 30);
+  }, []);
+
   const sendMessage = useCallback(
     async (text: string) => {
       if (isStreaming) return;
+
+      // Reset drain state for this turn
+      contentBufferRef.current = "";
+      displayedLengthRef.current = 0;
+      streamDoneRef.current = false;
+      stopDrain();
 
       const userMsg: ChatMessage = { id: makeId(), role: "user", content: text };
       const assistantMsg: ChatMessage = {
@@ -111,6 +164,7 @@ export const AIDraftProvider = ({ children, projectPath }: AIDraftProviderProps)
         toolCalls: [],
         isStreaming: true,
       };
+      streamingMsgIdRef.current = assistantMsg.id;
 
       // Capture before any state update — messages is the history up to (not including) this turn
       const capturedMessages = [...messages, userMsg];
@@ -169,13 +223,8 @@ export const AIDraftProvider = ({ children, projectPath }: AIDraftProviderProps)
 
             if (event.type === "token") {
               const text = (event.data.text as string) ?? "";
-              flushSync(() => {
-                setMessages((prev) =>
-                  prev.map((m) =>
-                    m.id === assistantMsg.id ? { ...m, content: m.content + text } : m
-                  )
-                );
-              });
+              contentBufferRef.current += text;
+              startDrain();
             } else if (event.type === "artifact-start") {
               const pending = {
                 type: (event.data.type as string) ?? "agent",
@@ -231,6 +280,7 @@ export const AIDraftProvider = ({ children, projectPath }: AIDraftProviderProps)
                 })
               );
             } else if (event.type === "error") {
+              stopDrain();
               const msg = (event.data.message as string) ?? "Unknown error";
               if (msg === "no_api_key") {
                 setNoApiKey(true);
@@ -257,6 +307,7 @@ export const AIDraftProvider = ({ children, projectPath }: AIDraftProviderProps)
           }
         }
       } catch (err) {
+        stopDrain();
         const msg = err instanceof Error ? err.message : "Unknown error";
         setBuildingArtifact(null);
         setMessages((prev) =>
@@ -266,17 +317,23 @@ export const AIDraftProvider = ({ children, projectPath }: AIDraftProviderProps)
               : m
           )
         );
+        setIsStreaming(false);
       } finally {
         setBuildingArtifact(null);
-        setMessages((prev) =>
-          prev.map((m) =>
-            m.id === assistantMsg.id ? { ...m, isStreaming: false } : m
-          )
-        );
-        setIsStreaming(false);
+        // Signal drain to finish and handle isStreaming cleanup.
+        // If drain never started (no tokens), clean up immediately.
+        streamDoneRef.current = true;
+        if (!drainRef.current) {
+          setMessages((prev) =>
+            prev.map((m) =>
+              m.id === assistantMsg.id ? { ...m, isStreaming: false } : m
+            )
+          );
+          setIsStreaming(false);
+        }
       }
     },
-    [isStreaming, projectPath]
+    [isStreaming, messages, projectPath, startDrain, stopDrain]
   );
 
   const saveArtifact = useCallback(
