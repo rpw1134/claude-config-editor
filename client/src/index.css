@@ -206,6 +206,40 @@ a {
   }
 }
 
+/* ── Stryde Status Icon animations ────────────────────────────────────────── */
+
+/* Idle: no animation — static glow applied as inline filter */
+
+/* Listening: soft opacity pulse */
+@keyframes si-listen-pulse {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 1; }
+}
+
+/* Streaming: calm scale + glow pulse */
+@keyframes si-stream-pulse {
+  0%, 100% { transform: scale(0.95); filter: drop-shadow(0 0 4px rgba(124, 77, 255, 0.5)); }
+  50% { transform: scale(1.05); filter: drop-shadow(0 0 12px rgba(124, 77, 255, 0.9)); }
+}
+
+/* Thinking: rect fill color oscillates purple → blue (applied per-rect, not via hue-rotate) */
+@keyframes si-think-color {
+  0%, 100% { fill: #7C4DFF; }
+  50% { fill: #00B4D8; }
+}
+
+/* Thinking: rotation for rect A (clockwise) */
+@keyframes si-think-a {
+  from { transform: rotate(22deg); }
+  to { transform: rotate(382deg); }
+}
+
+/* Thinking: rotation for rect B (counter-clockwise) */
+@keyframes si-think-b {
+  from { transform: rotate(-22deg); }
+  to { transform: rotate(-382deg); }
+}
+
 /* ── Grid canvas node styles ───────────────────────────────────────────────── */
 
 .orchestrator-node {

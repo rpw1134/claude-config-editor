@@ -3,9 +3,9 @@ import { useNavigate } from "react-router-dom";
 import { useAIDraft } from "../../contexts/AIDraftContext";
 import { useShell } from "../../contexts/ShellContext";
 import { encodeProject } from "../../lib/navigation";
-import { LockIcon, SendIcon, StrydeLogoMark, XIcon } from "../Icons";
+import { LockIcon, SendIcon, XIcon } from "../Icons";
 import { MessageBubble } from "./MessageBubble";
-import { StreamingDots } from "./StreamingDots";
+import { StrydeStatusIcon } from "./StrydeStatusIcon";
 
 // ── Greetings ─────────────────────────────────────────────────────────────────
 
@@ -309,9 +309,11 @@ interface ChatInterfaceProps {
 export const ChatInterface = ({ projectPath }: ChatInterfaceProps) => {
   const { messages, isStreaming, buildingArtifact, sendMessage, noApiKey } = useAIDraft();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const activePairRef = useRef<HTMLDivElement>(null);
   const { selectedProjectPath } = useShell();
   const [prefill, setPrefill] = useState<string | undefined>(undefined);
   const [hasText, setHasText] = useState(false);
+  const [tailSpace, setTailSpace] = useState(0);
 
   // Scroll the latest user message to the top only when a new exchange is added.
   // Never auto-scroll during streaming — the user controls the viewport.
@@ -338,13 +340,42 @@ export const ChatInterface = ({ projectPath }: ChatInterfaceProps) => {
           node = node.offsetParent as HTMLElement | null;
         }
 
-        container.scrollTo({ top: offsetTop - 64, behavior: "smooth" });
+        container.scrollTo({ top: offsetTop, behavior: "smooth" });
       });
     });
     return () => { cancelAnimationFrame(raf1); cancelAnimationFrame(raf2); };
   }, [messages.length]);
 
   const showEmpty = messages.length === 0 && !noApiKey;
+
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    const activePair = activePairRef.current;
+
+    if (!container || !activePair) {
+      setTailSpace(0);
+      return;
+    }
+
+    const updateTailSpace = () => {
+      const availableHeight = container.clientHeight;
+      const activeHeight = activePair.offsetHeight;
+      setTailSpace(Math.max(0, availableHeight - activeHeight));
+    };
+
+    updateTailSpace();
+
+    if (typeof ResizeObserver === "undefined") {
+      window.addEventListener("resize", updateTailSpace);
+      return () => window.removeEventListener("resize", updateTailSpace);
+    }
+
+    const observer = new ResizeObserver(updateTailSpace);
+    observer.observe(container);
+    observer.observe(activePair);
+
+    return () => observer.disconnect();
+  }, [messages.length, isStreaming, buildingArtifact]);
 
   // ── Empty landing ──────────────────────────────────────────────────────────
   if (showEmpty) {
@@ -356,9 +387,7 @@ export const ChatInterface = ({ projectPath }: ChatInterfaceProps) => {
         {/* Fixed content: logo + heading + input — never moves */}
         <div className="w-full max-w-2xl flex flex-col items-center gap-8">
           <div className="flex flex-col items-center gap-5 text-center">
-            <div className="text-(--accent) drop-shadow-[0_0_14px_rgba(0,229,255,0.35)]">
-              <StrydeLogoMark size={44} />
-            </div>
+            <StrydeStatusIcon status="idle" size={44} />
             <h1 className="text-[52px] font-bold text-(--text-primary) leading-[1.05] tracking-[-0.03em]">
               {greeting}
             </h1>
@@ -394,8 +423,7 @@ export const ChatInterface = ({ projectPath }: ChatInterfaceProps) => {
     );
   }
 
-  // Group messages into [user, assistant?] pairs so each exchange can
-  // occupy min-h-[85vh], guaranteeing enough scroll room to push old content off-screen.
+  // Group messages into [user, assistant?] pairs so each exchange renders as a single block.
   const pairs: { user: typeof messages[0]; assistant?: typeof messages[0] }[] = [];
   for (let i = 0; i < messages.length; i++) {
     if (messages[i].role === "user") {
@@ -412,25 +440,25 @@ export const ChatInterface = ({ projectPath }: ChatInterfaceProps) => {
       <div ref={scrollContainerRef} className="flex-1 min-h-0 overflow-y-auto">
         <div className="w-[80%] mx-auto">
           {pairs.map(({ user, assistant }, idx) => (
-            <div key={user.id} className={`${idx < lastPairIdx ? "min-h-[85vh]" : ""} flex flex-col gap-8 pt-16 pb-8`}>
+            <div
+              key={user.id}
+              ref={idx === lastPairIdx ? activePairRef : undefined}
+              className="flex flex-col gap-6 pt-6 pb-4"
+            >
               <div id={`msg-${user.id}`}>
                 <MessageBubble message={user} />
               </div>
               {assistant && (
                 <div id={`msg-${assistant.id}`}>
-                  <MessageBubble message={assistant} />
+                  <MessageBubble message={assistant} isLastAssistant={idx === lastPairIdx} />
                 </div>
               )}
               {idx === lastPairIdx && isStreaming && !assistant && !buildingArtifact && (
-                <StreamingDots />
+                <StrydeStatusIcon status="listening" size={28} />
               )}
               {idx === lastPairIdx && buildingArtifact && (
                 <div className="flex items-center gap-3 py-1">
-                  <div className="flex gap-1 shrink-0">
-                    <span className="w-1.5 h-1.5 rounded-full bg-(--accent) animate-bounce [animation-delay:0ms]" />
-                    <span className="w-1.5 h-1.5 rounded-full bg-(--accent) animate-bounce [animation-delay:150ms]" />
-                    <span className="w-1.5 h-1.5 rounded-full bg-(--accent) animate-bounce [animation-delay:300ms]" />
-                  </div>
+                  <StrydeStatusIcon status="thinking" size={28} />
                   <span className="text-[14px] text-(--text-muted)">
                     Drafting <span className="text-(--text-primary) font-medium">{buildingArtifact.name}</span>…
                   </span>
@@ -438,6 +466,7 @@ export const ChatInterface = ({ projectPath }: ChatInterfaceProps) => {
               )}
             </div>
           ))}
+          {lastPairIdx >= 0 && <div aria-hidden="true" style={{ height: tailSpace }} />}
         </div>
       </div>
       <div className="shrink-0 relative">

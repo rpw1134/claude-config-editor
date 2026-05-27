@@ -1,6 +1,8 @@
+import { useEffect, useState } from "react";
 import Markdown from "react-markdown";
 import type { ChatMessage } from "../../types/aiDraft";
-import { StreamingDots } from "./StreamingDots";
+import { useAIDraft } from "../../contexts/AIDraftContext";
+import { StrydeStatusIcon } from "./StrydeStatusIcon";
 
 // ── Tool chip ─────────────────────────────────────────────────────────────────
 
@@ -39,11 +41,22 @@ const ToolChip = ({ tool, done }: ToolChipProps) => (
 
 interface MessageBubbleProps {
   message: ChatMessage;
+  isLastAssistant?: boolean;
 }
 
-export const MessageBubble = ({ message }: MessageBubbleProps) => {
+export const MessageBubble = ({ message, isLastAssistant }: MessageBubbleProps) => {
+  const { buildingArtifact } = useAIDraft();
   const isUser = message.role === "user";
   const isEmpty = !message.content && !message.isStreaming;
+  const hasPendingTool = (message.toolCalls ?? []).some((tc) => tc.result === undefined);
+  const aiStatus = hasPendingTool ? "thinking" : message.content ? "streaming" : "listening";
+
+  // Once this message has streamed, wasStreaming stays true permanently so the
+  // idle icon remains at the bottom of the completed response.
+  const [wasStreaming, setWasStreaming] = useState(false);
+  useEffect(() => {
+    if (!isUser && message.isStreaming) setWasStreaming(true);
+  }, [isUser, message.isStreaming]);
 
   if (isUser) {
     return (
@@ -57,7 +70,7 @@ export const MessageBubble = ({ message }: MessageBubbleProps) => {
 
   // Assistant message — no bubble, just clean text
   return (
-    <div className="flex flex-col gap-2 w-full">
+    <div className="flex flex-col gap-4 w-full pb-6">
       {/* Tool calls */}
       {(message.toolCalls ?? []).length > 0 && (
         <div className="flex flex-wrap gap-1.5 mb-1">
@@ -83,14 +96,13 @@ export const MessageBubble = ({ message }: MessageBubbleProps) => {
           prose-hr:border-(--border-subtle) prose-hr:my-5
         ">
           <Markdown>{message.content}</Markdown>
-          {message.isStreaming && (
-            <span className="inline-block w-0.5 h-[1em] bg-(--text-primary) opacity-70 ml-0.5 animate-[caret-blink_1s_ease-in-out_infinite] align-baseline" />
-          )}
         </div>
       )}
 
-      {/* Streaming indicator — only when no content yet */}
-      {message.isStreaming && !message.content && <StreamingDots />}
+      {/* Status icon — only on the last assistant message; hidden while buildingArtifact owns the slot */}
+      {(message.isStreaming || (wasStreaming && isLastAssistant)) && !buildingArtifact && (
+        <StrydeStatusIcon status={message.isStreaming ? aiStatus : "idle"} size={28} />
+      )}
     </div>
   );
 };
