@@ -2,7 +2,7 @@ import { useAIDraft } from "../../contexts/AIDraftContext";
 import { XIcon } from "../Icons";
 import { ArtifactCard } from "./ArtifactCard";
 
-// ── Nav arrows ────────────────────────────────────────────────────────────────
+// ── Nav arrow ─────────────────────────────────────────────────────────────────
 
 interface NavArrowProps {
   direction: "prev" | "next";
@@ -14,13 +14,13 @@ const NavArrow = ({ direction, disabled, onClick }: NavArrowProps) => (
   <button
     onClick={onClick}
     disabled={disabled}
-    className="w-6 h-6 flex items-center justify-center rounded-md bg-transparent border-none cursor-pointer text-(--text-muted) hover:text-(--text-primary) hover:bg-(--bg-hover) transition-all duration-150 disabled:opacity-30 disabled:cursor-not-allowed"
+    className="w-7 h-7 flex items-center justify-center rounded-lg bg-transparent border-none cursor-pointer text-(--text-muted) hover:text-(--text-primary) hover:bg-(--bg-hover) transition-all duration-150 disabled:opacity-25 disabled:cursor-not-allowed"
   >
-    <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+    <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
       <path
         d={direction === "prev" ? "M7.5 2L4 6L7.5 10" : "M4.5 2L8 6L4.5 10"}
         stroke="currentColor"
-        strokeWidth="1.4"
+        strokeWidth="1.7"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
@@ -44,27 +44,25 @@ export const ArtifactSidebar = () => {
 
   return (
     <div
-      className="shrink-0 flex flex-col h-full bg-(--bg-surface) border-l border-(--border-faint) overflow-hidden transition-[width] duration-250 ease-in-out"
-      style={{ width: sidebarOpen ? 360 : 0 }}
+      className="shrink-0 flex flex-col h-full bg-(--bg-surface) border-l border-(--border-faint) overflow-hidden transition-[width] duration-300 ease-in-out"
+      style={{ width: sidebarOpen ? 420 : 0 }}
     >
-      {/* Only render content when open to avoid layout jank */}
       {sidebarOpen && (
         <>
           {/* Header */}
-          <div className="shrink-0 flex items-center gap-2 px-4 py-3.5 border-b border-(--border-faint)">
-            <h2 className='flex-1 m-0 text-[15px] font-["Bricolage_Grotesque",sans-serif] font-semibold text-(--text-primary)'>
+          <div className="shrink-0 flex items-center gap-2 px-5 h-13 border-b border-(--border-faint)">
+            <span className="flex-1 text-[11.5px] font-bold uppercase tracking-[0.11em] text-(--text-muted) select-none">
               Drafts
-            </h2>
+            </span>
 
-            {/* Navigation */}
             {total > 1 && (
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-0.5">
                 <NavArrow
                   direction="prev"
                   disabled={activeArtifactIndex === 0}
                   onClick={() => setActiveArtifactIndex(activeArtifactIndex - 1)}
                 />
-                <span className="text-[12px] text-(--text-muted) min-w-[40px] text-center">
+                <span className="text-[12px] text-(--text-muted) min-w-10.5 text-center font-medium tabular-nums">
                   {activeArtifactIndex + 1} / {total}
                 </span>
                 <NavArrow
@@ -75,15 +73,15 @@ export const ArtifactSidebar = () => {
               </div>
             )}
 
-            {total <= 1 && total > 0 && (
-              <span className="text-[12px] text-(--text-muted)">
-                {total} draft{total !== 1 ? "s" : ""}
+            {total === 1 && (
+              <span className="text-[12px] text-(--text-muted) font-medium">
+                1 draft
               </span>
             )}
 
             <button
               onClick={() => setSidebarOpen(false)}
-              className="w-7 h-7 flex items-center justify-center rounded-md bg-transparent border-none cursor-pointer text-(--text-muted) hover:text-(--text-primary) hover:bg-(--bg-hover) transition-all duration-150"
+              className="w-7 h-7 flex items-center justify-center rounded-lg bg-transparent border-none cursor-pointer text-(--text-muted) hover:text-(--text-primary) hover:bg-(--bg-hover) transition-all duration-150 ml-1"
             >
               <XIcon />
             </button>
@@ -92,12 +90,10 @@ export const ArtifactSidebar = () => {
           {/* Body */}
           <div className="flex-1 min-h-0 flex flex-col">
             {activeArtifact ? (
-              <ArtifactCard artifact={activeArtifact} />
+              <ArtifactCard key={activeArtifact.id} artifact={activeArtifact} />
             ) : (
               <div className="flex-1 flex flex-col items-center justify-center gap-2 px-6 text-center">
-                <p className="text-[14px] text-(--text-muted)">
-                  No drafts yet.
-                </p>
+                <p className="text-[14px] text-(--text-muted)">No drafts yet.</p>
                 <p className="text-[13px] text-(--text-muted)">
                   Ask me to create an agent or skill.
                 </p>

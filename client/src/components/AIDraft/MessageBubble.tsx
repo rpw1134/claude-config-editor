@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Markdown from "react-markdown";
 import type { ChatMessage } from "../../types/aiDraft";
 import { useAIDraft } from "../../contexts/AIDraftContext";
@@ -58,6 +58,22 @@ export const MessageBubble = ({ message, isLastAssistant }: MessageBubbleProps) 
     if (!isUser && message.isStreaming) setWasStreaming(true);
   }, [isUser, message.isStreaming]);
 
+  // Delay content visibility by ~350ms so the listening→streaming icon
+  // transition completes before text begins to appear.
+  const [showContent, setShowContent] = useState(false);
+  const contentTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    if (!isUser && message.content && !showContent && !contentTimerRef.current) {
+      contentTimerRef.current = setTimeout(() => setShowContent(true), 350);
+    }
+  }, [isUser, message.content, showContent]);
+  useEffect(() => {
+    return () => { if (contentTimerRef.current) clearTimeout(contentTimerRef.current); };
+  }, []);
+
+  // Show content immediately once streaming ends, or after the delay during streaming.
+  const shouldShowContent = !isEmpty && (!message.isStreaming || showContent);
+
   if (isUser) {
     return (
       <div className="flex justify-end w-full">
@@ -71,18 +87,9 @@ export const MessageBubble = ({ message, isLastAssistant }: MessageBubbleProps) 
   // Assistant message — no bubble, just clean text
   return (
     <div className="flex flex-col gap-4 w-full pb-6">
-      {/* Tool calls */}
-      {(message.toolCalls ?? []).length > 0 && (
-        <div className="flex flex-wrap gap-1.5 mb-1">
-          {(message.toolCalls ?? []).map((tc, i) => (
-            <ToolChip key={i} tool={tc.tool} done={tc.result !== undefined} />
-          ))}
-        </div>
-      )}
-
       {/* Content */}
-      {!isEmpty && (
-        <div className="text-[18px] text-(--text-primary) leading-[1.7] font-sans
+      {shouldShowContent && (
+        <div className="content-fade-in text-[18px] text-(--text-primary) leading-[1.7] font-sans
           prose prose-invert max-w-none
           **:font-sans
           prose-p:my-5 prose-p:leading-[1.7]
@@ -96,6 +103,15 @@ export const MessageBubble = ({ message, isLastAssistant }: MessageBubbleProps) 
           prose-hr:border-(--border-subtle) prose-hr:my-5
         ">
           <Markdown>{message.content}</Markdown>
+        </div>
+      )}
+
+      {/* Tool calls — rendered inline after content */}
+      {(message.toolCalls ?? []).length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {(message.toolCalls ?? []).map((tc, i) => (
+            <ToolChip key={i} tool={tc.tool} done={tc.result !== undefined} />
+          ))}
         </div>
       )}
 

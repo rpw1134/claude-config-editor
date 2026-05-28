@@ -443,7 +443,7 @@ export const ChatInterface = ({ projectPath }: ChatInterfaceProps) => {
             <div
               key={user.id}
               ref={idx === lastPairIdx ? activePairRef : undefined}
-              className="flex flex-col gap-6 pt-6 pb-4"
+              className={`flex flex-col gap-6 pt-6 ${idx === lastPairIdx ? "pb-10" : "pb-4"}`}
             >
               <div id={`msg-${user.id}`}>
                 <MessageBubble message={user} />

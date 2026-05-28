@@ -74,6 +74,8 @@ interface AIDraftProviderProps {
   projectPath: string;
 }
 
+// ── Provider ──────────────────────────────────────────────────────────────────
+
 export const AIDraftProvider = ({ children, projectPath }: AIDraftProviderProps) => {
   const { showToast } = useShell();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -93,6 +95,8 @@ export const AIDraftProvider = ({ children, projectPath }: AIDraftProviderProps)
   const drainRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const streamingMsgIdRef = useRef<string | null>(null);
   const streamDoneRef = useRef(false);
+  // Tool calls queued until the drain reaches their buffer position
+  const pendingToolCallsRef = useRef<Array<{ flushAt: number; toolCall: ToolCall }>>([]);
 
   const clearSession = useCallback(() => {
     setMessages([]);
@@ -143,6 +147,18 @@ export const AIDraftProvider = ({ children, projectPath }: AIDraftProviderProps)
       displayedLengthRef.current = end;
       const id = streamingMsgIdRef.current;
       if (id) setMessages(prev => prev.map(m => m.id === id ? { ...m, content: buffer.slice(0, end) } : m));
+
+      // Flush any tool calls whose buffer position has been reached
+      const ready = pendingToolCallsRef.current.filter(p => end >= p.flushAt);
+      if (ready.length > 0) {
+        pendingToolCallsRef.current = pendingToolCallsRef.current.filter(p => end < p.flushAt);
+        if (id) {
+          setMessages(prev => prev.map(m => {
+            if (m.id !== id) return m;
+            return { ...m, toolCalls: [...(m.toolCalls ?? []), ...ready.map(p => p.toolCall)] };
+          }));
+        }
+      }
     }, 30);
   }, []);
 
@@ -154,6 +170,7 @@ export const AIDraftProvider = ({ children, projectPath }: AIDraftProviderProps)
       contentBufferRef.current = "";
       displayedLengthRef.current = 0;
       streamDoneRef.current = false;
+      pendingToolCallsRef.current = [];
       stopDrain();
 
       const userMsg: ChatMessage = { id: makeId(), role: "user", content: text };
@@ -258,27 +275,42 @@ export const AIDraftProvider = ({ children, projectPath }: AIDraftProviderProps)
                 tool: (event.data.tool as string) ?? "unknown",
                 args: (event.data.args as object) ?? {},
               };
-              setMessages((prev) =>
-                prev.map((m) =>
-                  m.id === assistantMsg.id
-                    ? { ...m, toolCalls: [...(m.toolCalls ?? []), toolCall] }
-                    : m
-                )
-              );
+              // Queue until the drain reaches this position in the buffer
+              pendingToolCallsRef.current.push({
+                flushAt: contentBufferRef.current.length,
+                toolCall,
+              });
             } else if (event.type === "tool-result") {
               const toolName = (event.data.tool as string) ?? "";
               const result = (event.data.result as string) ?? "";
-              setMessages((prev) =>
-                prev.map((m) => {
-                  if (m.id !== assistantMsg.id) return m;
-                  const updated = (m.toolCalls ?? []).map((tc) =>
-                    tc.tool === toolName && tc.result === undefined
-                      ? { ...tc, result }
-                      : tc
-                  );
-                  return { ...m, toolCalls: updated };
-                })
-              );
+              // If the matching tool call is still queued, flush it now with the result attached
+              const pendingIdx = pendingToolCallsRef.current.findIndex(p => p.toolCall.tool === toolName);
+              if (pendingIdx !== -1) {
+                const [pending] = pendingToolCallsRef.current.splice(pendingIdx, 1);
+                displayedLengthRef.current = Math.max(displayedLengthRef.current, pending.flushAt);
+                setMessages((prev) =>
+                  prev.map((m) => {
+                    if (m.id !== assistantMsg.id) return m;
+                    return {
+                      ...m,
+                      content: contentBufferRef.current.slice(0, displayedLengthRef.current),
+                      toolCalls: [...(m.toolCalls ?? []), { ...pending.toolCall, result }],
+                    };
+                  })
+                );
+              } else {
+                setMessages((prev) =>
+                  prev.map((m) => {
+                    if (m.id !== assistantMsg.id) return m;
+                    const updated = (m.toolCalls ?? []).map((tc) =>
+                      tc.tool === toolName && tc.result === undefined
+                        ? { ...tc, result }
+                        : tc
+                    );
+                    return { ...m, toolCalls: updated };
+                  })
+                );
+              }
             } else if (event.type === "error") {
               stopDrain();
               const msg = (event.data.message as string) ?? "Unknown error";

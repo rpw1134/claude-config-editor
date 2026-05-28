@@ -86,6 +86,29 @@ function sendEvent(res: Response, type: string, data: object): void {
   res.write(`event: ${type}\ndata: ${JSON.stringify(data)}\n\n`);
 }
 
+function normalizeApiError(err: unknown): string {
+  if (err instanceof Anthropic.APIError) {
+    if (err.status === 529) return "Claude's API is busy right now — please try again in a moment.";
+    if (err.status === 401) return "Invalid API key. Check your key in Settings → Profile.";
+    if (err.status === 429) return "Rate limit reached — please wait a moment and try again.";
+    return err.message || `API error (${err.status})`;
+  }
+  if (err instanceof Error) {
+    // Some SDK versions serialize the full response body as err.message
+    try {
+      const parsed = JSON.parse(err.message) as Record<string, unknown>;
+      const inner = parsed?.error as Record<string, unknown> | undefined;
+      if (inner?.type === "overloaded_error") return "Claude's API is busy right now — please try again in a moment.";
+      if (inner?.type === "rate_limit_error") return "Rate limit reached — please wait a moment and try again.";
+      if (inner?.type === "authentication_error") return "Invalid API key. Check your key in Settings → Profile.";
+      return (inner?.message as string) ?? err.message;
+    } catch {
+      return err.message;
+    }
+  }
+  return "Unknown error";
+}
+
 async function executeToolCall(
   name: string,
   input: Record<string, unknown>,
@@ -406,8 +429,7 @@ router.post(
       sendEvent(res, "done", {});
       res.end();
     } catch (err) {
-      const error = err as Error;
-      sendEvent(res, "error", { message: error.message ?? "Internal error" });
+      sendEvent(res, "error", { message: normalizeApiError(err) });
       res.end();
       next(err);
     }
