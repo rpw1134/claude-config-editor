@@ -437,7 +437,7 @@ export const ChatInterface = ({ projectPath }: ChatInterfaceProps) => {
   // ── Active conversation ────────────────────────────────────────────────────
   return (
     <div className="flex flex-col flex-1 min-h-0">
-      <div ref={scrollContainerRef} className="flex-1 min-h-0 overflow-y-auto">
+      <div ref={scrollContainerRef} className="flex-1 min-h-0 overflow-y-auto relative">
         <div className="w-[80%] mx-auto">
           {pairs.map(({ user, assistant }, idx) => (
             <div

@@ -2,6 +2,14 @@ import { useAIDraft } from "../../contexts/AIDraftContext";
 import { XIcon } from "../Icons";
 import { ArtifactCard } from "./ArtifactCard";
 
+// ── Type labels ───────────────────────────────────────────────────────────────
+
+const TYPE_LABELS: Record<string, string> = {
+  agent: "Agent",
+  skill: "Skill",
+  "claude-md": "CLAUDE.md",
+};
+
 // ── Nav arrow ─────────────────────────────────────────────────────────────────
 
 interface NavArrowProps {
@@ -41,6 +49,7 @@ export const ArtifactSidebar = () => {
 
   const activeArtifact = artifacts[activeArtifactIndex] ?? null;
   const total = artifacts.length;
+  const typeLabel = activeArtifact ? (TYPE_LABELS[activeArtifact.type] ?? activeArtifact.type) : "Draft";
 
   return (
     <div
@@ -49,10 +58,10 @@ export const ArtifactSidebar = () => {
     >
       {sidebarOpen && (
         <>
-          {/* Header */}
-          <div className="shrink-0 flex items-center gap-2 px-5 h-13 border-b border-(--border-faint)">
-            <span className="flex-1 text-[11.5px] font-bold uppercase tracking-[0.11em] text-(--text-muted) select-none">
-              Drafts
+          {/* Header — no bottom border, type replaces "Drafts" */}
+          <div className="shrink-0 flex items-center gap-2 px-5 h-13">
+            <span className="flex-1 text-[12px] font-semibold text-(--text-secondary) select-none">
+              {typeLabel}
             </span>
 
             {total > 1 && (
@@ -71,12 +80,6 @@ export const ArtifactSidebar = () => {
                   onClick={() => setActiveArtifactIndex(activeArtifactIndex + 1)}
                 />
               </div>
-            )}
-
-            {total === 1 && (
-              <span className="text-[12px] text-(--text-muted) font-medium">
-                1 draft
-              </span>
             )}
 
             <button
