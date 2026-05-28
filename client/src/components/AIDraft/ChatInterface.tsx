@@ -443,7 +443,7 @@ export const ChatInterface = ({ projectPath }: ChatInterfaceProps) => {
             <div
               key={user.id}
               ref={idx === lastPairIdx ? activePairRef : undefined}
-              className={`flex flex-col gap-6 pt-6 ${idx === lastPairIdx ? "pb-10" : "pb-4"}`}
+              className={`flex flex-col gap-6 pt-6 pb-4`}
             >
               <div id={`msg-${user.id}`}>
                 <MessageBubble message={user} />
@@ -459,14 +459,14 @@ export const ChatInterface = ({ projectPath }: ChatInterfaceProps) => {
               {idx === lastPairIdx && buildingArtifact && (
                 <div className="flex items-center gap-3 py-1">
                   <StrydeStatusIcon status="thinking" size={28} />
-                  <span className="text-[14px] text-(--text-muted)">
-                    Drafting <span className="text-(--text-primary) font-medium">{buildingArtifact.name}</span>…
+                  <span className="thinking-text text-[14px]">
+                    Drafting {buildingArtifact.name}…
                   </span>
                 </div>
               )}
             </div>
           ))}
-          {lastPairIdx >= 0 && <div aria-hidden="true" style={{ height: tailSpace }} />}
+          {lastPairIdx >= 0 && <div aria-hidden="true" style={{ height: Math.max(40, tailSpace) }} />}
         </div>
       </div>
       <div className="shrink-0 relative">

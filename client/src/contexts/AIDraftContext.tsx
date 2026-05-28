@@ -74,15 +74,24 @@ interface AIDraftProviderProps {
   projectPath: string;
 }
 
+// ── Dev mock (remove before shipping) ────────────────────────────────────────
+const DEV_MOCK = typeof window !== "undefined" && localStorage.getItem("dev-sidebar") === "1";
+const DEV_ARTIFACTS: Artifact[] = DEV_MOCK ? [
+  { id: "dev-1", type: "agent", name: "code-reviewer", saved: false, discarded: false,
+    content: `---\nname: Code Reviewer\ndescription: Reviews pull requests for bugs, style issues, and security vulnerabilities.\nmodel: claude-opus-4-7\ntools:\n  - Read\n  - Bash\n  - Grep\ndisallowedTools:\n  - Write\npermissionMode: default\nmaxTurns: 20\neffort: high\n---\n\nYou are an expert code reviewer. When given a PR or set of files to review:\n\n1. Check for **logic bugs** and edge cases\n2. Flag \`security vulnerabilities\` (injections, auth issues)\n3. Review for performance anti-patterns\n4. Ensure error handling is thorough\n\nAlways cite specific line numbers. Be constructive, not critical.` },
+  { id: "dev-2", type: "skill", name: "deploy-staging", saved: true, discarded: false,
+    content: `---\nname: Deploy to Staging\ndescription: Runs the full deploy pipeline to the staging environment.\nwhen_to_use: When the user says "deploy to staging" or asks to deploy their changes for review.\nargument-hint: "[branch-name]"\nuser-invocable: true\nallowed-tools:\n  - Bash\nmodel: claude-sonnet-4-6\neffort: medium\n---\n\nDeploy the current branch to staging.\n\n## Steps\n\n1. Run \`npm test\` — abort if tests fail\n2. Run \`npm run build\`\n3. Push to the \`staging\` remote\n4. Wait for health check to return 200\n5. Report the staging URL` },
+] : [];
+
 // ── Provider ──────────────────────────────────────────────────────────────────
 
 export const AIDraftProvider = ({ children, projectPath }: AIDraftProviderProps) => {
   const { showToast } = useShell();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [artifacts, setArtifacts] = useState<Artifact[]>([]);
+  const [artifacts, setArtifacts] = useState<Artifact[]>(DEV_ARTIFACTS);
   const [isStreaming, setIsStreaming] = useState(false);
   const [buildingArtifact, setBuildingArtifact] = useState<{ type: string; name: string } | null>(null);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(DEV_MOCK);
   const [activeArtifactIndex, setActiveArtifactIndex] = useState(0);
   const [noApiKey, setNoApiKey] = useState(false);
 

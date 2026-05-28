@@ -215,6 +215,15 @@ a {
   animation: content-fade-in 300ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
+/* ── Thinking text pulse — oscillates between --text-muted and --text-secondary ── */
+@keyframes thinking-pulse {
+  0%, 100% { color: #6B7D96; }
+  50%       { color: #A8B8CC; }
+}
+.thinking-text {
+  animation: thinking-pulse 2s ease-in-out infinite;
+}
+
 /* ── Stryde Status Icon animations ────────────────────────────────────────── */
 
 /* Idle: no animation — static glow applied as inline filter */
@@ -385,4 +394,65 @@ a {
 @keyframes gridEdgeDash {
   from { stroke-dashoffset: 18; }
   to { stroke-dashoffset: 0; }
+}
+
+/* ── Artifact body markdown ───────────────────────────────────────────────── */
+
+.artifact-body {
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.75;
+}
+
+.artifact-body p { margin: 0; }
+.artifact-body p + p { margin-top: 12px; }
+
+.artifact-body h1 {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 20px 0 6px;
+  line-height: 1.3;
+}
+.artifact-body h2 {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 18px 0 5px;
+  line-height: 1.3;
+}
+.artifact-body h3,
+.artifact-body h4 {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 14px 0 4px;
+  line-height: 1.4;
+}
+
+.artifact-body h1:first-child,
+.artifact-body h2:first-child,
+.artifact-body h3:first-child {
+  margin-top: 0;
+}
+
+.artifact-body ol,
+.artifact-body ul {
+  margin-top: 8px;
+  padding-left: 20px;
+}
+
+.artifact-body li { margin-bottom: 6px; }
+
+.artifact-body strong {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.artifact-body code {
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: var(--bg-hover);
+  font-size: 13px;
+  font-family: "Fira Code", monospace;
 }

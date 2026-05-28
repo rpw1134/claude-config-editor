@@ -58,9 +58,9 @@ export const ArtifactSidebar = () => {
     >
       {sidebarOpen && (
         <>
-          {/* Header — no bottom border, type replaces "Drafts" */}
-          <div className="shrink-0 flex items-center gap-2 px-5 h-13">
-            <span className="flex-1 text-[12px] font-semibold text-(--text-secondary) select-none">
+          {/* Header */}
+          <div className="shrink-0 flex items-center gap-2 px-5 h-13 border-b border-(--border-faint)">
+            <span className="flex-1 text-[11px] font-semibold uppercase tracking-widest text-(--text-muted) select-none">
               {typeLabel}
             </span>
 
