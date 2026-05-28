@@ -448,22 +448,24 @@ export const ChatInterface = ({ projectPath }: ChatInterfaceProps) => {
               <div id={`msg-${user.id}`}>
                 <MessageBubble message={user} />
               </div>
-              {assistant && (
-                <div id={`msg-${assistant.id}`}>
-                  <MessageBubble message={assistant} isLastAssistant={idx === lastPairIdx} />
-                </div>
-              )}
-              {idx === lastPairIdx && isStreaming && !assistant && !buildingArtifact && (
-                <StrydeStatusIcon status="listening" size={28} />
-              )}
-              {idx === lastPairIdx && buildingArtifact && (
-                <div className="flex items-center gap-3 py-1">
-                  <StrydeStatusIcon status="thinking" size={28} />
-                  <span className="thinking-text text-[14px]">
-                    Drafting {buildingArtifact.name}…
-                  </span>
-                </div>
-              )}
+              <div className="flex flex-col gap-3">
+                {assistant && (
+                  <div id={`msg-${assistant.id}`}>
+                    <MessageBubble message={assistant} isLastAssistant={idx === lastPairIdx} />
+                  </div>
+                )}
+                {idx === lastPairIdx && isStreaming && !assistant && !buildingArtifact && (
+                  <StrydeStatusIcon status="listening" size={28} />
+                )}
+                {idx === lastPairIdx && buildingArtifact && (
+                  <div className="flex items-center gap-3 py-1">
+                    <StrydeStatusIcon status="thinking" size={28} />
+                    <span className="thinking-text text-[14px]">
+                      Drafting {buildingArtifact.name}…
+                    </span>
+                  </div>
+                )}
+              </div>
             </div>
           ))}
           {lastPairIdx >= 0 && <div aria-hidden="true" style={{ height: Math.max(40, tailSpace) }} />}

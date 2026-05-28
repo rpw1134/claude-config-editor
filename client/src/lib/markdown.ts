@@ -81,9 +81,13 @@ export function renderMarkdown(md: string): string {
       inList = false;
     }
 
-    // Blank line → paragraph break
+    // Blank line → paragraph break, but skip if next non-empty line is a heading
     if (line.trim() === "") {
-      out.push("<br>");
+      let nextNonEmpty = "";
+      for (let j = i + 1; j < lines.length; j++) {
+        if (lines[j].trim() !== "") { nextNonEmpty = lines[j]; break; }
+      }
+      if (!nextNonEmpty.match(/^#{1,3} /)) out.push("<br>");
       continue;
     }
 

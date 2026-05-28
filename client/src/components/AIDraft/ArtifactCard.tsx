@@ -161,7 +161,7 @@ export const ArtifactCard = ({ artifact }: ArtifactCardProps) => {
               <div className="bg-(--bg-elevated) border border-(--border-subtle) rounded-lg px-4 pt-3 pb-4">
                 <div
                   className="artifact-body"
-                  dangerouslySetInnerHTML={{ __html: renderMarkdown(body) }}
+                  dangerouslySetInnerHTML={{ __html: renderMarkdown(body.trim()) }}
                 />
               </div>
             </div>
