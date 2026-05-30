@@ -7,38 +7,49 @@ import {
   listSkills,
   getProjectContent,
   getConfigDir,
+  listMcpServers,
 } from "../services/claudeConfig.js";
+import { getHooks } from "../services/hooksService.js";
 import { readFileContent } from "../utils/fileIO.js";
 
 const router: Router = express.Router();
 
 const SYSTEM_PROMPT = `You are an AI assistant embedded in Stryde, a tool for managing Claude Code configuration files.
 
-You help users create agents (custom AI personas with system prompts) and skills (reusable Claude Code skills with frontmatter).
+You help users create and edit agents, skills, links, MCP servers, and hooks.
 
 ## Clarify before creating
 
-Before generating any agent or skill artifact, make sure you have the key details:
-- **Purpose / description** — what should this agent or skill do?
+Before generating any artifact, make sure you have the key details:
+- **Purpose / description** — what should this do?
 - **Model** — which Claude model? Options: claude-opus-4-8 (most capable), claude-sonnet-4-6 (balanced), claude-haiku-4-5-20251001 (fastest/cheapest)
-- **Effort** — how thorough should it be? (low / medium / high)
-- **Any specific guidelines** — constraints, tone, special instructions to include?
+- **Effort** — how thorough? (low / medium / high)
+- **Any guidelines** — constraints, tone, special instructions?
 
-If the user's first message already answers these, don't re-ask — proceed directly. For optional fields like tool allowlists and tags, use sensible defaults; don't block on them.
+If the user's first message already answers these, don't re-ask — proceed directly. For optional fields like tool allowlists and tags, use sensible defaults.
 
 ## Check existing agents/skills on first creation request
 
-The first time in a conversation that a user asks to create a new agent or skill, call list_agents and list_skills before responding. Use this context to spot naming conventions, similar existing items that could be extended instead of duplicated, and any patterns worth following. After checking, summarize briefly what exists before asking your clarifying questions or generating.
+The first time in a conversation that a user asks to create or edit an agent or skill, call list_agents and list_skills before responding. Use this to spot naming conventions, similar existing items, and patterns worth following.
+
+## Editing agents and skills
+
+To edit an existing agent or skill:
+1. Call get_agent or get_skill to read the current content
+2. Apply the requested changes
+3. Output an artifact with the SAME name and type as the original
+
+The frontend detects the name match and updates the draft in place. Saving the draft writes to disk. You do NOT need a separate edit tool — just use the same artifact format with the same name.
 
 ## Artifact format
 
-When creating a configuration file, wrap it in XML artifact tags:
+Wrap all created/edited files in XML artifact tags:
 
-<artifact type="agent|skill|claude-md" name="kebab-case-name">
-...file content here...
+<artifact type="agent|skill|claude-md|link|mcp|hook" name="kebab-case-name">
+...content...
 </artifact>
 
-Agent format (type="agent"):
+### Agent (type="agent")
 ---
 name: Agent Name
 description: What this agent does
@@ -48,7 +59,7 @@ tools: []
 
 System prompt body here.
 
-Skill format (type="skill"):
+### Skill (type="skill")
 ---
 name: Skill Name
 description: What this skill does
@@ -58,7 +69,40 @@ tags: []
 
 Skill instructions here.
 
-You may use tools to look up existing agents and skills when the user references them.
+### Link (type="link")
+
+A link is magic — it connects an agent to a skill and defines when the agent invokes it. Keep it minimal. After creating, confirm with one sentence.
+
+<artifact type="link" name="agent-skill-link">
+agent: agent-name
+skill: skill-name
+trigger: when the user says X / always loaded / after every response
+</artifact>
+
+### MCP Server (type="mcp")
+
+<artifact type="mcp" name="server-name">
+{
+  "type": "stdio",
+  "command": "npx",
+  "args": ["-y", "@scope/package"],
+  "env": { "TOKEN": "$TOKEN" }
+}
+</artifact>
+
+For HTTP/SSE servers use "type": "sse" with "url" instead of command/args.
+
+### Hook (type="hook")
+
+<artifact type="hook" name="hook-name">
+{
+  "event": "PreToolUse",
+  "command": "shell command to run"
+}
+</artifact>
+
+Hook events: PreToolUse, PostToolUse, Stop, SubagentStop, Notification
+
 Always explain what you created after the closing artifact tag.
 Respond conversationally outside artifact tags.`;
 
@@ -94,6 +138,16 @@ const TOOLS: Anthropic.Tool[] = [
   {
     name: "get_claude_md",
     description: "Get the project's CLAUDE.md content",
+    input_schema: { type: "object", properties: {}, required: [] },
+  },
+  {
+    name: "list_mcp_servers",
+    description: "List all MCP servers configured in the selected project",
+    input_schema: { type: "object", properties: {}, required: [] },
+  },
+  {
+    name: "get_hooks",
+    description: "Get the current hooks configuration to avoid overwriting existing hooks",
     input_schema: { type: "object", properties: {}, required: [] },
   },
 ];
@@ -160,6 +214,14 @@ async function executeToolCall(
     case "get_claude_md": {
       const content = await getProjectContent(projectPath);
       return content ?? "No CLAUDE.md found for this project.";
+    }
+    case "list_mcp_servers": {
+      const servers = await listMcpServers(projectPath);
+      return JSON.stringify(servers);
+    }
+    case "get_hooks": {
+      const hooks = await getHooks(projectPath);
+      return JSON.stringify(hooks);
     }
     default:
       return `Unknown tool: ${name}`;

@@ -77,9 +77,9 @@ interface AIDraftProviderProps {
 // ── Dev mock (remove before shipping) ────────────────────────────────────────
 const DEV_MOCK = typeof window !== "undefined" && localStorage.getItem("dev-sidebar") === "1";
 const DEV_ARTIFACTS: Artifact[] = DEV_MOCK ? [
-  { id: "dev-1", type: "agent", name: "code-reviewer", saved: false, discarded: false,
+  { id: "dev-1", type: "agent", name: "code-reviewer", saved: false,
     content: `---\nname: Code Reviewer\ndescription: Reviews pull requests for bugs, style issues, and security vulnerabilities.\nmodel: claude-opus-4-7\ntools:\n  - Read\n  - Bash\n  - Grep\ndisallowedTools:\n  - Write\npermissionMode: default\nmaxTurns: 20\neffort: high\n---\n\nYou are an expert code reviewer. When given a PR or set of files to review:\n\n1. Check for **logic bugs** and edge cases\n2. Flag \`security vulnerabilities\` (injections, auth issues)\n3. Review for performance anti-patterns\n4. Ensure error handling is thorough\n\nAlways cite specific line numbers. Be constructive, not critical.` },
-  { id: "dev-2", type: "skill", name: "deploy-staging", saved: true, discarded: false,
+  { id: "dev-2", type: "skill", name: "deploy-staging", saved: true,
     content: `---\nname: Deploy to Staging\ndescription: Runs the full deploy pipeline to the staging environment.\nwhen_to_use: When the user says "deploy to staging" or asks to deploy their changes for review.\nargument-hint: "[branch-name]"\nuser-invocable: true\nallowed-tools:\n  - Bash\nmodel: claude-sonnet-4-6\neffort: medium\n---\n\nDeploy the current branch to staging.\n\n## Steps\n\n1. Run \`npm test\` — abort if tests fail\n2. Run \`npm run build\`\n3. Push to the \`staging\` remote\n4. Wait for health check to return 200\n5. Report the staging URL` },
 ] : [];
 
@@ -269,26 +269,49 @@ export const AIDraftProvider = ({ children, projectPath }: AIDraftProviderProps)
               const artifactType = ((event.data.type as string) ?? pending?.type ?? "agent") as Artifact["type"];
               const artifactName = (event.data.name as string) ?? pending?.name ?? "Untitled";
               const content = (event.data.content as string) ?? "";
-              const newArtifact: Artifact = {
-                id: makeId(),
-                type: artifactType,
-                name: artifactName,
-                content,
-                saved: false,
-                discarded: false,
-              };
+              // Position in the streamed text where this artifact was generated
+              const artifactTextPosition = contentBufferRef.current.length;
+              const msgId = streamingMsgIdRef.current;
               setArtifacts((prev) => {
+                // Name+type dedup: editing an existing draft updates it in place
+                const existingIdx = prev.findIndex(
+                  (a) => a.name === artifactName && a.type === artifactType
+                );
+                if (existingIdx !== -1) {
+                  const updated = { ...prev[existingIdx], content, saved: false };
+                  setActiveArtifactIndex(existingIdx);
+                  if (msgId) {
+                    setMessages((ms) =>
+                      ms.map((m) =>
+                        m.id === msgId
+                          ? { ...m, draftedArtifactId: updated.id, artifactTextPosition }
+                          : m
+                      )
+                    );
+                  }
+                  return prev.map((a, i) => (i === existingIdx ? updated : a));
+                }
+                const newArtifact: Artifact = {
+                  id: makeId(),
+                  type: artifactType,
+                  name: artifactName,
+                  content,
+                  saved: false,
+
+                };
+                if (msgId) {
+                  setMessages((ms) =>
+                    ms.map((m) =>
+                      m.id === msgId
+                        ? { ...m, draftedArtifactId: newArtifact.id, artifactTextPosition }
+                        : m
+                    )
+                  );
+                }
                 const next = [...prev, newArtifact];
                 setActiveArtifactIndex(next.length - 1);
                 return next;
               });
-              // Tag the current assistant message with the drafted artifact ID
-              const msgId = streamingMsgIdRef.current;
-              if (msgId) {
-                setMessages((prev) =>
-                  prev.map((m) => m.id === msgId ? { ...m, draftedArtifactId: newArtifact.id } : m)
-                );
-              }
               setSidebarOpen(true);
               pendingArtifactRef.current = null;
               setBuildingArtifact(null);
@@ -396,23 +419,62 @@ export const AIDraftProvider = ({ children, projectPath }: AIDraftProviderProps)
       if (!artifact) return;
       try {
         if (artifact.type === "agent") {
-          await fetch(`${BASE_URL}/api/agents`, {
-            method: "POST",
+          // Use PUT if agent already exists on disk (edit), POST to create
+          const res = await fetch(`${BASE_URL}/api/agents/${encodeURIComponent(artifact.name)}`, {
+            method: "PUT",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ projectPath, name: artifact.name, content: artifact.content }),
+            body: JSON.stringify({ projectPath, content: artifact.content }),
           });
+          if (res.status === 404) {
+            await fetch(`${BASE_URL}/api/agents`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ projectPath, name: artifact.name, content: artifact.content }),
+            });
+          }
         } else if (artifact.type === "skill") {
-          await fetch(`${BASE_URL}/api/skills`, {
-            method: "POST",
+          const res = await fetch(`${BASE_URL}/api/skills/${encodeURIComponent(artifact.name)}`, {
+            method: "PUT",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ projectPath, name: artifact.name, content: artifact.content }),
+            body: JSON.stringify({ projectPath, content: artifact.content }),
           });
+          if (res.status === 404) {
+            await fetch(`${BASE_URL}/api/skills`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ projectPath, name: artifact.name, content: artifact.content }),
+            });
+          }
         } else if (artifact.type === "claude-md") {
           await fetch(`${BASE_URL}/api/projects/file`, {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ projectPath, content: artifact.content }),
           });
+        } else if (artifact.type === "mcp") {
+          await fetch(`${BASE_URL}/api/mcp-servers`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ projectPath, name: artifact.name, content: artifact.content }),
+          });
+        } else if (artifact.type === "hook") {
+          // Merge new hook into existing hooks config
+          const currentRes = await fetch(`${BASE_URL}/api/hooks?projectPath=${encodeURIComponent(projectPath)}`);
+          const currentData = await currentRes.json() as { hooks: Record<string, unknown[]> };
+          const hooks = currentData.hooks ?? {};
+          const hookConfig = JSON.parse(artifact.content) as { event: string; command: string };
+          const eventKey = hookConfig.event;
+          hooks[eventKey] = [...(hooks[eventKey] ?? []), { command: hookConfig.command }];
+          await fetch(`${BASE_URL}/api/hooks`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ projectPath, hooks }),
+          });
+        } else if (artifact.type === "link") {
+          // Links are session-only; no disk representation yet
+          showToast(`${artifact.name} is a session link — no disk save needed`, "success");
+          setArtifacts((prev) => prev.map((a) => (a.id === id ? { ...a, saved: true } : a)));
+          return;
         }
         setArtifacts((prev) =>
           prev.map((a) => (a.id === id ? { ...a, saved: true } : a))
@@ -427,12 +489,19 @@ export const AIDraftProvider = ({ children, projectPath }: AIDraftProviderProps)
   );
 
   const discardArtifact = useCallback((id: string) => {
-    setArtifacts((prev) =>
-      prev.map((a) => (a.id === id ? { ...a, discarded: true } : a))
-    );
+    setArtifacts((prev) => {
+      const next = prev.filter((a) => a.id !== id);
+      if (next.length === 0) {
+        setSidebarOpen(false);
+        setActiveArtifactIndex(0);
+      } else {
+        setActiveArtifactIndex((curr) => Math.min(curr, next.length - 1));
+      }
+      return next;
+    });
   }, []);
 
-  const unsavedCount = artifacts.filter((a) => !a.saved && !a.discarded).length;
+  const unsavedCount = artifacts.filter((a) => !a.saved).length;
 
   return (
     <AIDraftContext.Provider

@@ -8,6 +8,9 @@ const TYPE_LABELS: Record<string, string> = {
   agent: "Agent",
   skill: "Skill",
   "claude-md": "CLAUDE.md",
+  link: "Link",
+  mcp: "MCP Server",
+  hook: "Hook",
 };
 
 // ── Nav arrow ─────────────────────────────────────────────────────────────────

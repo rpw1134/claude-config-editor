@@ -4,8 +4,8 @@ import { ArtifactsIcon } from "../Icons";
 // ── ArtifactBadge ─────────────────────────────────────────────────────────────
 
 export const ArtifactBadge = () => {
-  const { artifacts, sidebarOpen, setSidebarOpen } = useAIDraft();
-  const total = artifacts.length;
+  const { unsavedCount, sidebarOpen, setSidebarOpen } = useAIDraft();
+  const total = unsavedCount;
 
   if (total === 0 || sidebarOpen) return null;
 

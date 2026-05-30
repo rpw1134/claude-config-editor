@@ -12,13 +12,13 @@ export interface ChatMessage {
   toolCalls?: ToolCall[];
   isStreaming?: boolean;
   draftedArtifactId?: string;
+  artifactTextPosition?: number;
 }
 
 export interface Artifact {
   id: string;
-  type: 'agent' | 'skill' | 'claude-md';
+  type: 'agent' | 'skill' | 'claude-md' | 'link' | 'mcp' | 'hook';
   name: string;
   content: string;
   saved: boolean;
-  discarded: boolean;
 }

@@ -8,7 +8,7 @@ import { StrydeStatusIcon } from "./StrydeStatusIcon";
 
 // ── DraftedCard ───────────────────────────────────────────────────────────────
 
-const TYPE_ICONS: Record<Artifact["type"], ReactNode> = {
+const TYPE_ICONS: Record<string, ReactNode> = {
   agent: <AgentIcon />,
   skill: <SkillIcon />,
   "claude-md": <DocumentIcon />,
@@ -27,7 +27,7 @@ const DraftedCard = ({ artifact, artifactIndex }: DraftedCardProps) => {
       className="group inline-flex items-center gap-2 px-2.5 py-1.5 bg-(--bg-elevated) border border-(--border-subtle) rounded-lg hover:border-(--border-default) hover:bg-(--bg-hover) transition-all duration-150 cursor-pointer max-w-xs"
     >
       <span className="shrink-0 text-(--text-muted) group-hover:text-(--accent) transition-colors w-3.5 h-3.5 [&>svg]:w-3.5 [&>svg]:h-3.5">
-        {TYPE_ICONS[artifact.type]}
+        {TYPE_ICONS[artifact.type] ?? <AgentIcon />}
       </span>
       <span className="text-[11px] text-(--text-muted) shrink-0">Drafted</span>
       <span className="text-(--text-muted) text-[10px] shrink-0">·</span>
@@ -43,12 +43,16 @@ const DraftedCard = ({ artifact, artifactIndex }: DraftedCardProps) => {
 
 function describeToolCall(tool: string, args: object): string {
   const a = args as Record<string, unknown>;
-  if (tool === "get_agent" && typeof a.name === "string") return `Looking up agent "${a.name}"`;
-  if (tool === "get_skill" && typeof a.name === "string") return `Looking up skill "${a.name}"`;
+  if (tool === "get_agent" && typeof a.name === "string") return `Agent "${a.name}"`;
+  if (tool === "get_skill" && typeof a.name === "string") return `Skill "${a.name}"`;
   const map: Record<string, string> = {
     list_agents: "Listing agents",
     list_skills: "Listing skills",
-    get_claude_md: "Reading CLAUDE.md",
+    get_claude_md: "CLAUDE.md",
+    edit_agent: "Editing agent",
+    edit_skill: "Editing skill",
+    create_mcp_server: "Creating MCP server",
+    create_hook: "Creating hook",
   };
   return map[tool] ?? tool.replace(/_/g, " ");
 }
@@ -56,18 +60,18 @@ function describeToolCall(tool: string, args: object): string {
 const ToolCallCard = ({ tc }: { tc: ToolCall }) => {
   const done = tc.result !== undefined;
   return (
-    <div className="my-1.5 inline-flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl
-      bg-(--accent)/6 border border-(--accent)/18
-      shadow-inner shadow-black/[0.07]
-      text-[13px] text-(--text-muted) select-none w-fit">
+    <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg
+      bg-(--bg-elevated) border border-(--border-subtle)
+      shadow-inner shadow-black/6
+      text-[12px] text-(--text-muted) select-none">
       <span className="shrink-0">
         {done ? (
-          <svg width="13" height="13" viewBox="0 0 13 13" fill="none" className="text-(--accent)/60">
-            <circle cx="6.5" cy="6.5" r="6" stroke="currentColor" strokeWidth="1" />
-            <path d="M3.5 6.5l2 2 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+          <svg width="11" height="11" viewBox="0 0 11 11" fill="none" className="text-(--text-muted)/60">
+            <circle cx="5.5" cy="5.5" r="5" stroke="currentColor" strokeWidth="0.9" />
+            <path d="M3 5.5l1.7 1.7 3.3-3.3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         ) : (
-          <span className="block w-3 h-3 rounded-full border border-(--text-muted)/40 border-t-(--accent)/60 animate-spin" />
+          <span className="block w-2.5 h-2.5 rounded-full border border-(--border-default) border-t-transparent animate-spin" />
         )}
       </span>
       <span>{describeToolCall(tc.tool, tc.args)}</span>
@@ -75,7 +79,7 @@ const ToolCallCard = ({ tc }: { tc: ToolCall }) => {
   );
 };
 
-// ── Prose wrapper (classes must live in JSX for Tailwind scanning) ─────────────
+// ── Prose wrapper ─────────────────────────────────────────────────────────────
 
 const ProseSegment = ({ children, fadeIn }: { children: ReactNode; fadeIn?: boolean }) => (
   <div className={`${fadeIn ? "content-fade-in " : ""}text-[18px] text-(--text-primary) leading-[1.7] font-sans
@@ -136,68 +140,108 @@ export const MessageBubble = ({ message, isLastAssistant }: MessageBubbleProps) 
   }
 
   const draftedArtifact = message.draftedArtifactId
-    ? artifacts.find(a => a.id === message.draftedArtifactId && !a.discarded)
+    ? (artifacts.find((a) => a.id === message.draftedArtifactId) ?? null)
     : null;
   const draftedArtifactIndex = draftedArtifact ? artifacts.indexOf(draftedArtifact) : -1;
 
   const toolCalls = message.toolCalls ?? [];
-  const sortedCalls = [...toolCalls].sort((a, b) => (a.textPosition ?? 0) - (b.textPosition ?? 0));
-  const hasPositions = toolCalls.length > 0 && toolCalls.every(tc => tc.textPosition !== undefined);
+  const hasToolPositions = toolCalls.length > 0 && toolCalls.every((tc) => tc.textPosition !== undefined);
+  const hasArtifactPosition = draftedArtifact !== null && message.artifactTextPosition !== undefined;
+
+  // Build ordered list of inline insertions (tool row + artifact card)
+  interface Insertion {
+    position: number;
+    node: ReactNode;
+  }
+  const insertions: Insertion[] = [];
+
+  if (hasToolPositions) {
+    const firstToolPos = Math.min(...toolCalls.map((tc) => tc.textPosition!));
+    insertions.push({
+      position: firstToolPos,
+      node: (
+        <div key="tools" className="flex flex-row flex-wrap gap-1.5 my-3">
+          {[...toolCalls]
+            .sort((a, b) => (a.textPosition ?? 0) - (b.textPosition ?? 0))
+            .map((tc, i) => <ToolCallCard key={i} tc={tc} />)}
+        </div>
+      ),
+    });
+  }
+
+  if (hasArtifactPosition) {
+    insertions.push({
+      position: message.artifactTextPosition!,
+      node: <div key="artifact" className="my-2"><DraftedCard artifact={draftedArtifact!} artifactIndex={draftedArtifactIndex} /></div>,
+    });
+  }
+
+  insertions.sort((a, b) => a.position - b.position);
 
   function renderBody() {
-    // No tool calls: just markdown
-    if (toolCalls.length === 0) {
-      return shouldShowContent ? (
-        <ProseSegment fadeIn>
-          <Markdown>{message.content}</Markdown>
-        </ProseSegment>
-      ) : null;
-    }
-
-    // Interleave text segments with tool call cards at their recorded positions
-    if (hasPositions) {
-      const nodes: ReactNode[] = [];
-      let cursor = 0;
-
-      sortedCalls.forEach((tc, i) => {
-        const pos = tc.textPosition!;
-        const before = message.content.slice(cursor, pos);
-        if (before && shouldShowContent) {
-          nodes.push(
-            <ProseSegment key={`t${i}`} fadeIn={i === 0 && cursor === 0}>
-              <Markdown>{before}</Markdown>
-            </ProseSegment>
-          );
-        }
-        nodes.push(<ToolCallCard key={`tc${i}`} tc={tc} />);
-        cursor = pos;
-      });
-
-      const after = message.content.slice(cursor);
-      if (after && shouldShowContent) {
-        nodes.push(
-          <ProseSegment key="tf">
-            <Markdown>{after}</Markdown>
-          </ProseSegment>
+    // No insertions: plain text
+    if (insertions.length === 0) {
+      if (toolCalls.length > 0) {
+        // Fallback: tool calls without positions render below text
+        return (
+          <>
+            {shouldShowContent && (
+              <ProseSegment fadeIn><Markdown>{message.content}</Markdown></ProseSegment>
+            )}
+            <div className="flex flex-row flex-wrap gap-1.5 mt-3">
+              {toolCalls.map((tc, i) => <ToolCallCard key={i} tc={tc} />)}
+            </div>
+            {draftedArtifact && (
+              <div className="mt-2">
+                <DraftedCard artifact={draftedArtifact} artifactIndex={draftedArtifactIndex} />
+              </div>
+            )}
+          </>
         );
       }
-
-      return <>{nodes}</>;
+      return (
+        <>
+          {shouldShowContent && (
+            <ProseSegment fadeIn><Markdown>{message.content}</Markdown></ProseSegment>
+          )}
+          {draftedArtifact && !hasArtifactPosition && (
+            <div className="mt-2">
+              <DraftedCard artifact={draftedArtifact} artifactIndex={draftedArtifactIndex} />
+            </div>
+          )}
+        </>
+      );
     }
 
-    // Fallback (no positions): text then cards stacked below
-    return (
-      <>
-        {shouldShowContent && (
-          <ProseSegment fadeIn>
-            <Markdown>{message.content}</Markdown>
+    // Interleaved rendering: split text at each insertion point
+    const nodes: ReactNode[] = [];
+    let cursor = 0;
+    let firstText = true;
+
+    for (const ins of insertions) {
+      const textBefore = message.content.slice(cursor, ins.position);
+      if (textBefore && shouldShowContent) {
+        nodes.push(
+          <ProseSegment key={`t${cursor}`} fadeIn={firstText}>
+            <Markdown>{textBefore}</Markdown>
           </ProseSegment>
-        )}
-        <div className="flex flex-col gap-1.5">
-          {toolCalls.map((tc, i) => <ToolCallCard key={i} tc={tc} />)}
-        </div>
-      </>
-    );
+        );
+        firstText = false;
+      }
+      nodes.push(ins.node);
+      cursor = ins.position;
+    }
+
+    const textAfter = message.content.slice(cursor);
+    if (textAfter && shouldShowContent) {
+      nodes.push(
+        <ProseSegment key="tf" fadeIn={firstText}>
+          <Markdown>{textAfter}</Markdown>
+        </ProseSegment>
+      );
+    }
+
+    return <>{nodes}</>;
   }
 
   return (
@@ -212,10 +256,6 @@ export const MessageBubble = ({ message, isLastAssistant }: MessageBubbleProps) 
               Drafting {buildingArtifact.name}…
             </span>
           </div>
-        )}
-
-        {!message.isStreaming && draftedArtifact && (
-          <DraftedCard artifact={draftedArtifact} artifactIndex={draftedArtifactIndex} />
         )}
       </div>
 

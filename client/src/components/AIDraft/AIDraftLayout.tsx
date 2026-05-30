@@ -49,7 +49,7 @@ export const AIDraftLayout = ({ projectPath }: AIDraftLayoutProps) => {
       {/* Navigation blocker modal */}
       {isBlocking && (
         <AIDraftUnsavedModal
-          unsavedArtifacts={artifacts.filter((a) => !a.saved && !a.discarded)}
+          unsavedArtifacts={artifacts.filter((a) => !a.saved)}
           onLeave={handleLeave}
           onKeep={handleKeep}
         />
