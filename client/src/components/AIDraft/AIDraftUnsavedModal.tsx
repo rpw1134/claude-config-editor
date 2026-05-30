@@ -4,12 +4,18 @@ const TYPE_LABELS: Record<Artifact["type"], string> = {
   agent: "Agent",
   skill: "Skill",
   "claude-md": "CLAUDE.md",
+  link: "Link",
+  mcp: "MCP Server",
+  hook: "Hook",
 };
 
 const TYPE_COLORS: Record<Artifact["type"], string> = {
   agent: "bg-violet-500/15 text-violet-400",
   skill: "bg-amber-500/15 text-amber-400",
   "claude-md": "bg-sky-500/15 text-sky-400",
+  link: "bg-teal-500/15 text-teal-400",
+  mcp: "bg-blue-500/15 text-blue-400",
+  hook: "bg-orange-500/15 text-orange-400",
 };
 
 interface AIDraftUnsavedModalProps {

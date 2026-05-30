@@ -2,6 +2,7 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useRef,
   useState,
 } from "react";
@@ -86,7 +87,7 @@ const DEV_ARTIFACTS: Artifact[] = DEV_MOCK ? [
 // ── Dev messages (remove before shipping) ────────────────────────────────────
 const DEV_MESSAGES: ChatMessage[] = DEV_MOCK ? [
   { id: "dm-1", role: "user", content: "Create a code review agent" },
-  { id: "dm-2", role: "assistant", content: "I'll create a code review agent for you.", draftedArtifactId: "dev-1" },
+  { id: "dm-2", role: "assistant", content: "I'll create a code review agent for you.", draftedArtifactName: "code-reviewer", draftedArtifactType: "agent" },
 ] : [];
 
 // ── Provider ──────────────────────────────────────────────────────────────────
@@ -100,6 +101,11 @@ export const AIDraftProvider = ({ children, projectPath }: AIDraftProviderProps)
   const [sidebarOpen, setSidebarOpen] = useState(DEV_MOCK);
   const [activeArtifactIndex, setActiveArtifactIndex] = useState(0);
   const [noApiKey, setNoApiKey] = useState(false);
+
+  // Ref for synchronous access to current artifacts inside the stream loop
+  // (avoids calling setMessages inside setArtifacts updater)
+  const artifactsRef = useRef<Artifact[]>(DEV_ARTIFACTS);
+  useEffect(() => { artifactsRef.current = artifacts; }, [artifacts]);
 
   // Ref for synchronous access inside the stream loop
   const pendingArtifactRef = useRef<{ type: string; name: string } | null>(null);
@@ -269,49 +275,41 @@ export const AIDraftProvider = ({ children, projectPath }: AIDraftProviderProps)
               const artifactType = ((event.data.type as string) ?? pending?.type ?? "agent") as Artifact["type"];
               const artifactName = (event.data.name as string) ?? pending?.name ?? "Untitled";
               const content = (event.data.content as string) ?? "";
-              // Position in the streamed text where this artifact was generated
               const artifactTextPosition = contentBufferRef.current.length;
               const msgId = streamingMsgIdRef.current;
-              setArtifacts((prev) => {
-                // Name+type dedup: editing an existing draft updates it in place
-                const existingIdx = prev.findIndex(
-                  (a) => a.name === artifactName && a.type === artifactType
-                );
-                if (existingIdx !== -1) {
-                  const updated = { ...prev[existingIdx], content, saved: false };
-                  setActiveArtifactIndex(existingIdx);
-                  if (msgId) {
-                    setMessages((ms) =>
-                      ms.map((m) =>
-                        m.id === msgId
-                          ? { ...m, draftedArtifactId: updated.id, artifactTextPosition }
-                          : m
-                      )
-                    );
-                  }
-                  return prev.map((a, i) => (i === existingIdx ? updated : a));
-                }
-                const newArtifact: Artifact = {
-                  id: makeId(),
-                  type: artifactType,
-                  name: artifactName,
-                  content,
-                  saved: false,
 
-                };
-                if (msgId) {
-                  setMessages((ms) =>
-                    ms.map((m) =>
-                      m.id === msgId
-                        ? { ...m, draftedArtifactId: newArtifact.id, artifactTextPosition }
-                        : m
-                    )
-                  );
-                }
-                const next = [...prev, newArtifact];
-                setActiveArtifactIndex(next.length - 1);
-                return next;
-              });
+              // Name+type dedup: check current artifacts via ref (synchronous, no setState nesting)
+              const currentArtifacts = artifactsRef.current;
+              const existingIdx = currentArtifacts.findIndex(
+                (a) => a.name === artifactName && a.type === artifactType
+              );
+              const isEdit = existingIdx !== -1;
+
+              // Update message metadata — all known synchronously, no ID lookup needed
+              if (msgId) {
+                setMessages((ms) =>
+                  ms.map((m) =>
+                    m.id === msgId
+                      ? { ...m, draftedArtifactName: artifactName, draftedArtifactType: artifactType, artifactTextPosition, isEdit }
+                      : m
+                  )
+                );
+              }
+
+              // Update artifacts and active index
+              if (isEdit) {
+                setActiveArtifactIndex(existingIdx);
+                setArtifacts((prev) =>
+                  prev.map((a, i) => (i === existingIdx ? { ...a, content, saved: false } : a))
+                );
+              } else {
+                setActiveArtifactIndex(currentArtifacts.length);
+                setArtifacts((prev) => [
+                  ...prev,
+                  { id: makeId(), type: artifactType, name: artifactName, content, saved: false },
+                ]);
+              }
+
               setSidebarOpen(true);
               pendingArtifactRef.current = null;
               setBuildingArtifact(null);

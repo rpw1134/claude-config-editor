@@ -11,7 +11,9 @@ export interface ChatMessage {
   content: string;
   toolCalls?: ToolCall[];
   isStreaming?: boolean;
-  draftedArtifactId?: string;
+  draftedArtifactName?: string;
+  draftedArtifactType?: string;
+  isEdit?: boolean;
   artifactTextPosition?: number;
 }
 

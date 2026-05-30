@@ -384,6 +384,13 @@ export const AIDraftIcon = () => (
   </svg>
 );
 
+export const LinkIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M6.5 8.5C6.5 8.5 7 9.5 8.5 9.5C9.88 9.5 11 8.38 11 7C11 5.62 9.88 4.5 8.5 4.5L7.5 4.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+    <path d="M8.5 6.5C8.5 6.5 8 5.5 6.5 5.5C5.12 5.5 4 6.62 4 8C4 9.38 5.12 10.5 6.5 10.5L7.5 10.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+  </svg>
+);
+
 export const ArtifactsIcon = () => (
   <svg width="20" height="20" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg">
     <rect x="3" y="4" width="9" height="9.5" rx="1.2" stroke="currentColor" strokeWidth="1.2"/>

@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import Markdown from "react-markdown";
 import type { Artifact, ChatMessage, ToolCall } from "../../types/aiDraft";
 import { useAIDraft } from "../../contexts/AIDraftContext";
-import { AgentIcon, DocumentIcon, SkillIcon } from "../Icons";
+import { AgentIcon, DocumentIcon, HooksIcon, LinkIcon, McpIcon, SkillIcon } from "../Icons";
 import { StrydeStatusIcon } from "./StrydeStatusIcon";
 
 // ── DraftedCard ───────────────────────────────────────────────────────────────
@@ -12,14 +12,18 @@ const TYPE_ICONS: Record<string, ReactNode> = {
   agent: <AgentIcon />,
   skill: <SkillIcon />,
   "claude-md": <DocumentIcon />,
+  link: <LinkIcon />,
+  mcp: <McpIcon />,
+  hook: <HooksIcon />,
 };
 
 interface DraftedCardProps {
   artifact: Artifact;
   artifactIndex: number;
+  isEdit?: boolean;
 }
 
-const DraftedCard = ({ artifact, artifactIndex }: DraftedCardProps) => {
+const DraftedCard = ({ artifact, artifactIndex, isEdit }: DraftedCardProps) => {
   const { setSidebarOpen, setActiveArtifactIndex } = useAIDraft();
   return (
     <button
@@ -29,7 +33,7 @@ const DraftedCard = ({ artifact, artifactIndex }: DraftedCardProps) => {
       <span className="shrink-0 text-(--text-muted) group-hover:text-(--accent) transition-colors w-3.5 h-3.5 [&>svg]:w-3.5 [&>svg]:h-3.5">
         {TYPE_ICONS[artifact.type] ?? <AgentIcon />}
       </span>
-      <span className="text-[11px] text-(--text-muted) shrink-0">Drafted</span>
+      <span className="text-[11px] text-(--text-muted) shrink-0">{isEdit ? "Editing" : "Drafted"}</span>
       <span className="text-(--text-muted) text-[10px] shrink-0">·</span>
       <span className="text-[13px] font-medium text-(--text-secondary) group-hover:text-(--text-primary) truncate transition-colors">
         {artifact.name}
@@ -139,8 +143,8 @@ export const MessageBubble = ({ message, isLastAssistant }: MessageBubbleProps) 
     );
   }
 
-  const draftedArtifact = message.draftedArtifactId
-    ? (artifacts.find((a) => a.id === message.draftedArtifactId) ?? null)
+  const draftedArtifact = message.draftedArtifactName
+    ? (artifacts.find((a) => a.name === message.draftedArtifactName && a.type === message.draftedArtifactType) ?? null)
     : null;
   const draftedArtifactIndex = draftedArtifact ? artifacts.indexOf(draftedArtifact) : -1;
 
@@ -172,7 +176,7 @@ export const MessageBubble = ({ message, isLastAssistant }: MessageBubbleProps) 
   if (hasArtifactPosition) {
     insertions.push({
       position: message.artifactTextPosition!,
-      node: <div key="artifact" className="my-2"><DraftedCard artifact={draftedArtifact!} artifactIndex={draftedArtifactIndex} /></div>,
+      node: <div key="artifact" className="my-2"><DraftedCard artifact={draftedArtifact!} artifactIndex={draftedArtifactIndex} isEdit={message.isEdit} /></div>,
     });
   }
 
@@ -193,7 +197,7 @@ export const MessageBubble = ({ message, isLastAssistant }: MessageBubbleProps) 
             </div>
             {draftedArtifact && (
               <div className="mt-2">
-                <DraftedCard artifact={draftedArtifact} artifactIndex={draftedArtifactIndex} />
+                <DraftedCard artifact={draftedArtifact} artifactIndex={draftedArtifactIndex} isEdit={message.isEdit} />
               </div>
             )}
           </>
@@ -206,7 +210,7 @@ export const MessageBubble = ({ message, isLastAssistant }: MessageBubbleProps) 
           )}
           {draftedArtifact && !hasArtifactPosition && (
             <div className="mt-2">
-              <DraftedCard artifact={draftedArtifact} artifactIndex={draftedArtifactIndex} />
+              <DraftedCard artifact={draftedArtifact} artifactIndex={draftedArtifactIndex} isEdit={message.isEdit} />
             </div>
           )}
         </>
