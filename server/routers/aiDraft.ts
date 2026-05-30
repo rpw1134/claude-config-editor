@@ -392,7 +392,7 @@ async function runStream(
   messages: MessageParam[],
   projectPath: string,
   res: Response,
-): Promise<void> {
+): Promise<MessageParam[]> {
   let state: ParserState = "chat";
   let artifactBuffer = "";
   let artifactType = "";
@@ -407,7 +407,7 @@ async function runStream(
     tools: TOOLS,
   });
 
-  await new Promise<void>((resolve, reject) => {
+  return new Promise<MessageParam[]>((resolve, reject) => {
     stream.on("text", (text: string) => {
       const next = processTextChunk(
         text,
@@ -440,7 +440,8 @@ async function runStream(
         );
 
         if (toolUseBlocks.length === 0) {
-          resolve();
+          // Base case: no tool calls — return full history including this assistant turn
+          resolve([...messages, { role: "assistant", content: msg.content }]);
           return;
         }
 
@@ -469,8 +470,8 @@ async function runStream(
           { role: "user", content: toolResults },
         ];
 
-        await runStream(client, updatedMessages, projectPath, res);
-        resolve();
+        const finalMessages = await runStream(client, updatedMessages, projectPath, res);
+        resolve(finalMessages);
       } catch (err) {
         reject(err);
       }
@@ -507,7 +508,8 @@ router.post(
       }
 
       const client = new Anthropic({ apiKey: profile.apiKey });
-      await runStream(client, messages as MessageParam[], projectPath.trim(), res);
+      const finalHistory = await runStream(client, messages as MessageParam[], projectPath.trim(), res);
+      sendEvent(res, "history", { messages: finalHistory });
       sendEvent(res, "done", {});
       res.end();
     } catch (err) {

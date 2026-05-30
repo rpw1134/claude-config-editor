@@ -5,16 +5,20 @@ export interface ToolCall {
   textPosition?: number;
 }
 
+export interface DraftedArtifactRef {
+  name: string;
+  type: string;
+  isEdit: boolean;
+  textPosition: number;
+}
+
 export interface ChatMessage {
   id: string;
   role: 'user' | 'assistant';
   content: string;
   toolCalls?: ToolCall[];
   isStreaming?: boolean;
-  draftedArtifactName?: string;
-  draftedArtifactType?: string;
-  isEdit?: boolean;
-  artifactTextPosition?: number;
+  draftedArtifacts?: DraftedArtifactRef[];
 }
 
 export interface Artifact {

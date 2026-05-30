@@ -1,20 +1,20 @@
 import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import Markdown from "react-markdown";
-import type { Artifact, ChatMessage, ToolCall } from "../../types/aiDraft";
+import type { Artifact, ChatMessage, DraftedArtifactRef, ToolCall } from "../../types/aiDraft";
 import { useAIDraft } from "../../contexts/AIDraftContext";
-import { AgentIcon, DocumentIcon, HooksIcon, LinkIcon, McpIcon, SkillIcon } from "../Icons";
+import { ArtifactsIcon } from "../Icons";
 import { StrydeStatusIcon } from "./StrydeStatusIcon";
 
 // ── DraftedCard ───────────────────────────────────────────────────────────────
 
-const TYPE_ICONS: Record<string, ReactNode> = {
-  agent: <AgentIcon />,
-  skill: <SkillIcon />,
-  "claude-md": <DocumentIcon />,
-  link: <LinkIcon />,
-  mcp: <McpIcon />,
-  hook: <HooksIcon />,
+const TYPE_LABELS: Record<string, string> = {
+  agent: "Agent",
+  skill: "Skill",
+  "claude-md": "CLAUDE.md",
+  link: "Link",
+  mcp: "MCP Server",
+  hook: "Hook",
 };
 
 interface DraftedCardProps {
@@ -28,17 +28,24 @@ const DraftedCard = ({ artifact, artifactIndex, isEdit }: DraftedCardProps) => {
   return (
     <button
       onClick={() => { setActiveArtifactIndex(artifactIndex); setSidebarOpen(true); }}
-      className="group inline-flex items-center gap-2 px-2.5 py-1.5 bg-(--bg-elevated) border border-(--border-subtle) rounded-lg hover:border-(--border-default) hover:bg-(--bg-hover) transition-all duration-150 cursor-pointer max-w-xs"
+      className="group flex items-center gap-4 w-full px-5 py-4 bg-(--bg-elevated) border border-(--border-subtle) rounded-xl hover:border-(--border-default) hover:bg-(--bg-hover) transition-all duration-150 cursor-pointer"
     >
-      <span className="shrink-0 text-(--text-muted) group-hover:text-(--accent) transition-colors w-3.5 h-3.5 [&>svg]:w-3.5 [&>svg]:h-3.5">
-        {TYPE_ICONS[artifact.type] ?? <AgentIcon />}
+      <span className="shrink-0 text-(--text-muted) group-hover:text-(--accent) transition-colors w-5 h-5 [&>svg]:w-5 [&>svg]:h-5">
+        <ArtifactsIcon />
       </span>
-      <span className="text-[11px] text-(--text-muted) shrink-0">{isEdit ? "Editing" : "Drafted"}</span>
-      <span className="text-(--text-muted) text-[10px] shrink-0">·</span>
-      <span className="text-[13px] font-medium text-(--text-secondary) group-hover:text-(--text-primary) truncate transition-colors">
+      <span className="text-[12px] font-semibold uppercase tracking-wider text-(--text-muted) shrink-0">
+        {TYPE_LABELS[artifact.type] ?? artifact.type}
+      </span>
+      <span className="text-(--text-muted) text-[12px] shrink-0">·</span>
+      <span className="text-[16px] font-medium text-(--text-secondary) group-hover:text-(--text-primary) flex-1 min-w-0 truncate text-left transition-colors">
         {artifact.name}
       </span>
-      <span className="shrink-0 text-[11px] text-(--accent) opacity-0 group-hover:opacity-100 transition-opacity duration-150">↗</span>
+      {isEdit && (
+        <span className="shrink-0 text-[11px] font-semibold uppercase tracking-wider text-(--accent)/60">
+          Editing
+        </span>
+      )}
+      <span className="shrink-0 text-[13px] text-(--accent) opacity-0 group-hover:opacity-100 transition-opacity duration-150">↗</span>
     </button>
   );
 };
@@ -143,16 +150,17 @@ export const MessageBubble = ({ message, isLastAssistant }: MessageBubbleProps) 
     );
   }
 
-  const draftedArtifact = message.draftedArtifactName
-    ? (artifacts.find((a) => a.name === message.draftedArtifactName && a.type === message.draftedArtifactType) ?? null)
-    : null;
-  const draftedArtifactIndex = draftedArtifact ? artifacts.indexOf(draftedArtifact) : -1;
+  // Resolve all drafted artifact refs to live artifacts (discarded refs resolve to null and are skipped)
+  const resolvedDrafts = (message.draftedArtifacts ?? []).flatMap((ref: DraftedArtifactRef) => {
+    const artifact = artifacts.find((a) => a.name === ref.name && a.type === ref.type);
+    if (!artifact) return [];
+    return [{ artifact, index: artifacts.indexOf(artifact), isEdit: ref.isEdit, textPosition: ref.textPosition }];
+  });
 
   const toolCalls = message.toolCalls ?? [];
   const hasToolPositions = toolCalls.length > 0 && toolCalls.every((tc) => tc.textPosition !== undefined);
-  const hasArtifactPosition = draftedArtifact !== null && message.artifactTextPosition !== undefined;
 
-  // Build ordered list of inline insertions (tool row + artifact card)
+  // Build ordered list of inline insertions (tool row + one card per artifact)
   interface Insertion {
     position: number;
     node: ReactNode;
@@ -173,20 +181,23 @@ export const MessageBubble = ({ message, isLastAssistant }: MessageBubbleProps) 
     });
   }
 
-  if (hasArtifactPosition) {
+  for (const d of resolvedDrafts) {
     insertions.push({
-      position: message.artifactTextPosition!,
-      node: <div key="artifact" className="my-2"><DraftedCard artifact={draftedArtifact!} artifactIndex={draftedArtifactIndex} isEdit={message.isEdit} /></div>,
+      position: d.textPosition,
+      node: (
+        <div key={`artifact-${d.artifact.id}`} className="my-2 w-full">
+          <DraftedCard artifact={d.artifact} artifactIndex={d.index} isEdit={d.isEdit} />
+        </div>
+      ),
     });
   }
 
   insertions.sort((a, b) => a.position - b.position);
 
   function renderBody() {
-    // No insertions: plain text
+    // No insertions: plain text (+ fallback artifact cards below)
     if (insertions.length === 0) {
       if (toolCalls.length > 0) {
-        // Fallback: tool calls without positions render below text
         return (
           <>
             {shouldShowContent && (
@@ -195,11 +206,11 @@ export const MessageBubble = ({ message, isLastAssistant }: MessageBubbleProps) 
             <div className="flex flex-row flex-wrap gap-1.5 mt-3">
               {toolCalls.map((tc, i) => <ToolCallCard key={i} tc={tc} />)}
             </div>
-            {draftedArtifact && (
-              <div className="mt-2">
-                <DraftedCard artifact={draftedArtifact} artifactIndex={draftedArtifactIndex} isEdit={message.isEdit} />
+            {resolvedDrafts.map((d) => (
+              <div key={d.artifact.id} className="mt-2 w-full">
+                <DraftedCard artifact={d.artifact} artifactIndex={d.index} isEdit={d.isEdit} />
               </div>
-            )}
+            ))}
           </>
         );
       }
@@ -208,11 +219,11 @@ export const MessageBubble = ({ message, isLastAssistant }: MessageBubbleProps) 
           {shouldShowContent && (
             <ProseSegment fadeIn><Markdown>{message.content}</Markdown></ProseSegment>
           )}
-          {draftedArtifact && !hasArtifactPosition && (
-            <div className="mt-2">
-              <DraftedCard artifact={draftedArtifact} artifactIndex={draftedArtifactIndex} isEdit={message.isEdit} />
+          {resolvedDrafts.map((d) => (
+            <div key={d.artifact.id} className="mt-2 w-full">
+              <DraftedCard artifact={d.artifact} artifactIndex={d.index} isEdit={d.isEdit} />
             </div>
-          )}
+          ))}
         </>
       );
     }
@@ -257,7 +268,7 @@ export const MessageBubble = ({ message, isLastAssistant }: MessageBubbleProps) 
           <div className="flex items-center gap-3 py-0.5">
             <StrydeStatusIcon status="thinking" size={28} />
             <span className="thinking-text text-[14px]">
-              Drafting {buildingArtifact.name}…
+              {buildingArtifact.isEdit ? "Editing" : "Drafting"} {buildingArtifact.name}…
             </span>
           </div>
         )}

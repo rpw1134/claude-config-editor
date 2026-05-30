@@ -7,7 +7,7 @@ import {
   useState,
 } from "react";
 import type { ReactNode } from "react";
-import type { Artifact, ChatMessage, ToolCall } from "../types/aiDraft";
+import type { Artifact, ChatMessage, DraftedArtifactRef, ToolCall } from "../types/aiDraft";
 import { useShell } from "./ShellContext";
 
 const BASE_URL = "http://localhost:3000";
@@ -18,7 +18,7 @@ interface AIDraftContextValue {
   messages: ChatMessage[];
   artifacts: Artifact[];
   isStreaming: boolean;
-  buildingArtifact: { type: string; name: string } | null;
+  buildingArtifact: { type: string; name: string; isEdit?: boolean } | null;
   sidebarOpen: boolean;
   activeArtifactIndex: number;
   noApiKey: boolean;
@@ -87,7 +87,7 @@ const DEV_ARTIFACTS: Artifact[] = DEV_MOCK ? [
 // ── Dev messages (remove before shipping) ────────────────────────────────────
 const DEV_MESSAGES: ChatMessage[] = DEV_MOCK ? [
   { id: "dm-1", role: "user", content: "Create a code review agent" },
-  { id: "dm-2", role: "assistant", content: "I'll create a code review agent for you.", draftedArtifactName: "code-reviewer", draftedArtifactType: "agent" },
+  { id: "dm-2", role: "assistant", content: "I'll create a code review agent for you.", draftedArtifacts: [{ name: "code-reviewer", type: "agent", isEdit: false, textPosition: 0 }] },
 ] : [];
 
 // ── Provider ──────────────────────────────────────────────────────────────────
@@ -97,7 +97,7 @@ export const AIDraftProvider = ({ children, projectPath }: AIDraftProviderProps)
   const [messages, setMessages] = useState<ChatMessage[]>(DEV_MESSAGES);
   const [artifacts, setArtifacts] = useState<Artifact[]>(DEV_ARTIFACTS);
   const [isStreaming, setIsStreaming] = useState(false);
-  const [buildingArtifact, setBuildingArtifact] = useState<{ type: string; name: string } | null>(null);
+  const [buildingArtifact, setBuildingArtifact] = useState<{ type: string; name: string; isEdit?: boolean } | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(DEV_MOCK);
   const [activeArtifactIndex, setActiveArtifactIndex] = useState(0);
   const [noApiKey, setNoApiKey] = useState(false);
@@ -106,6 +106,10 @@ export const AIDraftProvider = ({ children, projectPath }: AIDraftProviderProps)
   // (avoids calling setMessages inside setArtifacts updater)
   const artifactsRef = useRef<Artifact[]>(DEV_ARTIFACTS);
   useEffect(() => { artifactsRef.current = artifacts; }, [artifacts]);
+
+  // Full Anthropic message history (with tool use/result blocks) from the last completed turn.
+  // Sent to the API on the next turn so the model retains tool call context across turns.
+  const rawHistoryRef = useRef<unknown[]>([]);
 
   // Ref for synchronous access inside the stream loop
   const pendingArtifactRef = useRef<{ type: string; name: string } | null>(null);
@@ -128,6 +132,7 @@ export const AIDraftProvider = ({ children, projectPath }: AIDraftProviderProps)
     setActiveArtifactIndex(0);
     setNoApiKey(false);
     pendingArtifactRef.current = null;
+    rawHistoryRef.current = [];
   }, []);
 
   const stopDrain = useCallback(() => {
@@ -204,8 +209,13 @@ export const AIDraftProvider = ({ children, projectPath }: AIDraftProviderProps)
       };
       streamingMsgIdRef.current = assistantMsg.id;
 
-      // Capture before any state update — messages is the history up to (not including) this turn
-      const capturedMessages = [...messages, userMsg];
+      // Build the API message list. If we have raw history from previous turns (with full
+      // tool use/result blocks), use that so the model retains tool call context. Otherwise
+      // fall back to the simplified {role, content} format for the first turn.
+      const prevRawHistory = rawHistoryRef.current;
+      const apiMessages = prevRawHistory.length > 0
+        ? [...prevRawHistory, { role: "user", content: text }]
+        : [{ role: "user", content: text }];
 
       setMessages((prev) => [...prev, userMsg, assistantMsg]);
       setIsStreaming(true);
@@ -216,10 +226,7 @@ export const AIDraftProvider = ({ children, projectPath }: AIDraftProviderProps)
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            messages: capturedMessages.map((m) => ({
-              role: m.role,
-              content: m.content,
-            })),
+            messages: apiMessages,
             projectPath,
           }),
         });
@@ -268,8 +275,11 @@ export const AIDraftProvider = ({ children, projectPath }: AIDraftProviderProps)
                 type: (event.data.type as string) ?? "agent",
                 name: (event.data.name as string) ?? "Untitled",
               };
+              const isEditArtifact = artifactsRef.current.some(
+                (a) => a.name === pending.name && a.type === pending.type
+              );
               pendingArtifactRef.current = pending;
-              setBuildingArtifact(pending);
+              setBuildingArtifact({ ...pending, isEdit: isEditArtifact });
             } else if (event.type === "artifact-end") {
               const pending = pendingArtifactRef.current;
               const artifactType = ((event.data.type as string) ?? pending?.type ?? "agent") as Artifact["type"];
@@ -285,12 +295,18 @@ export const AIDraftProvider = ({ children, projectPath }: AIDraftProviderProps)
               );
               const isEdit = existingIdx !== -1;
 
-              // Update message metadata — all known synchronously, no ID lookup needed
+              // Append to the message's draftedArtifacts array (supports multiple per message)
+              const artifactRef: DraftedArtifactRef = {
+                name: artifactName,
+                type: artifactType,
+                isEdit,
+                textPosition: artifactTextPosition,
+              };
               if (msgId) {
                 setMessages((ms) =>
                   ms.map((m) =>
                     m.id === msgId
-                      ? { ...m, draftedArtifactName: artifactName, draftedArtifactType: artifactType, artifactTextPosition, isEdit }
+                      ? { ...m, draftedArtifacts: [...(m.draftedArtifacts ?? []), artifactRef] }
                       : m
                   )
                 );
@@ -376,6 +392,8 @@ export const AIDraftProvider = ({ children, projectPath }: AIDraftProviderProps)
               setBuildingArtifact(null);
               setIsStreaming(false);
               return;
+            } else if (event.type === "history") {
+              rawHistoryRef.current = (event.data.messages as unknown[]) ?? [];
             } else if (event.type === "done") {
               break;
             }
@@ -408,7 +426,7 @@ export const AIDraftProvider = ({ children, projectPath }: AIDraftProviderProps)
         }
       }
     },
-    [isStreaming, messages, projectPath, startDrain, stopDrain]
+    [isStreaming, projectPath, startDrain, stopDrain]
   );
 
   const saveArtifact = useCallback(
