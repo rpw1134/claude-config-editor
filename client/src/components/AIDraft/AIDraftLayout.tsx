@@ -13,13 +13,14 @@ interface AIDraftLayoutProps {
 }
 
 export const AIDraftLayout = ({ projectPath }: AIDraftLayoutProps) => {
-  const { artifacts, unsavedCount, clearSession } = useAIDraft();
+  const { artifacts, messages, unsavedCount, clearSession } = useAIDraft();
+  const hasSession = messages.length > 0;
 
   const blocker = useBlocker(
     useCallback(
       ({ currentLocation, nextLocation }) =>
-        unsavedCount > 0 && currentLocation.pathname !== nextLocation.pathname,
-      [unsavedCount]
+        hasSession && currentLocation.pathname !== nextLocation.pathname,
+      [hasSession]
     )
   );
 
@@ -50,6 +51,7 @@ export const AIDraftLayout = ({ projectPath }: AIDraftLayoutProps) => {
       {isBlocking && (
         <AIDraftUnsavedModal
           unsavedArtifacts={artifacts.filter((a) => !a.saved)}
+          unsavedCount={unsavedCount}
           onLeave={handleLeave}
           onKeep={handleKeep}
         />

@@ -46,8 +46,10 @@ export const ArtifactSidebar = () => {
     artifacts,
     sidebarOpen,
     activeArtifactIndex,
+    unsavedCount,
     setSidebarOpen,
     setActiveArtifactIndex,
+    saveAll,
   } = useAIDraft();
 
   const activeArtifact = artifacts[activeArtifactIndex] ?? null;
@@ -66,6 +68,15 @@ export const ArtifactSidebar = () => {
             <span className="flex-1 text-[11px] font-semibold uppercase tracking-widest text-(--text-muted) select-none">
               {typeLabel}
             </span>
+
+            {unsavedCount > 0 && (
+              <button
+                onClick={() => void saveAll()}
+                className="text-[11px] font-semibold text-(--accent) bg-(--accent)/10 border border-(--accent)/20 px-2.5 py-1 rounded-lg cursor-pointer hover:bg-(--accent)/15 transition-all duration-150 shrink-0"
+              >
+                Save all
+              </button>
+            )}
 
             {total > 1 && (
               <div className="flex items-center gap-0.5">

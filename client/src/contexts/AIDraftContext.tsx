@@ -24,6 +24,7 @@ interface AIDraftContextValue {
   noApiKey: boolean;
   sendMessage: (text: string) => Promise<void>;
   saveArtifact: (id: string) => Promise<void>;
+  saveAll: () => Promise<void>;
   discardArtifact: (id: string) => void;
   setSidebarOpen: (open: boolean) => void;
   setActiveArtifactIndex: (i: number) => void;
@@ -487,15 +488,31 @@ export const AIDraftProvider = ({ children, projectPath }: AIDraftProviderProps)
             body: JSON.stringify({ projectPath, hooks }),
           });
         } else if (artifact.type === "link") {
-          // Links are session-only; no disk representation yet
-          showToast(`${artifact.name} is a session link — no disk save needed`, "success");
-          setArtifacts((prev) => prev.map((a) => (a.id === id ? { ...a, saved: true } : a)));
-          return;
+          // Parse agent/skill/trigger from link content and inject a skill trigger into the agent
+          const linkData: Record<string, string> = {};
+          for (const line of artifact.content.trim().split("\n")) {
+            const idx = line.indexOf(":");
+            if (idx !== -1) linkData[line.slice(0, idx).trim()] = line.slice(idx + 1).trim();
+          }
+          const { agent: agentName, skill: skillName, trigger } = linkData;
+          if (!agentName || !skillName) {
+            showToast("Link is missing agent or skill fields", "error");
+            return;
+          }
+          const skillSection = `\n\n## Linked Skill: ${skillName}\n\nWhen ${trigger ?? "triggered"}, invoke the \`${skillName}\` skill using \`/${skillName}\`.`;
+          // Apply to the session agent artifact if present so the user can review before saving
+          const sessionAgent = artifacts.find((a) => a.name === agentName && a.type === "agent");
+          if (sessionAgent) {
+            setArtifacts((prev) =>
+              prev.map((a) => (a.id === sessionAgent.id ? { ...a, content: a.content + skillSection, saved: false } : a))
+            );
+          }
+          showToast(`Link saved`, "success");
         }
         setArtifacts((prev) =>
           prev.map((a) => (a.id === id ? { ...a, saved: true } : a))
         );
-        showToast(`${artifact.name} saved`, "success");
+        if (artifact.type !== "link") showToast(`${artifact.name} saved`, "success");
       } catch (err) {
         const msg = err instanceof Error ? err.message : "Save failed";
         showToast(msg, "error");
@@ -503,6 +520,13 @@ export const AIDraftProvider = ({ children, projectPath }: AIDraftProviderProps)
     },
     [artifacts, projectPath, showToast]
   );
+
+  const saveAll = useCallback(async () => {
+    const unsaved = artifacts.filter((a) => !a.saved);
+    for (const a of unsaved) {
+      await saveArtifact(a.id);
+    }
+  }, [artifacts, saveArtifact]);
 
   const discardArtifact = useCallback((id: string) => {
     setArtifacts((prev) => {
@@ -531,6 +555,7 @@ export const AIDraftProvider = ({ children, projectPath }: AIDraftProviderProps)
         noApiKey,
         sendMessage,
         saveArtifact,
+        saveAll,
         discardArtifact,
         setSidebarOpen,
         setActiveArtifactIndex,

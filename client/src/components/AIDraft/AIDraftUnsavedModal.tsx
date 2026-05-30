@@ -20,16 +20,18 @@ const TYPE_COLORS: Record<Artifact["type"], string> = {
 
 interface AIDraftUnsavedModalProps {
   unsavedArtifacts: Artifact[];
+  unsavedCount: number;
   onLeave: () => void;
   onKeep: () => void;
 }
 
 export const AIDraftUnsavedModal = ({
   unsavedArtifacts,
+  unsavedCount,
   onLeave,
   onKeep,
 }: AIDraftUnsavedModalProps) => {
-  const count = unsavedArtifacts.length;
+  const hasUnsaved = unsavedCount > 0;
 
   return (
     <div
@@ -41,40 +43,43 @@ export const AIDraftUnsavedModal = ({
         onClick={(e) => e.stopPropagation()}
       >
         <h2 className='font-["Bricolage_Grotesque",sans-serif] text-[20px] font-semibold text-(--text-primary) m-0 mb-2'>
-          Leave without saving?
+          {hasUnsaved ? "Leave without saving?" : "Leave this session?"}
         </h2>
         <p className="text-[13px] text-(--text-muted) m-0 mb-3 leading-relaxed">
-          {count === 1 ? "1 unsaved draft" : `${count} unsaved drafts`} will be
-          permanently discarded:
+          {hasUnsaved
+            ? `${unsavedCount === 1 ? "1 unsaved draft" : `${unsavedCount} unsaved drafts`} will be permanently discarded:`
+            : "AI Draft is an ephemeral workspace. Your conversation and any drafted artifacts will be cleared when you leave."}
         </p>
 
-        <ul className="list-none m-0 p-0 mb-6 flex flex-col gap-1.5">
-          {unsavedArtifacts.map((a) => (
-            <li key={a.id} className="flex items-center gap-2">
-              <span
-                className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold ${TYPE_COLORS[a.type]}`}
-              >
-                {TYPE_LABELS[a.type]}
-              </span>
-              <span className="text-[13px] text-(--text-secondary) truncate">
-                {a.name}
-              </span>
-            </li>
-          ))}
-        </ul>
+        {hasUnsaved && (
+          <ul className="list-none m-0 p-0 mb-6 flex flex-col gap-1.5">
+            {unsavedArtifacts.map((a) => (
+              <li key={a.id} className="flex items-center gap-2">
+                <span
+                  className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold ${TYPE_COLORS[a.type]}`}
+                >
+                  {TYPE_LABELS[a.type]}
+                </span>
+                <span className="text-[13px] text-(--text-secondary) truncate">
+                  {a.name}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
 
-        <div className="flex items-center gap-3">
+        <div className={`flex items-center gap-3 ${!hasUnsaved ? "mt-6" : ""}`}>
           <button
             onClick={onKeep}
             className="text-[13px] font-semibold text-(--accent) bg-(--accent)/10 border border-(--accent)/20 px-5 py-2.5 rounded-xl cursor-pointer hover:bg-(--accent)/15 transition-all duration-150"
           >
-            Keep editing
+            Stay
           </button>
           <button
             onClick={onLeave}
             className="text-[13px] font-semibold text-red-400 bg-red-500/10 border border-red-500/20 px-5 py-2.5 rounded-xl cursor-pointer hover:bg-red-500/15 transition-all duration-150"
           >
-            Leave and discard
+            {hasUnsaved ? "Leave and discard" : "Leave"}
           </button>
         </div>
       </div>
