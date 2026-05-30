@@ -2,6 +2,7 @@ export interface ToolCall {
   tool: string;
   args: object;
   result?: string;
+  textPosition?: number;
 }
 
 export interface ChatMessage {
@@ -10,6 +11,7 @@ export interface ChatMessage {
   content: string;
   toolCalls?: ToolCall[];
   isStreaming?: boolean;
+  draftedArtifactId?: string;
 }
 
 export interface Artifact {

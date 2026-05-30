@@ -83,11 +83,17 @@ const DEV_ARTIFACTS: Artifact[] = DEV_MOCK ? [
     content: `---\nname: Deploy to Staging\ndescription: Runs the full deploy pipeline to the staging environment.\nwhen_to_use: When the user says "deploy to staging" or asks to deploy their changes for review.\nargument-hint: "[branch-name]"\nuser-invocable: true\nallowed-tools:\n  - Bash\nmodel: claude-sonnet-4-6\neffort: medium\n---\n\nDeploy the current branch to staging.\n\n## Steps\n\n1. Run \`npm test\` — abort if tests fail\n2. Run \`npm run build\`\n3. Push to the \`staging\` remote\n4. Wait for health check to return 200\n5. Report the staging URL` },
 ] : [];
 
+// ── Dev messages (remove before shipping) ────────────────────────────────────
+const DEV_MESSAGES: ChatMessage[] = DEV_MOCK ? [
+  { id: "dm-1", role: "user", content: "Create a code review agent" },
+  { id: "dm-2", role: "assistant", content: "I'll create a code review agent for you.", draftedArtifactId: "dev-1" },
+] : [];
+
 // ── Provider ──────────────────────────────────────────────────────────────────
 
 export const AIDraftProvider = ({ children, projectPath }: AIDraftProviderProps) => {
   const { showToast } = useShell();
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>(DEV_MESSAGES);
   const [artifacts, setArtifacts] = useState<Artifact[]>(DEV_ARTIFACTS);
   const [isStreaming, setIsStreaming] = useState(false);
   const [buildingArtifact, setBuildingArtifact] = useState<{ type: string; name: string } | null>(null);
@@ -164,7 +170,7 @@ export const AIDraftProvider = ({ children, projectPath }: AIDraftProviderProps)
         if (id) {
           setMessages(prev => prev.map(m => {
             if (m.id !== id) return m;
-            return { ...m, toolCalls: [...(m.toolCalls ?? []), ...ready.map(p => p.toolCall)] };
+            return { ...m, toolCalls: [...(m.toolCalls ?? []), ...ready.map(p => ({ ...p.toolCall, textPosition: p.flushAt }))] };
           }));
         }
       }
@@ -276,6 +282,13 @@ export const AIDraftProvider = ({ children, projectPath }: AIDraftProviderProps)
                 setActiveArtifactIndex(next.length - 1);
                 return next;
               });
+              // Tag the current assistant message with the drafted artifact ID
+              const msgId = streamingMsgIdRef.current;
+              if (msgId) {
+                setMessages((prev) =>
+                  prev.map((m) => m.id === msgId ? { ...m, draftedArtifactId: newArtifact.id } : m)
+                );
+              }
               setSidebarOpen(true);
               pendingArtifactRef.current = null;
               setBuildingArtifact(null);
@@ -303,7 +316,7 @@ export const AIDraftProvider = ({ children, projectPath }: AIDraftProviderProps)
                     return {
                       ...m,
                       content: contentBufferRef.current.slice(0, displayedLengthRef.current),
-                      toolCalls: [...(m.toolCalls ?? []), { ...pending.toolCall, result }],
+                      toolCalls: [...(m.toolCalls ?? []), { ...pending.toolCall, result, textPosition: pending.flushAt }],
                     };
                   })
                 );
