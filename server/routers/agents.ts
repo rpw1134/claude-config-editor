@@ -1,13 +1,19 @@
 import express from "express";
 import path from "path";
 import type { NextFunction, Request, Response, Router } from "express";
-import { readFileContent, writeFileContent, writeFileEnsureDir, fileExists, deleteFile } from "../utils/fileIO.js";
+import {
+  readFileContent,
+  writeFileContent,
+  writeFileEnsureDir,
+  fileExists,
+  deleteFile,
+} from "../utils/fileIO.js";
 import { requireProjectPath } from "../utils/parsing.js";
 import { getConfigDir } from "../services/claudeConfig.js";
 import { findRepoRoot, stageFiles } from "../services/versionControl.js";
 
 const router: Router = express.Router();
-
+// TODO: add authentication and check user permissions for the project before allowing these operations
 router.get(
   "/:name",
   async (req: Request, res: Response, next: NextFunction) => {
@@ -32,7 +38,10 @@ router.put(
   "/:name",
   async (req: Request, res: Response, next: NextFunction) => {
     const { name } = req.params;
-    const { projectPath: rawPath, content } = req.body as { projectPath?: unknown; content?: unknown };
+    const { projectPath: rawPath, content } = req.body as {
+      projectPath?: unknown;
+      content?: unknown;
+    };
     const projectPath = requireProjectPath(rawPath, res);
     if (projectPath === null) return;
     if (typeof content !== "string") {
@@ -48,42 +57,53 @@ router.put(
   },
 );
 
-router.post(
-  "/",
-  async (req: Request, res: Response, next: NextFunction) => {
-    const { projectPath: rawPath, name, content } = req.body as {
-      projectPath?: unknown;
-      name?: unknown;
-      content?: unknown;
-    };
-    const projectPath = requireProjectPath(rawPath, res);
-    if (projectPath === null) return;
-    if (typeof name !== "string" || typeof content !== "string") {
-      return res.status(400).json({ message: "name and content must be strings" });
+router.post("/", async (req: Request, res: Response, next: NextFunction) => {
+  const {
+    projectPath: rawPath,
+    name,
+    content,
+  } = req.body as {
+    projectPath?: unknown;
+    name?: unknown;
+    content?: unknown;
+  };
+  const projectPath = requireProjectPath(rawPath, res);
+  if (projectPath === null) return;
+  if (typeof name !== "string" || typeof content !== "string") {
+    return res
+      .status(400)
+      .json({ message: "name and content must be strings" });
+  }
+  if (
+    !name ||
+    name.includes("/") ||
+    name.includes("\\") ||
+    name.includes("..")
+  ) {
+    return res
+      .status(400)
+      .json({ message: "name must not be empty or contain path separators" });
+  }
+  const configDir = getConfigDir(projectPath);
+  const filePath = `${configDir}/agents/${name}.md`;
+  try {
+    if (await fileExists(filePath)) {
+      return res.status(409).json({ message: "Agent already exists" });
     }
-    if (!name || name.includes("/") || name.includes("\\") || name.includes("..")) {
-      return res.status(400).json({ message: "name must not be empty or contain path separators" });
-    }
-    const configDir = getConfigDir(projectPath);
-    const filePath = `${configDir}/agents/${name}.md`;
-    try {
-      if (await fileExists(filePath)) {
-        return res.status(409).json({ message: "Agent already exists" });
-      }
-      await writeFileEnsureDir(filePath, content);
+    await writeFileEnsureDir(filePath, content);
 
-      const repoRoot = await findRepoRoot(configDir) ?? await findRepoRoot(projectPath);
-      if (repoRoot) {
-        const rel = path.relative(repoRoot, filePath);
-        await stageFiles(repoRoot, [rel]);
-      }
-
-      res.status(201).json({ message: "Agent created" });
-    } catch (err) {
-      next(err);
+    const repoRoot =
+      (await findRepoRoot(configDir)) ?? (await findRepoRoot(projectPath));
+    if (repoRoot) {
+      const rel = path.relative(repoRoot, filePath);
+      await stageFiles(repoRoot, [rel]);
     }
-  },
-);
+
+    res.status(201).json({ message: "Agent created" });
+  } catch (err) {
+    next(err);
+  }
+});
 
 router.delete(
   "/:name",

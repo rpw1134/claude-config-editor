@@ -259,11 +259,6 @@ export const ArtifactCard = ({ artifact }: ArtifactCardProps) => {
 
   // ── Hook type ──────────────────────────────────────────────────────────────
   if (artifact.type === "hook") {
-    const hookFields: Record<string, string> = {
-      event: "Event",
-      command: "Command",
-      matcher: "Tool matcher",
-    };
     return (
       <div className="flex flex-col h-full min-h-0">
         <div className="flex-1 min-h-0 overflow-y-auto">
@@ -273,7 +268,7 @@ export const ArtifactCard = ({ artifact }: ArtifactCardProps) => {
             </h2>
             <p className="m-0 text-[13px] text-(--text-muted)">Hook</p>
           </div>
-          <JsonBody content={artifact.content} fields={hookFields} />
+          <JsonBody content={artifact.content} fields={{}} />
         </div>
         <div className="shrink-0 px-5 py-3.5 border-t border-(--border-faint) flex items-center justify-between">
           {artifact.saved ? (

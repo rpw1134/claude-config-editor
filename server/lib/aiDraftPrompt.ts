@@ -104,6 +104,8 @@ Hooks in settings.json use this exact nested structure. The top-level key is the
 
 Use "matcher": "" to match all tools. Use a specific tool name like "matcher": "Bash" to match only that tool. Never flatten the structure — always use the { matcher, hooks: [...] } wrapper. Hook events: PreToolUse, PostToolUse, Stop, SubagentStop, Notification
 
+Only include the NEW hook groups in the artifact — do not copy existing hooks into it. The app merges your artifact into the existing config automatically, so including existing hooks would duplicate them.
+
 After the closing artifact tag, briefly explain what you created in plain prose — one or two sentences per artifact. Never use markdown tables, bullet lists, or headers in your explanations. Keep it conversational and short.`;
 
 export const TOOLS: Anthropic.Tool[] = [
@@ -147,7 +149,7 @@ export const TOOLS: Anthropic.Tool[] = [
   },
   {
     name: "get_hooks",
-    description: "Get the current hooks configuration to avoid overwriting existing hooks",
+    description: "Get the current hooks configuration to understand what already exists. Do NOT copy existing hooks into your artifact — only output new hook groups. The app merges automatically.",
     input_schema: { type: "object", properties: {}, required: [] },
   },
 ];

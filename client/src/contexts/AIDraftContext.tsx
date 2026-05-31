@@ -475,13 +475,18 @@ export const AIDraftProvider = ({ children, projectPath }: AIDraftProviderProps)
             body: JSON.stringify({ projectPath, name: artifact.name, content: artifact.content }),
           });
         } else if (artifact.type === "hook") {
-          // Merge new hook into existing hooks config
+          // Merge new hook groups into existing hooks config.
+          // Artifact content is the full nested format:
+          // { "PreToolUse": [{ matcher: "", hooks: [{ type: "command", command: "..." }] }] }
           const currentRes = await fetch(`${BASE_URL}/api/hooks?projectPath=${encodeURIComponent(projectPath)}`);
           const currentData = await currentRes.json() as { hooks: Record<string, unknown[]> };
           const hooks = currentData.hooks ?? {};
-          const hookConfig = JSON.parse(artifact.content) as { event: string; command: string };
-          const eventKey = hookConfig.event;
-          hooks[eventKey] = [...(hooks[eventKey] ?? []), { command: hookConfig.command }];
+          const hookConfig = JSON.parse(artifact.content) as Record<string, unknown[]>;
+          for (const [event, groups] of Object.entries(hookConfig)) {
+            if (Array.isArray(groups)) {
+              hooks[event] = [...(hooks[event] ?? []), ...groups];
+            }
+          }
           await fetch(`${BASE_URL}/api/hooks`, {
             method: "PUT",
             headers: { "Content-Type": "application/json" },

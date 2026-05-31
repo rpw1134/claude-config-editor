@@ -17,7 +17,7 @@ const INPUT_CLASS =
   "w-full bg-(--bg-base) border border-(--border-subtle) rounded-lg px-3 py-2 text-[13px] text-(--text-primary) placeholder:text-(--text-muted) focus:outline-none focus:border-(--accent) transition-colors";
 
 export const AddHookModal = ({ onConfirm, onClose, fixedEvent, initialGroup }: AddHookModalProps) => {
-  const firstHook = initialGroup?.hooks[0];
+  const firstHook = initialGroup?.hooks?.[0];
   const isEditing = initialGroup != null;
 
   const [event, setEvent] = useState<string>(fixedEvent ?? HOOK_EVENTS[0]);

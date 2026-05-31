@@ -6,12 +6,29 @@ function settingsPath(projectPath: string): string {
   return `${getConfigDir(projectPath)}/settings.json`;
 }
 
+function normalizeLegacyHookEntry(entry: unknown): { matcher: string; hooks: Array<Record<string, unknown>> } {
+  if (typeof entry !== "object" || entry === null) return { matcher: "", hooks: [] };
+  const obj = entry as Record<string, unknown>;
+  if (Array.isArray(obj.hooks)) return obj as { matcher: string; hooks: Array<Record<string, unknown>> };
+  // Legacy flat format: { command: "...", type?: "..." } — wrap it
+  const hookEntry: Record<string, unknown> = { type: obj.type ?? "command" };
+  if (obj.command != null) hookEntry.command = obj.command;
+  if (obj.url != null) hookEntry.url = obj.url;
+  if (obj.timeout != null) hookEntry.timeout = obj.timeout;
+  return { matcher: typeof obj.matcher === "string" ? obj.matcher : "", hooks: [hookEntry] };
+}
+
 export async function getHooks(projectPath: string): Promise<Record<string, unknown[]>> {
   const path = resolveHome(settingsPath(projectPath));
   try {
     const raw = await readFileContent(path);
     const parsed = JSON.parse(raw) as Record<string, unknown>;
-    return (parsed.hooks as Record<string, unknown[]>) ?? {};
+    const rawHooks = (parsed.hooks as Record<string, unknown[]>) ?? {};
+    const normalized: Record<string, unknown[]> = {};
+    for (const [event, groups] of Object.entries(rawHooks)) {
+      normalized[event] = Array.isArray(groups) ? groups.map(normalizeLegacyHookEntry) : [];
+    }
+    return normalized;
   } catch (e) {
     const err = e as NodeJS.ErrnoException;
     if (err.code === "ENOENT") return {};
