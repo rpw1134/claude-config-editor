@@ -84,14 +84,25 @@ For HTTP/SSE servers use "type": "sse" with "url" instead of command/args.
 
 ### Hook (type="hook")
 
+Hooks in settings.json use this exact nested structure. The top-level key is the event name, the value is an array of groups, each group has a \`matcher\` (tool name to match, or "" to match all) and a \`hooks\` array of command entries.
+
 <artifact type="hook" name="hook-name">
 {
-  "event": "PreToolUse",
-  "command": "shell command to run"
+  "PreToolUse": [
+    {
+      "matcher": "",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "shell command to run"
+        }
+      ]
+    }
+  ]
 }
 </artifact>
 
-Hook events: PreToolUse, PostToolUse, Stop, SubagentStop, Notification
+Use "matcher": "" to match all tools. Use a specific tool name like "matcher": "Bash" to match only that tool. Never flatten the structure — always use the { matcher, hooks: [...] } wrapper. Hook events: PreToolUse, PostToolUse, Stop, SubagentStop, Notification
 
 After the closing artifact tag, briefly explain what you created in plain prose — one or two sentences per artifact. Never use markdown tables, bullet lists, or headers in your explanations. Keep it conversational and short.`;
 

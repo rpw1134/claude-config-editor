@@ -66,7 +66,7 @@ export function useHooksEditor(projectPath: string) {
   const deleteHookGroup = useCallback((event: string, index: number) => {
     setHooks((prev) => {
       const updated = { ...prev };
-      updated[event] = prev[event].filter((_, i) => i !== index);
+      updated[event] = (prev[event] ?? []).filter((_, i) => i !== index);
       if (updated[event].length === 0) delete updated[event];
       setRawJson(JSON.stringify(updated, null, 2));
       return updated;

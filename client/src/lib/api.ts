@@ -213,7 +213,7 @@ export async function createProject(path: string): Promise<{ absolutePath: strin
   return res.json() as Promise<{ absolutePath: string; name: string }>;
 }
 
-export type HooksConfig = Record<string, Array<{ matcher: string; hooks: Array<Record<string, unknown>> }>>;
+export type HooksConfig = Record<string, Array<Record<string, unknown>>>;
 
 export async function fetchHooks(projectPath: string): Promise<HooksConfig> {
   const data = await get<{ hooks: HooksConfig }>(

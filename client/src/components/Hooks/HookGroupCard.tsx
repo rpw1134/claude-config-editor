@@ -8,7 +8,7 @@ interface HookEntry {
 }
 
 interface HookGroupCardProps {
-  group: { matcher: string; hooks: HookEntry[] };
+  group: { matcher?: string; hooks?: HookEntry[]; command?: string; type?: string };
   onEdit: () => void;
   onDelete: () => void;
 }
@@ -35,16 +35,27 @@ export const HookGroupCard = ({ group, onEdit, onDelete }: HookGroupCardProps) =
           </span>
         </div>
         <div className="flex flex-col gap-1">
-          {group.hooks.map((h, i) => (
-            <div key={i} className="flex items-center gap-2">
-              <span className="text-[10px] font-semibold uppercase tracking-wider text-(--accent) shrink-0">
-                {h.type ?? "command"}
-              </span>
-              <span className="text-[12px] font-['Fira_Code',monospace] text-(--text-secondary) truncate">
-                {h.command ?? h.url ?? h.prompt ?? ""}
-              </span>
-            </div>
-          ))}
+          {group.hooks
+            ? group.hooks.map((h, i) => (
+                <div key={i} className="flex items-center gap-2">
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-(--accent) shrink-0">
+                    {h.type ?? "command"}
+                  </span>
+                  <span className="text-[12px] font-['Fira_Code',monospace] text-(--text-secondary) truncate">
+                    {h.command ?? h.url ?? h.prompt ?? ""}
+                  </span>
+                </div>
+              ))
+            : group.command && (
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-(--accent) shrink-0">
+                    {group.type ?? "command"}
+                  </span>
+                  <span className="text-[12px] font-['Fira_Code',monospace] text-(--text-secondary) truncate">
+                    {group.command}
+                  </span>
+                </div>
+              )}
         </div>
       </div>
       <div className="shrink-0 flex items-center gap-1">

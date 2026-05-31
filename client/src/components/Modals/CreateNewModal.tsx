@@ -1,7 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { createAgent, createSkill, createMcpServer } from "../../lib/api";
+import { parseSkillFrontmatter } from "../../lib/frontmatter";
+import { validateName } from "../../lib/validation";
 
 type CreateType = "agent" | "skill" | "mcp-server";
+type SkillTab = "new" | "import";
 
 interface CreateNewModalProps {
   type: CreateType;
@@ -61,6 +64,23 @@ export const CreateNewModal = ({
   const inputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
+  const [skillTab, setSkillTab] = useState<SkillTab>("new");
+  const [importContent, setImportContent] = useState("");
+  const [importNameOverride, setImportNameOverride] = useState("");
+  const importTextareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const parsedImport = parseSkillFrontmatter(importContent);
+  const parsedImportName = parsedImport.frontmatter.name?.trim() ?? "";
+  const effectiveImportName = importNameOverride.trim() || parsedImportName;
+  const importNameError = importContent.trim()
+    ? validateName(effectiveImportName)
+    : null;
+  const canSubmitImport =
+    importContent.trim().length > 0 &&
+    effectiveImportName.length > 0 &&
+    importNameError === null &&
+    !submitting;
+
   useEffect(() => {
     inputRef.current?.focus();
   }, []);
@@ -72,12 +92,32 @@ export const CreateNewModal = ({
   }, [step]);
 
   useEffect(() => {
+    if (skillTab === "import") {
+      importTextareaRef.current?.focus();
+    }
+  }, [skillTab]);
+
+  useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
     };
     document.addEventListener("keydown", handler);
     return () => document.removeEventListener("keydown", handler);
   }, [onClose]);
+
+  const handleImportSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!canSubmitImport) return;
+    setSubmitting(true);
+    setError(null);
+    try {
+      await createSkill(projectPath, effectiveImportName, importContent);
+      onSuccess(effectiveImportName);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong");
+      setSubmitting(false);
+    }
+  };
 
   const handleNameSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -148,7 +188,11 @@ export const CreateNewModal = ({
               </span>
             )}
             <h2 className="text-[22px] font-semibold text-(--text-primary) leading-tight font-['Bricolage_Grotesque',sans-serif] m-0">
-              {step === "body" ? "Configure Server" : `New ${label}`}
+              {step === "body"
+                ? "Configure Server"
+                : skillTab === "import"
+                  ? "Import Skill"
+                  : `New ${label}`}
             </h2>
             <p className="mt-2 text-[13px] text-(--text-muted) leading-relaxed">
               {step === "body" ? (
@@ -163,6 +207,8 @@ export const CreateNewModal = ({
                   </code>
                   . The key is the name you just entered.
                 </>
+              ) : skillTab === "import" ? (
+                "Paste your existing skill .md file below."
               ) : (
                 TYPE_SUBTITLES[type]
               )}
@@ -185,8 +231,83 @@ export const CreateNewModal = ({
         {/* Divider */}
         <div className="border-t border-(--border-subtle) my-6" />
 
+        {/* Step: Import (skill only) */}
+        {step === "name" && type === "skill" && skillTab === "import" && (
+          <form onSubmit={handleImportSubmit}>
+            <button
+              type="button"
+              onClick={() => setSkillTab("new")}
+              className="mb-4 text-[13px] text-(--text-muted) hover:text-(--text-secondary) bg-transparent border-none cursor-pointer transition-colors duration-150 p-0 flex items-center gap-1"
+            >
+              ← back
+            </button>
+            <label className="block text-[11px] font-medium text-(--text-muted) tracking-widest uppercase mb-3">
+              Skill file content
+            </label>
+            <textarea
+              ref={importTextareaRef}
+              rows={10}
+              value={importContent}
+              onChange={(e) => setImportContent(e.target.value)}
+              disabled={submitting}
+              placeholder={
+                "---\nname: my-skill\ndescription: What this skill does\n---\n\nYour skill instructions here."
+              }
+              className={[
+                'w-full font-["Fira_Code",monospace] text-[13px] text-(--text-primary)',
+                "bg-(--bg-elevated) rounded-xl px-4 py-3 resize-none outline-none transition-colors leading-relaxed box-border",
+                "focus:border-(--accent) border border-(--border-subtle)",
+              ].join(" ")}
+            />
+
+            <div className="mt-3">
+              <label className="block text-[11px] font-medium text-(--text-muted) tracking-widest uppercase mb-2">
+                Name
+              </label>
+              <input
+                type="text"
+                value={importNameOverride || parsedImportName}
+                onChange={(e) => setImportNameOverride(e.target.value)}
+                disabled={submitting}
+                placeholder={parsedImportName || "extracted from frontmatter"}
+                className={[
+                  'w-full px-4 py-2.5 rounded-xl text-[14px] font-["Fira_Code",monospace]',
+                  "bg-(--bg-elevated) text-(--text-primary) outline-none transition-colors duration-150 box-border",
+                  importNameError
+                    ? "border border-(--error)"
+                    : "border border-(--border-subtle) focus:border-(--accent)",
+                ].join(" ")}
+              />
+              {importNameError && importContent.trim() && (
+                <p className="mt-1.5 text-[12px] text-(--error) font-['Fira_Code',monospace]">
+                  {importNameError}
+                </p>
+              )}
+            </div>
+
+            {error && (
+              <p className="mt-2 text-[12px] text-(--error) font-['Fira_Code',monospace]">
+                {error}
+              </p>
+            )}
+
+            <button
+              type="submit"
+              disabled={!canSubmitImport}
+              className={[
+                "w-full mt-6 py-3 rounded-xl text-[14px] font-semibold transition-colors duration-150",
+                canSubmitImport
+                  ? "border border-(--border-subtle) bg-(--bg-elevated) text-(--text-primary) cursor-pointer hover:bg-(--bg-hover)"
+                  : "bg-(--bg-elevated) text-(--text-muted) border border-(--border-subtle) cursor-not-allowed",
+              ].join(" ")}
+            >
+              {submitting ? "Importing…" : "Import Skill"}
+            </button>
+          </form>
+        )}
+
         {/* Step: Name */}
-        {step === "name" && (
+        {step === "name" && (type !== "skill" || skillTab === "new") && (
           <form onSubmit={handleNameSubmit}>
             <label className="block text-[11px] font-medium text-(--text-muted) tracking-widest uppercase mb-3">
               Name
@@ -230,6 +351,17 @@ export const CreateNewModal = ({
                   ? "Continue →"
                   : `Create ${label}`}
             </button>
+            {type === "skill" && (
+              <div className="mt-4 text-center">
+                <button
+                  type="button"
+                  onClick={() => setSkillTab("import")}
+                  className="text-[13px] text-(--text-muted) hover:text-(--text-secondary) bg-transparent border-none cursor-pointer transition-colors duration-150 p-0"
+                >
+                  or import from file
+                </button>
+              </div>
+            )}
           </form>
         )}
 

@@ -39,8 +39,10 @@ const TabButton = ({
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 interface HookGroup {
-  matcher: string;
-  hooks: Array<{ type?: string; command?: string; url?: string; timeout?: number }>;
+  matcher?: string;
+  hooks?: Array<{ type?: string; command?: string; url?: string; timeout?: number }>;
+  command?: string;
+  type?: string;
 }
 
 interface HooksEventDetailProps {

@@ -30,6 +30,7 @@ interface StepNameProps {
   onContinue: () => void;
   projectPath: string;
   inputRef?: React.RefObject<HTMLInputElement | null>;
+  onSwitchToPaste?: () => void;
 }
 
 export const StepName = ({
@@ -39,6 +40,7 @@ export const StepName = ({
   onContinue,
   projectPath,
   inputRef,
+  onSwitchToPaste,
 }: StepNameProps) => {
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") onContinue();
@@ -76,7 +78,7 @@ export const StepName = ({
         ].join(" ")}
       />
       {error && <InlineError message={error} />}
-      <div className="mt-6">
+      <div className="mt-6 flex items-center gap-4">
         <button
           onClick={onContinue}
           className="flex items-center gap-2 px-5 py-2.75 rounded-2.5 border border-(--border-subtle) bg-(--bg-elevated) text-(--text-primary) text-[15px] font-semibold cursor-pointer transition-colors duration-150 hover:bg-(--bg-hover)"
@@ -84,6 +86,15 @@ export const StepName = ({
           Continue
           <ArrowRightIcon />
         </button>
+        {onSwitchToPaste && (
+          <button
+            type="button"
+            onClick={onSwitchToPaste}
+            className="text-[13px] text-(--text-muted) hover:text-(--text-secondary) bg-transparent border-none cursor-pointer transition-colors duration-150 p-0"
+          >
+            or paste definition
+          </button>
+        )}
       </div>
     </div>
   );

@@ -9,6 +9,9 @@ import { StepDescription } from "./steps/StepDescription";
 import { StepOptions } from "./steps/StepOptions";
 import { StepSystemPrompt } from "./steps/StepSystemPrompt";
 import { XIcon } from "../Icons";
+import { AgentPastePanel } from "./AgentPastePanel";
+
+type AgentCreateMode = "wizard" | "paste";
 
 export interface AgentCreateFlowProps {
   projectPath: string;
@@ -70,6 +73,7 @@ export const AgentCreateFlow = ({
     hasData,
   } = useAgentCreateForm(projectPath, onCreated);
 
+  const [mode, setMode] = useState<AgentCreateMode>("wizard");
   const [showDiscardModal, setShowDiscardModal] = useState(false);
   const submitted = useRef(false);
 
@@ -81,6 +85,7 @@ export const AgentCreateFlow = ({
   const blocker = useBlocker(
     ({ currentLocation, nextLocation }) =>
       currentLocation.pathname !== nextLocation.pathname &&
+      mode === "wizard" &&
       hasData &&
       !submitted.current,
   );
@@ -107,13 +112,20 @@ export const AgentCreateFlow = ({
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && !showDiscardModal) setShowDiscardModal(true);
+      if (e.key === "Escape" && !showDiscardModal) {
+        if (mode === "paste") {
+          setMode("wizard");
+        } else {
+          setShowDiscardModal(true);
+        }
+      }
     };
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
-  }, [showDiscardModal]);
+  }, [showDiscardModal, mode, onCancel]);
 
   useEffect(() => {
+    if (mode !== "wizard") return;
     const t = setTimeout(() => {
       if (step === 0) nameInputRef.current?.focus();
       if (step === 1) descriptionRef.current?.focus();
@@ -121,7 +133,7 @@ export const AgentCreateFlow = ({
       if (step === 3) systemPromptRef.current?.focus();
     }, 380);
     return () => clearTimeout(t);
-  }, [step]);
+  }, [step, mode]);
 
   const steps = [
     <StepName
@@ -135,6 +147,7 @@ export const AgentCreateFlow = ({
       onContinue={handleStep1Continue}
       projectPath={projectPath}
       inputRef={nameInputRef}
+      onSwitchToPaste={() => setMode("paste")}
     />,
     <StepDescription
       key="desc"
@@ -251,22 +264,37 @@ export const AgentCreateFlow = ({
       )}
 
       <button
-        onClick={() => setShowDiscardModal(true)}
+        onClick={() => {
+          if (mode === "paste") {
+            setMode("wizard");
+          } else {
+            setShowDiscardModal(true);
+          }
+        }}
         aria-label="Discard and exit"
         className="absolute top-7 left-8 z-10 flex items-center justify-center w-8 h-8 rounded-full text-(--text-muted) bg-transparent border-none cursor-pointer transition-colors duration-150 hover:text-(--text-secondary) hover:bg-(--bg-hover) focus-visible:outline-2 focus-visible:outline-(--accent) focus-visible:outline-offset-2"
       >
         <XIcon />
       </button>
 
-      {/* Dots pinned to top */}
-      <div className="absolute top-8 left-0 right-0 flex justify-center z-10 pointer-events-none">
-        <div className="pointer-events-auto">
-          <StepDots total={TOTAL_STEPS} current={step} onGoTo={goTo} />
+      {/* Dots pinned to top — wizard only */}
+      {mode === "wizard" && (
+        <div className="absolute top-8 left-0 right-0 flex justify-center z-10 pointer-events-none">
+          <div className="pointer-events-auto">
+            <StepDots total={TOTAL_STEPS} current={step} onGoTo={goTo} />
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* Track */}
-      <div
+      {/* Paste mode */}
+      {mode === "paste" && (
+        <div className="flex-1 flex flex-col items-center justify-center px-14 py-20 overflow-y-auto">
+          <AgentPastePanel projectPath={projectPath} onCreated={onCreated} />
+        </div>
+      )}
+
+      {/* Wizard track */}
+      {mode === "wizard" && <div
         style={{
           position: "absolute",
           top: 0,
@@ -402,7 +430,7 @@ export const AgentCreateFlow = ({
             </div>
           );
         })}
-      </div>
+      </div>}
     </div>
   );
 };
