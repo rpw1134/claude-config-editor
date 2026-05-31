@@ -38,9 +38,15 @@ router.put(
     if (typeof content !== "string") {
       return res.status(400).json({ message: "content must be a string" });
     }
-    const filePath = `${getConfigDir(projectPath)}/skills/${name}/SKILL.md`;
+    const configDir = getConfigDir(projectPath);
+    const filePath = `${configDir}/skills/${name}/SKILL.md`;
     try {
       await writeFileContent(filePath, content);
+      const repoRoot = await findRepoRoot(configDir) ?? await findRepoRoot(projectPath);
+      if (repoRoot) {
+        const rel = path.relative(repoRoot, filePath);
+        await stageFiles(repoRoot, [rel]);
+      }
       res.status(200).json({ message: "Skill saved" });
     } catch (err) {
       next(err);

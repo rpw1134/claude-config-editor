@@ -133,7 +133,7 @@ export const HooksEventDetail = ({
   const isGlobal = projectPath.endsWith("/.claude");
 
   return (
-    <div className="flex flex-col flex-1 min-h-0 bg-(--bg-base)">
+    <div className="flex flex-col flex-1 min-h-0 min-w-0 bg-(--bg-base)">
       {/* Header — matches McpEditorPane exactly */}
       <div className="shrink-0 flex items-stretch justify-between border-b border-(--border-faint) px-4">
         <div className="flex items-stretch gap-1">
@@ -169,7 +169,7 @@ export const HooksEventDetail = ({
 
       {/* Visual tab */}
       {activeTab === "visual" && (
-        <div className="flex-1 min-h-0 overflow-y-auto px-8 py-8">
+        <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-8 py-8">
           <div className="flex items-center justify-between mb-6">
             <div>
               <h2 className='m-0 mb-1 text-2xl font-["Bricolage_Grotesque",sans-serif] font-bold tracking-[-0.015em] text-(--text-primary)'>
@@ -200,7 +200,7 @@ export const HooksEventDetail = ({
               </button>
             </div>
           ) : (
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-2 min-w-0">
               {groups.map((group, i) => (
                 <HookGroupCard
                   key={i}

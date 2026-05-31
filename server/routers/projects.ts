@@ -1,7 +1,9 @@
 import express from "express";
+import nodePath from "path";
 import type { NextFunction, Request, Response, Router } from "express";
 import { createProject, deleteProject, getProjectContent, listProjects, setProjectContent } from "../services/claudeConfig.js";
-import { requireProjectPath } from "../utils/parsing.js";
+import { requireProjectPath, resolveHome } from "../utils/parsing.js";
+import { findRepoRoot, stageFiles } from "../services/versionControl.js";
 
 const router: Router = express.Router();
 
@@ -45,6 +47,12 @@ router.put("/file", async (req: Request, res: Response, next: NextFunction) => {
   }
   try {
     await setProjectContent(path, content);
+    const claudeMdPath = resolveHome(`${path}/CLAUDE.md`);
+    const repoRoot = (await findRepoRoot(path)) ?? null;
+    if (repoRoot) {
+      const rel = nodePath.relative(repoRoot, claudeMdPath);
+      await stageFiles(repoRoot, [rel]);
+    }
     res.json({ message: "Project saved" });
   } catch (err) {
     const error = err as Error;

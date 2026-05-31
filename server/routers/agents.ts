@@ -13,7 +13,6 @@ import { getConfigDir } from "../services/claudeConfig.js";
 import { findRepoRoot, stageFiles } from "../services/versionControl.js";
 
 const router: Router = express.Router();
-// TODO: add authentication and check user permissions for the project before allowing these operations
 router.get(
   "/:name",
   async (req: Request, res: Response, next: NextFunction) => {
@@ -47,9 +46,16 @@ router.put(
     if (typeof content !== "string") {
       return res.status(400).json({ message: "content must be a string" });
     }
-    const filePath = `${getConfigDir(projectPath)}/agents/${name}.md`;
+    const configDir = getConfigDir(projectPath);
+    const filePath = `${configDir}/agents/${name}.md`;
     try {
       await writeFileContent(filePath, content);
+      const repoRoot =
+        (await findRepoRoot(configDir)) ?? (await findRepoRoot(projectPath));
+      if (repoRoot) {
+        const rel = path.relative(repoRoot, filePath);
+        await stageFiles(repoRoot, [rel]);
+      }
       res.status(200).json({ message: "Agent saved" });
     } catch (err) {
       next(err);

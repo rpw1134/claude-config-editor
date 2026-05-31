@@ -493,7 +493,6 @@ export const AIDraftProvider = ({ children, projectPath }: AIDraftProviderProps)
             body: JSON.stringify({ projectPath, hooks }),
           });
         } else if (artifact.type === "link") {
-          // Parse agent/skill/trigger from link content and inject a skill trigger into the agent
           const linkData: Record<string, string> = {};
           for (const line of artifact.content.trim().split("\n")) {
             const idx = line.indexOf(":");
@@ -505,14 +504,50 @@ export const AIDraftProvider = ({ children, projectPath }: AIDraftProviderProps)
             return;
           }
           const skillSection = `\n\n## Linked Skill: ${skillName}\n\nWhen ${trigger ?? "triggered"}, invoke the \`${skillName}\` skill using \`/${skillName}\`.`;
-          // Apply to the session agent artifact if present so the user can review before saving
+
+          // Use session artifact content if present, otherwise fetch from disk
           const sessionAgent = artifacts.find((a) => a.name === agentName && a.type === "agent");
+          let agentContent: string;
+          if (sessionAgent) {
+            agentContent = sessionAgent.content;
+          } else {
+            const agentRes = await fetch(
+              `${BASE_URL}/api/agents/${encodeURIComponent(agentName)}?projectPath=${encodeURIComponent(projectPath)}`
+            );
+            if (!agentRes.ok) {
+              showToast(`Agent "${agentName}" not found — save the agent first`, "error");
+              return;
+            }
+            agentContent = ((await agentRes.json()) as { content: string }).content;
+          }
+
+          const updatedContent = agentContent + skillSection;
+
+          // Write the updated agent to disk (stages it via the PUT handler)
+          const putRes = await fetch(`${BASE_URL}/api/agents/${encodeURIComponent(agentName)}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ projectPath, content: updatedContent }),
+          });
+          if (!putRes.ok && putRes.status !== 404) throw new Error("Failed to save agent");
+          if (putRes.status === 404) {
+            const postRes = await fetch(`${BASE_URL}/api/agents`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ projectPath, name: agentName, content: updatedContent }),
+            });
+            if (!postRes.ok) throw new Error("Failed to create agent");
+          }
+
+          // Mark the session agent as saved with updated content
           if (sessionAgent) {
             setArtifacts((prev) =>
-              prev.map((a) => (a.id === sessionAgent.id ? { ...a, content: a.content + skillSection, saved: false } : a))
+              prev.map((a) =>
+                a.id === sessionAgent.id ? { ...a, content: updatedContent, saved: true } : a
+              )
             );
           }
-          showToast(`Link saved`, "success");
+          showToast(`${agentName} saved`, "success");
         }
         setArtifacts((prev) =>
           prev.map((a) => (a.id === id ? { ...a, saved: true } : a))
@@ -528,7 +563,23 @@ export const AIDraftProvider = ({ children, projectPath }: AIDraftProviderProps)
 
   const saveAll = useCallback(async () => {
     const unsaved = artifacts.filter((a) => !a.saved);
-    for (const a of unsaved) {
+    const links = unsaved.filter((a) => a.type === "link");
+    const others = unsaved.filter((a) => a.type !== "link");
+
+    // Collect agent names that links will save, so we don't double-save them
+    const agentNamesSavedByLinks = new Set<string>();
+    for (const a of links) {
+      for (const line of a.content.trim().split("\n")) {
+        const idx = line.indexOf(":");
+        if (idx !== -1 && line.slice(0, idx).trim() === "agent") {
+          agentNamesSavedByLinks.add(line.slice(idx + 1).trim());
+        }
+      }
+    }
+
+    for (const a of links) await saveArtifact(a.id);
+    for (const a of others) {
+      if (a.type === "agent" && agentNamesSavedByLinks.has(a.name)) continue;
       await saveArtifact(a.id);
     }
   }, [artifacts, saveArtifact]);

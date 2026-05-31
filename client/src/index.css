@@ -515,3 +515,17 @@ a {
   font-size: 13px;
   font-family: "Fira Code", monospace;
 }
+
+/* ── Shell syntax highlighting (hljs-stryde scope) ─────────────────────────── */
+
+.hljs-stryde .hljs-keyword,
+.hljs-stryde .hljs-built_in         { color: #7C4DFF; }   /* purple — builtins & keywords */
+.hljs-stryde .hljs-string           { color: #C3E88D; }   /* green — strings */
+.hljs-stryde .hljs-variable,
+.hljs-stryde .hljs-variable.hljs-language_ { color: #00E5FF; } /* cyan — $vars */
+.hljs-stryde .hljs-comment          { color: var(--text-muted); font-style: italic; }
+.hljs-stryde .hljs-number           { color: #F78C6C; }   /* orange — numbers */
+.hljs-stryde .hljs-literal          { color: #F78C6C; }
+.hljs-stryde .hljs-title.function_  { color: #82AAFF; }   /* blue — function names */
+.hljs-stryde .hljs-subst            { color: var(--text-primary); }
+.hljs-stryde .hljs-meta             { color: var(--text-muted); }

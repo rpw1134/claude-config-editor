@@ -58,7 +58,7 @@ export const HooksPage = ({ projectPath }: HooksPageProps) => {
   }
 
   return (
-    <div className="flex flex-col flex-1 min-h-0 bg-(--bg-base)">
+    <div className="flex flex-col flex-1 min-h-0 min-w-0 bg-(--bg-base)">
       {blocker.state === "blocked" && (
         <UnsavedModal
           onLeave={() => blocker.proceed()}
