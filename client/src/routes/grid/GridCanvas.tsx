@@ -19,12 +19,17 @@ import "@xyflow/react/dist/style.css";
 import { OrchestratorNode } from "../../components/Grid/nodes/OrchestratorNode";
 import { AgentNode } from "../../components/Grid/nodes/AgentNode";
 import { SkillNode } from "../../components/Grid/nodes/SkillNode";
+import { McpNode } from "../../components/Grid/nodes/McpNode";
+import { HookNode } from "../../components/Grid/nodes/HookNode";
 import { GridEdgeComponent } from "../../components/Grid/GridEdge";
+import { isValidPair } from "../../types/grids";
 
 const nodeTypes: NodeTypes = {
   orchestrator: OrchestratorNode as unknown as NodeTypes[string],
   agent: AgentNode as unknown as NodeTypes[string],
   skill: SkillNode as unknown as NodeTypes[string],
+  mcp: McpNode as unknown as NodeTypes[string],
+  hook: HookNode as unknown as NodeTypes[string],
 };
 
 const edgeTypes: EdgeTypes = {
@@ -62,13 +67,8 @@ export const GridCanvas = ({
   const checkConnection = useCallback<IsValidConnection>((connectionOrEdge) => {
     const src = nodeMap.current.get(connectionOrEdge.source ?? "") ?? null;
     const tgt = nodeMap.current.get(connectionOrEdge.target ?? "") ?? null;
-    if (!src || !tgt) return false;
-    if (src.id === tgt.id) return false;
-    const types = new Set([src.type, tgt.type]);
-    if (types.has("orchestrator") && types.has("agent")) return true;
-    if (types.has("agent") && types.has("skill")) return true;
-    if (src.type === "agent" && tgt.type === "agent") return true;
-    return false;
+    if (!src || !tgt || src.id === tgt.id) return false;
+    return isValidPair(src.type as Parameters<typeof isValidPair>[0], tgt.type as Parameters<typeof isValidPair>[1]);
   }, []);
 
   const handleConnect = useCallback(

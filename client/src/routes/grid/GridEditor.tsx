@@ -10,6 +10,7 @@ import { GridCanvas } from './GridCanvas';
 import { HistoryTab } from './HistoryTab';
 import { SettingsTab } from './SettingsTab';
 import { EdgeDescriptionModal } from '../../components/Grid/EdgeDescriptionModal';
+import type { GridNode } from '../../types/grids';
 
 function GridEditorInner({
   projectPath,
@@ -81,7 +82,7 @@ function GridEditorInner({
   const handleDrop = useCallback(
     (e: React.DragEvent<HTMLDivElement>) => {
       e.preventDefault();
-      const type = e.dataTransfer.getData('application/grid-node-type') as 'agent' | 'skill';
+      const type = e.dataTransfer.getData('application/grid-node-type') as GridNode['type'];
       const name = e.dataTransfer.getData('application/grid-node-name');
       if (!type || !name) return;
 
@@ -90,10 +91,27 @@ function GridEditorInner({
         ? (JSON.parse(offsetRaw) as { offsetX: number; offsetY: number })
         : {};
 
-      addNode(type, name, screenToFlowPosition({ x: e.clientX - offsetX, y: e.clientY - offsetY }));
+      const extraRaw = e.dataTransfer.getData('application/grid-node-extra');
+      const extra = extraRaw ? (JSON.parse(extraRaw) as Partial<GridNode['data']>) : undefined;
+
+      addNode(type, name, screenToFlowPosition({ x: e.clientX - offsetX, y: e.clientY - offsetY }), extra);
     },
     [screenToFlowPosition, addNode],
   );
+
+  const handleHookCreate = useCallback(
+    (name: string, event: GridNode['data']['hookEvent'], command: string) => {
+      const center = screenToFlowPosition({ x: window.innerWidth / 2, y: window.innerHeight / 2 });
+      addNode('hook', name, center, { hookEvent: event, hookCommand: command });
+    },
+    [screenToFlowPosition, addNode],
+  );
+
+  // Auto-confirm edges that need no modal (mcp→skill, hook→skill, *→knowledge)
+  useEffect(() => {
+    if (!pendingConnection?.noModal) return;
+    confirmConnection('');
+  }, [pendingConnection, confirmConnection]);
 
   const handleDeleted = useCallback(() => {
     onBumpGridsRefresh();
@@ -171,9 +189,13 @@ function GridEditorInner({
         )}
       </div>
 
-      {pendingConnection && (
+      {pendingConnection && !pendingConnection.noModal && (
         <EdgeDescriptionModal
-          onConfirm={confirmConnection}
+          sourceType={pendingConnection.sourceType}
+          targetType={pendingConnection.targetType}
+          sourceLabel={pendingConnection.sourceLabel}
+          targetLabel={pendingConnection.targetLabel}
+          onConfirm={(description, isKnowledge) => confirmConnection(description, isKnowledge)}
           onCancel={cancelConnection}
         />
       )}

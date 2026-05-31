@@ -3,6 +3,8 @@ import { createPortal } from 'react-dom';
 import { BaseEdge, EdgeLabelRenderer, getBezierPath } from '@xyflow/react';
 import { EdgeDescriptionModal } from './EdgeDescriptionModal';
 
+import type { NodeType } from '../../types/grids';
+
 interface GridEdgeProps {
   id: string;
   sourceX: number;
@@ -13,6 +15,11 @@ interface GridEdgeProps {
   targetPosition: import('@xyflow/react').Position;
   data?: {
     description?: string;
+    sourceType?: NodeType;
+    targetType?: NodeType;
+    // Legacy flags kept for backward compat with saved grids
+    isKnowledge?: boolean;
+    isMcpRelation?: boolean;
     onUpdateEdge?: (edgeId: string, description: string) => void;
   };
   selected?: boolean;
@@ -40,11 +47,39 @@ export const GridEdgeComponent = ({
     targetPosition,
   });
 
+  const isKnowledge = data?.isKnowledge ?? false;
+  const isMcpSkill =
+    (data?.sourceType === 'mcp' && data?.targetType === 'skill') ||
+    (data?.isMcpRelation ?? false); // legacy compat
   const description = data?.description ?? '';
   const label = description.length > 30 ? description.slice(0, 28) + '…' : description;
 
+  // Knowledge skill: purple, solid
+  // MCP relation: green, dotted
+  // Regular: cyan, dashed animated
+  const edgeStyle = isKnowledge
+    ? {
+        stroke: selected ? 'rgba(167,139,250,0.9)' : 'rgba(167,139,250,0.5)',
+        strokeWidth: selected ? 2 : 1.5,
+        strokeDasharray: undefined,
+      }
+    : isMcpSkill
+    ? {
+        stroke: selected ? 'rgba(52,211,153,1)' : 'rgba(52,211,153,0.65)',
+        strokeWidth: selected ? 2 : 1.5,
+        strokeDasharray: '3 5',
+      }
+    : {
+        stroke: selected ? 'rgba(0,229,255,0.85)' : 'rgba(0,229,255,0.45)',
+        strokeWidth: selected ? 2 : 1.5,
+        strokeDasharray: '6 3',
+        animation: 'gridEdgeDash 1.2s linear infinite',
+      };
+
+  const canEdit = !isKnowledge && !isMcpSkill && !!data?.onUpdateEdge;
+
   const handleLabelClick = () => {
-    if (data?.onUpdateEdge) setEditing(true);
+    if (canEdit) setEditing(true);
   };
 
   const handleSave = (newDescription: string) => {
@@ -52,20 +87,13 @@ export const GridEdgeComponent = ({
     setEditing(false);
   };
 
+  const handleEditConfirm = (desc: string) => handleSave(desc);
+
   return (
     <>
-      <BaseEdge
-        id={id}
-        path={edgePath}
-        style={{
-          stroke: selected ? 'rgba(0,229,255,0.85)' : 'rgba(0,229,255,0.45)',
-          strokeWidth: selected ? 2 : 1.5,
-          strokeDasharray: '6 3',
-          animation: 'gridEdgeDash 1.2s linear infinite',
-        }}
-      />
+      <BaseEdge id={id} path={edgePath} style={edgeStyle} />
       <EdgeLabelRenderer>
-        {label ? (
+        {isKnowledge || isMcpSkill ? null : label ? (
           <button
             onClick={handleLabelClick}
             style={{ transform: `translate(-50%, -50%) translate(${labelX}px,${labelY}px)` }}
@@ -74,7 +102,7 @@ export const GridEdgeComponent = ({
             {label}
           </button>
         ) : (
-          data?.onUpdateEdge && (
+          canEdit && (
             <button
               onClick={handleLabelClick}
               style={{ transform: `translate(-50%, -50%) translate(${labelX}px,${labelY}px)` }}
@@ -88,8 +116,13 @@ export const GridEdgeComponent = ({
 
       {editing && createPortal(
         <EdgeDescriptionModal
+          sourceType={data?.sourceType ?? 'agent'}
+          targetType={data?.targetType ?? 'agent'}
+          sourceLabel=""
+          targetLabel=""
           initialDescription={description}
-          onConfirm={handleSave}
+          initialIsKnowledge={isKnowledge}
+          onConfirm={handleEditConfirm}
           onCancel={() => setEditing(false)}
         />,
         document.body,
