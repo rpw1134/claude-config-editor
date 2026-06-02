@@ -68,18 +68,18 @@ export const AIDraftUnsavedModal = ({
           </ul>
         )}
 
-        <div className={`flex items-center gap-3 ${!hasUnsaved ? "mt-6" : ""}`}>
-          <button
-            onClick={onKeep}
-            className="text-[13px] font-semibold text-(--accent) bg-(--accent)/10 border border-(--accent)/20 px-5 py-2.5 rounded-xl cursor-pointer hover:bg-(--accent)/15 transition-all duration-150"
-          >
-            Stay
-          </button>
+        <div className={`flex items-center gap-4 ${!hasUnsaved ? "mt-6" : ""}`}>
           <button
             onClick={onLeave}
-            className="text-[13px] font-semibold text-red-400 bg-red-500/10 border border-red-500/20 px-5 py-2.5 rounded-xl cursor-pointer hover:bg-red-500/15 transition-all duration-150"
+            className="text-[13px] font-medium text-red-400 bg-transparent border border-red-500/30 px-3 py-1.5 rounded-lg cursor-pointer hover:bg-red-500/10 transition-colors duration-150"
           >
             {hasUnsaved ? "Leave and discard" : "Leave"}
+          </button>
+          <button
+            onClick={onKeep}
+            className="text-[13px] text-(--text-muted) bg-transparent border-none cursor-pointer hover:text-(--text-secondary) transition-colors duration-150"
+          >
+            Stay
           </button>
         </div>
       </div>

@@ -75,7 +75,7 @@ export const DeleteProjectModal = ({
       >
         {/* Header */}
         <div className="flex items-start justify-between mb-6">
-          <h2 className='text-[22px] font-semibold text-(--text-primary) leading-tight font-["Bricolage_Grotesque",sans-serif] m-0'>
+          <h2 className='text-[20px] font-semibold text-(--text-primary) leading-tight font-["Bricolage_Grotesque",sans-serif] m-0'>
             Delete project?
           </h2>
           <button
@@ -141,16 +141,16 @@ export const DeleteProjectModal = ({
         )}
 
         {/* Actions */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-4">
           <button
             type="button"
             onClick={handleDelete}
             disabled={!isConfirmed || deleting}
             className={[
-              "flex-1 py-3 rounded-xl text-[14px] font-semibold transition-colors duration-150 border-none",
+              "text-[13px] font-medium px-3 py-1.5 rounded-lg border transition-colors duration-150",
               isConfirmed && !deleting
-                ? "bg-(--error) text-white cursor-pointer hover:opacity-90"
-                : "bg-(--bg-elevated) text-(--text-muted) border border-(--border-subtle) cursor-not-allowed",
+                ? "text-red-400 bg-transparent border-red-500/30 cursor-pointer hover:bg-red-500/10"
+                : "text-(--text-muted) bg-transparent border-(--border-subtle) cursor-not-allowed opacity-40",
             ].join(" ")}
           >
             {deleting ? "Deleting…" : "Delete project"}
@@ -158,7 +158,7 @@ export const DeleteProjectModal = ({
           <button
             type="button"
             onClick={onClose}
-            className="text-[14px] text-(--text-muted) bg-transparent border-none cursor-pointer transition-colors duration-150 hover:text-(--text-secondary)"
+            className="text-[13px] text-(--text-muted) bg-transparent border-none cursor-pointer transition-colors duration-150 hover:text-(--text-secondary)"
           >
             Cancel
           </button>

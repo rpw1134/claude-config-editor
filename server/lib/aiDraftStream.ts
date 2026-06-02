@@ -10,6 +10,7 @@ import {
 import { getHooks } from "../services/hooksService.js";
 import { readFileContent } from "../utils/fileIO.js";
 import { SYSTEM_PROMPT, TOOLS } from "./aiDraftPrompt.js";
+import { listMcpRegistryNames, getMcpRegistryServer } from "./mcpRegistry.js";
 import {
   sendEvent,
   processTextChunk,
@@ -89,6 +90,15 @@ async function executeToolCall(
     case "get_hooks": {
       const hooks = await getHooks(projectPath);
       return JSON.stringify(hooks);
+    }
+    case "list_mcp_registry": {
+      return JSON.stringify(listMcpRegistryNames());
+    }
+    case "get_mcp_registry_server": {
+      const serverName = input.name as string;
+      const template = getMcpRegistryServer(serverName);
+      if (!template) return `No registry template found for "${serverName}".`;
+      return JSON.stringify(template);
     }
     default:
       return `Unknown tool: ${name}`;
