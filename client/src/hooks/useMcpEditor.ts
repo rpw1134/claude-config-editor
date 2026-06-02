@@ -25,6 +25,9 @@ export function useMcpEditor(name: string, projectPath: string, onDeleted: () =>
   // Raw JSON state (for JSON tab)
   const [rawJson, setRawJson] = useState("{}");
   const [savedJson, setSavedJson] = useState("{}");
+  // True only when the user has actually typed in the JSON editor (not when
+  // handleTabChange syncs the configured form values into rawJson).
+  const [jsonEdited, setJsonEdited] = useState(false);
 
   // Configure tab state
   const [serverType, setServerType] = useState<"stdio" | "http">("stdio");
@@ -44,8 +47,9 @@ export function useMcpEditor(name: string, projectPath: string, onDeleted: () =>
   const setAuthTypeDirty = (v: AuthType) => { setAuthType(v); setConfigDirty(true); };
   const setTokenDirty = (v: string) => { setToken(v); setConfigDirty(true); };
 
-  // Derived dirty state
-  const dirty = configDirty || rawJson !== savedJson;
+  // Derived dirty state — jsonEdited only flips true when the user actually
+  // types in the JSON editor; tab-switching sync (handleTabChange) does not count.
+  const dirty = configDirty || jsonEdited;
 
   // Save / delete state
   const [saving, setSaving] = useState(false);
@@ -60,6 +64,7 @@ export function useMcpEditor(name: string, projectPath: string, onDeleted: () =>
         setRawJson(content);
         setSavedJson(content);
         setConfigDirty(false);
+        setJsonEdited(false);
         try {
           const parsed = JSON.parse(content);
           if ("command" in parsed) {
@@ -133,6 +138,7 @@ export function useMcpEditor(name: string, projectPath: string, onDeleted: () =>
       setRawJson(content);
       setSavedJson(content);
       setConfigDirty(false);
+      setJsonEdited(false);
       refreshVc();
     } catch {
       // save failed — dirty state preserved so user can retry
@@ -148,6 +154,7 @@ export function useMcpEditor(name: string, projectPath: string, onDeleted: () =>
       await updateMcpServerContent(projectPath, name, rawJson);
       setSavedJson(rawJson);
       setConfigDirty(false);
+      setJsonEdited(false);
       refreshVc();
     } catch {
       // save failed — dirty state preserved so user can retry
@@ -212,6 +219,7 @@ export function useMcpEditor(name: string, projectPath: string, onDeleted: () =>
     // json
     rawJson,
     setRawJson,
+    setRawJsonDirty: (v: string) => { setRawJson(v); setJsonEdited(true); },
     // status
     dirty,
     saving,

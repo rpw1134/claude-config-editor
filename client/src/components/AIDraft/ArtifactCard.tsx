@@ -304,9 +304,26 @@ export const ArtifactCard = ({ artifact }: ArtifactCardProps) => {
 
   // ── Agent / Skill / CLAUDE.md ──────────────────────────────────────────────
   const bodyLabel = BODY_LABELS[artifact.type] ?? "Content";
+
+  // For skills, strip the <skill.md> wrapper before parsing frontmatter
+  const skillMdContent = artifact.type === "skill"
+    ? (artifact.content.match(/<skill\.md>([\s\S]*?)<\/skill\.md>/))?.[1]?.trim() ?? artifact.content
+    : artifact.content;
+
+  // Extract embedded scripts for display
+  const embeddedScripts: string[] = [];
+  if (artifact.type === "skill") {
+    const scriptsMatch = artifact.content.match(/<scripts>([\s\S]*?)<\/scripts>/);
+    if (scriptsMatch) {
+      const re = /<script name="([^"]+)">/g;
+      let m;
+      while ((m = re.exec(scriptsMatch[1])) !== null) embeddedScripts.push(m[1]);
+    }
+  }
+
   const parsed =
     artifact.type === "skill"
-      ? parseSkillFrontmatter(artifact.content)
+      ? parseSkillFrontmatter(skillMdContent)
       : parseFrontmatter(artifact.content);
   const { frontmatter, body } = parsed;
   const fm = frontmatter as Record<string, unknown>;
@@ -367,6 +384,18 @@ export const ArtifactCard = ({ artifact }: ArtifactCardProps) => {
                 />
               </div>
             </div>
+          )}
+
+          {embeddedScripts.length > 0 && (
+            <PropertyCard label="Scripts">
+              <div className="divide-y divide-(--border-faint)">
+                {embeddedScripts.map((name) => (
+                  <div key={name} className="px-3.5 py-2.5">
+                    <span className="text-[13px] font-mono text-(--text-secondary)">{name}</span>
+                  </div>
+                ))}
+              </div>
+            </PropertyCard>
           )}
         </div>
       </div>

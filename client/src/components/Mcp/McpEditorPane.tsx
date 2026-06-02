@@ -72,6 +72,7 @@ export const McpEditorPane = ({
     setTokenDirty,
     rawJson,
     setRawJson,
+    setRawJsonDirty,
     dirty,
     saving,
     handleConfigureSave,
@@ -186,7 +187,7 @@ export const McpEditorPane = ({
           <div className="flex-1 min-h-0">
             <Editor
               value={rawJson}
-              onChange={setRawJson}
+              onChange={setRawJsonDirty}
               language="json"
             />
           </div>

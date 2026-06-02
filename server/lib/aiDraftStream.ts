@@ -1,4 +1,6 @@
 import type { Response } from "express";
+import { resolve, join } from "path";
+import { stat } from "fs/promises";
 import Anthropic from "@anthropic-ai/sdk";
 import {
   listAgents,
@@ -8,7 +10,7 @@ import {
   listMcpServers,
 } from "../services/claudeConfig.js";
 import { getHooks } from "../services/hooksService.js";
-import { readFileContent } from "../utils/fileIO.js";
+import { readFileContent, listDir } from "../utils/fileIO.js";
 import { SYSTEM_PROMPT, TOOLS } from "./aiDraftPrompt.js";
 import { listMcpRegistryNames, getMcpRegistryServer } from "./mcpRegistry.js";
 import {
@@ -79,6 +81,12 @@ async function executeToolCall(
         return `Skill "${skillName}" not found.`;
       }
     }
+    case "get_skill_scripts": {
+      const skillName = input.name as string;
+      const scriptsDir = `${getConfigDir(projectPath)}/skills/${skillName}/scripts`;
+      const listing = await listDir(scriptsDir);
+      return JSON.stringify(listing?.files ?? []);
+    }
     case "get_claude_md": {
       const content = await getProjectContent(projectPath);
       return content ?? "No CLAUDE.md found for this project.";
@@ -90,6 +98,35 @@ async function executeToolCall(
     case "get_hooks": {
       const hooks = await getHooks(projectPath);
       return JSON.stringify(hooks);
+    }
+    case "list_directory": {
+      const projectRoot = resolve(projectPath);
+      const rel = (input.path as string | undefined) ?? ".";
+      const target = resolve(join(projectRoot, rel));
+      if (!target.startsWith(projectRoot)) return "Error: path is outside the project root.";
+      const BLOCKED = new Set(["node_modules", ".git", "dist", "build", ".cache", ".next", ".nuxt", "vendor", "coverage", "__pycache__", ".venv", "venv"]);
+      const listing = await listDir(target);
+      if (!listing) return `Directory not found: ${rel}`;
+      const filteredDirs = listing.dirs.filter((d) => !BLOCKED.has(d));
+      return JSON.stringify({ path: rel, dirs: filteredDirs, files: listing.files });
+    }
+    case "read_file": {
+      const projectRoot = resolve(projectPath);
+      const filePath = input.path as string;
+      const target = resolve(join(projectRoot, filePath));
+      if (!target.startsWith(projectRoot)) return "Error: path is outside the project root.";
+      const BLOCKED_NAMES = new Set([".env", ".env.local", ".env.production", ".env.development"]);
+      const fileName = target.split("/").pop() ?? "";
+      if (BLOCKED_NAMES.has(fileName) || fileName.startsWith(".env")) return "Error: reading environment/secret files is not allowed.";
+      const BINARY_EXTS = new Set([".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg", ".ico", ".woff", ".woff2", ".ttf", ".eot", ".pdf", ".zip", ".tar", ".gz", ".lock"]);
+      const ext = fileName.includes(".") ? "." + fileName.split(".").pop()! : "";
+      if (BINARY_EXTS.has(ext)) return `Error: binary or lock file (${ext}) cannot be read.`;
+      const MAX_BYTES = 100 * 1024;
+      const info = await stat(target).catch(() => null);
+      if (!info) return `File not found: ${filePath}`;
+      if (!info.isFile()) return `Not a file: ${filePath}`;
+      if (info.size > MAX_BYTES) return `Error: file is too large (${Math.round(info.size / 1024)} KB > 100 KB limit).`;
+      return await readFileContent(target);
     }
     case "list_mcp_registry": {
       return JSON.stringify(listMcpRegistryNames());

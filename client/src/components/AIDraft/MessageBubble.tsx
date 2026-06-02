@@ -120,7 +120,7 @@ export const MessageBubble = ({ message, isLastAssistant }: MessageBubbleProps) 
   const isUser = message.role === "user";
   const isEmpty = !message.content && !message.isStreaming;
   const hasPendingTool = (message.toolCalls ?? []).some((tc) => tc.result === undefined);
-  const aiStatus = hasPendingTool ? "thinking" : message.content ? "streaming" : "listening";
+  const aiStatus = hasPendingTool ? "thinking" : "streaming";
 
   const [wasStreaming, setWasStreaming] = useState(false);
   useEffect(() => {

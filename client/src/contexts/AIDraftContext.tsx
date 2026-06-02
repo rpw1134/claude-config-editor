@@ -450,17 +450,49 @@ export const AIDraftProvider = ({ children, projectPath }: AIDraftProviderProps)
             });
           }
         } else if (artifact.type === "skill") {
+          // Extract <skill.md> block if present; fall back to raw content for plain artifacts
+          const skillMdMatch = artifact.content.match(/<skill\.md>([\s\S]*?)<\/skill\.md>/);
+          const skillContent = skillMdMatch ? skillMdMatch[1].trim() : artifact.content;
+
           const res = await fetch(`${BASE_URL}/api/skills/${encodeURIComponent(artifact.name)}`, {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ projectPath, content: artifact.content }),
+            body: JSON.stringify({ projectPath, content: skillContent }),
           });
           if (res.status === 404) {
             await fetch(`${BASE_URL}/api/skills`, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ projectPath, name: artifact.name, content: artifact.content }),
+              body: JSON.stringify({ projectPath, name: artifact.name, content: skillContent }),
             });
+          }
+
+          // Save any embedded scripts
+          const scriptsMatch = artifact.content.match(/<scripts>([\s\S]*?)<\/scripts>/);
+          if (scriptsMatch) {
+            const scriptRegex = /<script name="([^"]+)">([\s\S]*?)<\/script>/g;
+            let m;
+            while ((m = scriptRegex.exec(scriptsMatch[1])) !== null) {
+              const [, fileName, scriptContent] = m;
+              const postRes = await fetch(
+                `${BASE_URL}/api/skills/${encodeURIComponent(artifact.name)}/script`,
+                {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ projectPath, file: fileName, content: scriptContent.trim() }),
+                }
+              );
+              if (postRes.status === 409) {
+                await fetch(
+                  `${BASE_URL}/api/skills/${encodeURIComponent(artifact.name)}/script`,
+                  {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ projectPath, file: fileName, content: scriptContent.trim() }),
+                  }
+                );
+              }
+            }
           }
         } else if (artifact.type === "claude-md") {
           await fetch(`${BASE_URL}/api/projects/file`, {

@@ -131,7 +131,7 @@ export function useSkillFileEditor({
   }, [draftStore, fileName, fileContent, savedContent, contentLoading, hasEdits]);
 
   const setContent = (next: string) => {
-    setHasEdits(true);
+    setHasEdits(next !== savedContent);
     setFileContent(next);
   };
 
