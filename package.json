@@ -2,7 +2,8 @@
   "name": "stryde",
   "private": true,
   "scripts": {
-    "dev": "concurrently --kill-others --names server,client --prefix-colors cyan,magenta \"npm run dev --prefix server\" \"npm run dev --prefix client -- --open\""
+    "dev": "concurrently --kill-others --names server,client --prefix-colors cyan,magenta \"npm run dev --prefix server\" \"npm run dev --prefix client -- --open\"",
+    "postinstall": "npm install --prefix client && npm install --prefix server"
   },
   "devDependencies": {
     "concurrently": "^9.0.0"
