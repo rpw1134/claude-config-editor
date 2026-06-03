@@ -359,8 +359,8 @@ export async function getGrid(projectPath: string, name: string): Promise<GridDa
   return get<GridData>(`/api/grids/${encodeURIComponent(name)}?projectPath=${encodeURIComponent(projectPath)}`);
 }
 
-export async function createGrid(projectPath: string, name: string, description: string): Promise<void> {
-  await post('/api/grids', { projectPath, name, description });
+export async function createGrid(projectPath: string, name: string, description: string, model?: string): Promise<void> {
+  await post('/api/grids', { projectPath, name, description, model });
 }
 
 export async function updateGrid(projectPath: string, name: string, data: GridData): Promise<void> {

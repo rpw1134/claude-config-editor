@@ -180,6 +180,7 @@ export function useGridEditor(projectPath: string, gridName: string, onError?: (
   const [dirty, setDirty] = useState(false);
   const [pendingConnection, setPendingConnection] = useState<PendingConnection | null>(null);
   const [gridDescription, setGridDescription] = useState('');
+  const [gridModel, setGridModel] = useState<string | undefined>(undefined);
   const [createdAt, setCreatedAt] = useState('');
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -202,6 +203,7 @@ export function useGridEditor(projectPath: string, gridName: string, onError?: (
         setNodes(data.nodes.map(toFlowNode));
         setEdges(data.edges.map(toFlowEdge));
         setGridDescription(data.description);
+        setGridModel(data.model);
         setCreatedAt(data.createdAt);
         history.current = [];
         setCanUndo(false);
@@ -461,6 +463,8 @@ export function useGridEditor(projectPath: string, gridName: string, onError?: (
     gridDescription,
     nodes.map(fromFlowNode),
     edges.map(fromFlowEdge),
+    projectPath,
+    gridModel,
   );
 
   return {

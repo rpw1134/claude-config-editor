@@ -54,14 +54,21 @@ const GridCardRow = ({ grid, onClick, isLast }: GridCardRowProps) => (
   </button>
 );
 
+const MODEL_OPTIONS = [
+  { value: "claude-opus-4-8", label: "Opus 4.8", recommended: true },
+  { value: "claude-sonnet-4-6", label: "Sonnet 4.6", recommended: false },
+  { value: "claude-haiku-4-5-20251001", label: "Haiku 4.5", recommended: false },
+];
+
 interface CreateGridModalProps {
-  onConfirm: (name: string, description: string) => void;
+  onConfirm: (name: string, description: string, model: string) => void;
   onClose: () => void;
 }
 
 const CreateGridModal = ({ onConfirm, onClose }: CreateGridModalProps) => {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [model, setModel] = useState("claude-opus-4-8");
   const [submitted, setSubmitted] = useState(false);
 
   const nameError = submitted && !name.trim() ? "Name is required" : null;
@@ -71,7 +78,7 @@ const CreateGridModal = ({ onConfirm, onClose }: CreateGridModalProps) => {
   const handleSubmit = () => {
     setSubmitted(true);
     if (name.trim() && description.trim())
-      onConfirm(name.trim(), description.trim());
+      onConfirm(name.trim(), description.trim(), model);
   };
 
   return (
@@ -146,6 +153,31 @@ const CreateGridModal = ({ onConfirm, onClose }: CreateGridModalProps) => {
               </p>
             )}
           </div>
+          <div>
+            <label className="text-[12px] font-semibold text-(--text-secondary) uppercase tracking-[0.08em] block mb-1.5">
+              Model
+            </label>
+            <div className="flex gap-2">
+              {MODEL_OPTIONS.map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => setModel(opt.value)}
+                  className={[
+                    "flex-1 px-3 py-2 rounded-xl text-[13px] font-medium border cursor-pointer transition-colors duration-120",
+                    model === opt.value
+                      ? "bg-(--accent)/12 border-(--accent)/50 text-(--accent)"
+                      : "bg-(--bg-surface) border-(--border-subtle) text-(--text-secondary) hover:border-(--border-default)",
+                  ].join(" ")}
+                >
+                  {opt.label}
+                  {opt.recommended && (
+                    <span className="ml-1.5 text-[10px] opacity-60">(rec.)</span>
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
 
         <div className="flex items-center justify-end gap-3">
@@ -199,9 +231,9 @@ export const GridsLandingContent = () => {
 
   if (!projectPath) return <Navigate to="/" replace />;
 
-  const handleCreate = async (name: string, description: string) => {
+  const handleCreate = async (name: string, description: string, model: string) => {
     try {
-      await createGrid(projectPath, name, description);
+      await createGrid(projectPath, name, description, model);
       onBumpGridsRefresh();
       onBumpVcRefresh();
       showToast(`Grid "${name}" created`);

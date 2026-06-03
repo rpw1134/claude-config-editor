@@ -67,6 +67,7 @@ interface GridEdge {
 interface GridJson {
   name: string;
   description: string;
+  model?: string;
   createdAt: string;
   nodes: GridNode[];
   edges: GridEdge[];
@@ -94,10 +95,11 @@ function validateName(name: unknown, res: Response): string | null {
   return name.trim();
 }
 
-function buildInitialGrid(name: string, description: string): GridJson {
+function buildInitialGrid(name: string, description: string, model?: string): GridJson {
   return {
     name,
     description,
+    ...(model ? { model } : {}),
     createdAt: new Date().toISOString(),
     nodes: [
       {
@@ -126,7 +128,6 @@ interface AgentEntry {
   invocation_rule: string;
   agents: AgentEntry[];
   skills: SkillEntry[];
-  knowledge_skills?: string[];
 }
 
 function mcpServersForSkill(skillNodeId: string, nodes: GridNode[], edges: GridEdge[]): string[] {
@@ -144,13 +145,17 @@ function buildSkillEntry(
   skillNode: GridNode,
   nodes: GridNode[],
   edges: GridEdge[],
+  configDir: string,
+  isKnowledge = false,
 ): SkillEntry {
   const skillName = skillNode.data.skillName ?? skillNode.data.label;
   const mcps = mcpServersForSkill(skillNode.id, nodes, edges);
   return {
     name: skillName,
-    directory: `~/.claude/skills/${skillName}/`,
-    invocation_rule: edge.data.description ?? "Use when appropriate",
+    directory: `${configDir}/skills/${skillName}/`,
+    invocation_rule: isKnowledge
+      ? "at initialization. this is knowledge or context"
+      : (edge.data.description ?? "Use when appropriate"),
     ...(mcps.length > 0 ? { mcp_servers: mcps } : {}),
   };
 }
@@ -161,6 +166,7 @@ function buildAgentEntry(
   nodes: GridNode[],
   edges: GridEdge[],
   visited: Set<string>,
+  configDir: string,
 ): AgentEntry | null {
   if (visited.has(nodeId)) return null;
   visited.add(nodeId);
@@ -173,19 +179,18 @@ function buildAgentEntry(
 
   const childAgents: AgentEntry[] = [];
   const childSkills: SkillEntry[] = [];
-  const knowledgeSkills: string[] = [];
 
   for (const edge of childEdges) {
     const child = nodes.find((n) => n.id === edge.target);
     if (!child) continue;
 
     if (child.type === "agent") {
-      const entry = buildAgentEntry(child.id, edge.data.description ?? "Use when appropriate", nodes, edges, new Set(visited));
+      const entry = buildAgentEntry(child.id, edge.data.description ?? "Use when appropriate", nodes, edges, new Set(visited), configDir);
       if (entry) childAgents.push(entry);
     } else if (child.type === "skill") {
-      childSkills.push(buildSkillEntry(edge, child, nodes, edges));
+      childSkills.push(buildSkillEntry(edge, child, nodes, edges, configDir, edge.data.isKnowledge));
     } else if (child.type === "knowledge") {
-      knowledgeSkills.push(child.data.skillName ?? child.data.label);
+      childSkills.push(buildSkillEntry(edge, child, nodes, edges, configDir, true));
     }
   }
 
@@ -193,11 +198,10 @@ function buildAgentEntry(
 
   return {
     name,
-    directory: `~/.claude/agents/${name}.md`,
+    directory: `${configDir}/agents/${name}.md`,
     invocation_rule: invocationRule,
     agents: childAgents,
     skills: childSkills,
-    ...(knowledgeSkills.length > 0 ? { knowledge_skills: knowledgeSkills } : {}),
   };
 }
 
@@ -214,7 +218,6 @@ type Agent = {
   invocation_rule: string
   agents: Agent[]
   skills: Skill[]
-  knowledge_skills?: string[]
 }`;
 
 const SUBAGENT_PREAMBLE_TEMPLATE =
@@ -228,11 +231,11 @@ const SUBAGENT_PREAMBLE_TEMPLATE =
   `"agents" and "skills" arrays as their subgraph, and prepend this same block verbatim ` +
   `to their invocation — replacing {SUBGRAPH} with their subgraph JSON. The block starts at Instructions from your superior agent and ends right before the actual task.`;
 
-function buildOrchestratorPrompt(grid: GridJson): string {
+function buildOrchestratorPrompt(grid: GridJson, projectPath: string): string {
+  const configDir = projectPath.endsWith("/.claude") ? projectPath : `${projectPath}/.claude`;
   const orchEdges = grid.edges.filter((e) => e.source === "orchestrator");
   const agentTree: AgentEntry[] = [];
   const directSkills: SkillEntry[] = [];
-  const knowledgeSkills: string[] = [];
 
   for (const edge of orchEdges) {
     const target = grid.nodes.find((n) => n.id === edge.target);
@@ -240,28 +243,16 @@ function buildOrchestratorPrompt(grid: GridJson): string {
 
     if (target.type === "agent") {
       const rule = edge.data.description ?? "Use when appropriate";
-      const entry = buildAgentEntry(target.id, rule, grid.nodes, grid.edges, new Set(["orchestrator"]));
+      const entry = buildAgentEntry(target.id, rule, grid.nodes, grid.edges, new Set(["orchestrator"]), configDir);
       if (entry) agentTree.push(entry);
     } else if (target.type === "skill") {
-      if (edge.data.isKnowledge) {
-        knowledgeSkills.push(target.data.skillName ?? target.data.label);
-      } else {
-        directSkills.push(buildSkillEntry(edge, target, grid.nodes, grid.edges));
-      }
+      directSkills.push(buildSkillEntry(edge, target, grid.nodes, grid.edges, configDir, edge.data.isKnowledge));
     }
   }
 
   const graphBlock = "```json\n" + JSON.stringify(agentTree, null, 2) + "\n```";
 
   let body = `You are an orchestrator. Route each request to the correct agent. Do not fulfill requests yourself.\n\n`;
-
-  if (knowledgeSkills.length > 0) {
-    body +=
-      `## Knowledge Context\n\n` +
-      `The following skills are loaded into your context at startup and are always available:\n` +
-      knowledgeSkills.map((s) => `- \`${s}\` (~/.claude/skills/${s}/)`).join("\n") +
-      `\n\n`;
-  }
 
   body +=
     `## Type Definitions\n\n` +
@@ -289,12 +280,13 @@ function buildOrchestratorPrompt(grid: GridJson): string {
 }
 
 function buildFrontmatter(grid: GridJson): string {
-  return `---\nname: ${grid.name}\ndescription: ${grid.description}\n---\n\n`;
+  const modelLine = grid.model ? `model: ${grid.model}\n` : "";
+  return `---\nname: ${grid.name}\ndescription: ${grid.description}\n${modelLine}---\n\n`;
 }
 
 async function writeAgentFile(projectPath: string, grid: GridJson): Promise<void> {
   await ensureDir(agentsDir(projectPath));
-  const content = buildOrchestratorPrompt(grid);
+  const content = buildOrchestratorPrompt(grid, projectPath);
   await writeFileEnsureDir(agentPath(projectPath, grid.name), content);
 }
 
@@ -423,10 +415,11 @@ router.get(
 router.post(
   "/",
   async (req: Request, res: Response, next: NextFunction) => {
-    const { name: rawName, description: rawDescription } = req.body as {
+    const { name: rawName, description: rawDescription, model: rawModel } = req.body as {
       projectPath?: unknown;
       name?: unknown;
       description?: unknown;
+      model?: unknown;
     };
 
     const projectPath = requireProjectPath((req.body as { projectPath?: unknown }).projectPath, res);
@@ -450,7 +443,8 @@ router.post(
         return res.status(409).json({ message: "Grid already exists" });
       }
 
-      const grid = buildInitialGrid(name, description);
+      const model = typeof rawModel === "string" && rawModel ? rawModel : undefined;
+      const grid = buildInitialGrid(name, description, model);
       await writeFileEnsureDir(filePath, JSON.stringify(grid, null, 2));
       await writeAgentFile(projectPath, grid);
       await stageGridFiles(projectPath, filePath, agentPath(projectPath, name));

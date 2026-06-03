@@ -29,6 +29,7 @@ export interface GridEdge {
 export interface GridData {
   name: string;
   description: string;
+  model?: string;
   createdAt: string;
   nodes: GridNode[];
   edges: GridEdge[];
@@ -37,6 +38,7 @@ export interface GridData {
 export interface GridSummary {
   name: string;
   description: string;
+  model?: string;
   createdAt: string;
 }
 
