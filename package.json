@@ -1,0 +1,10 @@
+{
+  "name": "stryde",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently --kill-others --names server,client --prefix-colors cyan,magenta \"npm run dev --prefix server\" \"npm run dev --prefix client -- --open\""
+  },
+  "devDependencies": {
+    "concurrently": "^9.0.0"
+  }
+}
