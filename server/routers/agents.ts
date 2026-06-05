@@ -7,12 +7,56 @@ import {
   writeFileEnsureDir,
   fileExists,
   deleteFile,
+  listDir,
 } from "../utils/fileIO.js";
 import { requireProjectPath } from "../utils/parsing.js";
 import { getConfigDir } from "../services/claudeConfig.js";
 import { findRepoRoot, stageFiles } from "../services/versionControl.js";
 
+interface AgentSummary {
+  name: string;
+  color?: string;
+}
+
+// Matches `color: #7c3aed` or `color: "#7c3aed"` in YAML frontmatter.
+const COLOR_LINE_RE = /^color:\s*["']?(#[0-9a-fA-F]{3,8})["']?\s*$/m;
+const FRONTMATTER_BLOCK_RE = /^---\r?\n[\s\S]*?\r?\n---(?:\r?\n|$)/;
+
+function extractColor(content: string): string | undefined {
+  const trimmed = content.trimStart();
+  if (!FRONTMATTER_BLOCK_RE.test(trimmed)) return undefined;
+  const match = COLOR_LINE_RE.exec(trimmed);
+  return match ? match[1] : undefined;
+}
+
 const router: Router = express.Router();
+
+router.get(
+  "/summaries",
+  async (req: Request, res: Response, next: NextFunction) => {
+    const projectPath = requireProjectPath(req.query.projectPath, res);
+    if (projectPath === null) return;
+    const agentsDir = `${getConfigDir(projectPath)}/agents`;
+    try {
+      const listing = await listDir(agentsDir);
+      const names =
+        listing?.files.filter((f) => f.endsWith(".md")).map((f) => f.slice(0, -3)) ?? [];
+      const summaries: AgentSummary[] = await Promise.all(
+        names.map(async (name) => {
+          try {
+            const content = await readFileContent(`${agentsDir}/${name}.md`);
+            return { name, color: extractColor(content) };
+          } catch {
+            return { name };
+          }
+        }),
+      );
+      res.json({ summaries });
+    } catch (err) {
+      next(err);
+    }
+  },
+);
 router.get(
   "/:name",
   async (req: Request, res: Response, next: NextFunction) => {

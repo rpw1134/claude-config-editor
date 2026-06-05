@@ -413,6 +413,16 @@ export const LockIcon = () => (
   </svg>
 );
 
+export const ForkIcon = () => (
+  <svg width="13" height="13" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="3" cy="3" r="1.5" stroke="currentColor" strokeWidth="1.2" fill="none"/>
+    <circle cx="12" cy="3" r="1.5" stroke="currentColor" strokeWidth="1.2" fill="none"/>
+    <circle cx="3" cy="12" r="1.5" stroke="currentColor" strokeWidth="1.2" fill="none"/>
+    <path d="M3 4.5V7.5C3 9.16 4.34 10.5 6 10.5H9C10.66 10.5 12 9.16 12 7.5V4.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" fill="none"/>
+    <path d="M3 10.5V10.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+  </svg>
+);
+
 export const StrydeLogoMark = ({ size = 32 }: { size?: number }) => (
   <svg
     width={size}

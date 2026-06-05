@@ -3,6 +3,8 @@ import { fetchSkills } from "../../lib/api";
 import { SectionHeader } from "../Shared/SectionHeader";
 import { Pagination } from "../Shared/Pagination";
 import { useVersionControl } from "../../contexts/VersionControlContext";
+import { ForkIcon } from "../Icons";
+import { ForkModal } from "../Modals/ForkModal";
 
 const PAGE_SIZE = 10;
 
@@ -10,48 +12,58 @@ interface SkillCardProps {
   name: string;
   isSelected: boolean;
   onSelect: (name: string | null) => void;
+  onFork: (name: string) => void;
   vcStatus?: "M" | "A" | "??" | null;
 }
 
-const SkillCard = ({ name, isSelected, onSelect, vcStatus }: SkillCardProps) => (
-  <button
-    onClick={() => onSelect(isSelected ? null : name)}
+const SkillCard = ({ name, isSelected, onSelect, onFork, vcStatus }: SkillCardProps) => (
+  <div
     className={[
-      "group w-full text-left px-5 py-4 rounded-lg border transition-all duration-150 block",
+      "group relative w-full rounded-lg border transition-all duration-150",
       isSelected
         ? "bg-white/6 border-white/14"
         : "bg-white/2.5 border-white/7 hover:bg-white/4.5 hover:border-white/12",
     ].join(" ")}
   >
-    <div className="flex items-center gap-3">
-      <div
-        className={[
-          "w-1.5 h-1.5 rounded-full shrink-0 transition-colors",
-          isSelected ? "bg-orange-400" : "bg-white/20 group-hover:bg-white/35",
-        ].join(" ")}
-      />
-      <div className="flex items-center gap-1.5 min-w-0">
-        <span
+    <button
+      onClick={() => onSelect(isSelected ? null : name)}
+      className="w-full text-left px-5 py-4 bg-transparent border-none cursor-pointer"
+    >
+      <div className="flex items-center gap-3">
+        <div
           className={[
-            "text-[14px] font-semibold font-mono transition-colors leading-tight truncate",
-            isSelected
-              ? "text-white/95"
-              : "text-white/70 group-hover:text-white/90",
+            "w-1.5 h-1.5 rounded-full shrink-0 transition-colors",
+            isSelected ? "bg-orange-400" : "bg-white/20 group-hover:bg-white/35",
           ].join(" ")}
-        >
-          {name}
-        </span>
-        {vcStatus && (
+        />
+        <div className="flex items-center gap-1.5 min-w-0 pr-6">
           <span
             className={[
-              "w-1.5 h-1.5 rounded-full shrink-0 flex-none",
-              vcStatus === "M" ? "bg-amber-400" : "bg-emerald-400",
+              "text-[14px] font-semibold font-mono transition-colors leading-tight truncate",
+              isSelected ? "text-white/95" : "text-white/70 group-hover:text-white/90",
             ].join(" ")}
-          />
-        )}
+          >
+            {name}
+          </span>
+          {vcStatus && (
+            <span
+              className={[
+                "w-1.5 h-1.5 rounded-full shrink-0 flex-none",
+                vcStatus === "M" ? "bg-amber-400" : "bg-emerald-400",
+              ].join(" ")}
+            />
+          )}
+        </div>
       </div>
-    </div>
-  </button>
+    </button>
+    <button
+      onClick={(e) => { e.stopPropagation(); onFork(name); }}
+      title="Fork to another project"
+      className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-150 p-1 rounded text-white/40 hover:text-white/80 bg-transparent border-none cursor-pointer"
+    >
+      <ForkIcon />
+    </button>
+  </div>
 );
 
 interface SkillsSectionProps {
@@ -74,6 +86,7 @@ export const SkillsSection = ({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
+  const [forkName, setForkName] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -121,12 +134,23 @@ export const SkillsSection = ({
                 name={name}
                 isSelected={selectedName === name}
                 onSelect={onSelect}
+                onFork={setForkName}
                 vcStatus={getItemStatus("skill", name)}
               />
             ))}
           </div>
           <Pagination page={page} totalPages={totalPages} onPage={setPage} />
         </>
+      )}
+
+      {forkName && (
+        <ForkModal
+          resourceType="skill"
+          name={forkName}
+          sourceProjectPath={projectPath}
+          onClose={() => setForkName(null)}
+          onSuccess={() => setForkName(null)}
+        />
       )}
     </div>
   );

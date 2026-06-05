@@ -51,6 +51,18 @@ export async function fetchAgents(projectPath: string): Promise<string[]> {
   return data.agents;
 }
 
+export interface AgentSummary {
+  name: string;
+  color?: string;
+}
+
+export async function fetchAgentSummaries(projectPath: string): Promise<AgentSummary[]> {
+  const data = await get<{ summaries: AgentSummary[] }>(
+    `/api/agents/summaries?projectPath=${encodeURIComponent(projectPath)}`
+  );
+  return data.summaries;
+}
+
 export async function fetchMcpServers(projectPath: string): Promise<string[]> {
   const data = await get<{ mcpServers: string[] }>(
     `/api/stryde/mcp-servers?projectPath=${encodeURIComponent(projectPath)}`
@@ -369,4 +381,28 @@ export async function updateGrid(projectPath: string, name: string, data: GridDa
 
 export async function deleteGrid(projectPath: string, name: string): Promise<void> {
   await del(`/api/grids/${encodeURIComponent(name)}?projectPath=${encodeURIComponent(projectPath)}`);
+}
+
+// ── Fork ───────────────────────────────────────────────────────────────────────
+
+export type ForkResourceType = "agent" | "skill" | "mcp" | "grid";
+
+export async function forkResource(
+  resourceType: ForkResourceType,
+  name: string,
+  sourceProjectPath: string,
+  destProjectPath: string,
+): Promise<void> {
+  const res = await fetch(`${BASE_URL}/api/fork`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ resourceType, name, sourceProjectPath, destProjectPath }),
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({})) as { message?: string };
+    throw Object.assign(
+      new Error(body.message ?? `${res.status} ${res.statusText}`),
+      { status: res.status },
+    );
+  }
 }

@@ -4,54 +4,67 @@ import { useShell } from "../contexts/ShellContext";
 import { decodeProject, encodeProject } from "../lib/navigation";
 import { listGrids, createGrid } from "../lib/api";
 import type { GridSummary } from "../types/grids";
-import { GridsIcon } from "../components/Icons";
+import { GridsIcon, ForkIcon } from "../components/Icons";
+import { ForkModal } from "../components/Modals/ForkModal";
 
 export { GridEditor } from "./grid/GridEditor";
 
 interface GridCardRowProps {
   grid: GridSummary;
   onClick: () => void;
+  onFork: (name: string) => void;
   isLast: boolean;
 }
 
-const GridCardRow = ({ grid, onClick, isLast }: GridCardRowProps) => (
-  <button
-    onClick={onClick}
+const GridCardRow = ({ grid, onClick, onFork, isLast }: GridCardRowProps) => (
+  <div
     className={[
-      "w-full flex items-center gap-5 pl-6 pr-4 min-h-20 text-left cursor-pointer",
-      "bg-transparent transition-colors duration-120 border-none hover:bg-(--bg-hover)",
+      "group relative w-full flex items-center gap-5 pl-6 pr-4 min-h-20",
+      "bg-transparent transition-colors duration-120 hover:bg-(--bg-hover)",
       !isLast ? "border-b border-(--border-faint)" : "",
     ].join(" ")}
   >
-    <div className="w-9 h-9 rounded-xl bg-(--accent)/10 flex items-center justify-center shrink-0 text-(--accent)">
-      <GridsIcon size={16} />
-    </div>
-    <div className="flex flex-col gap-0.5 flex-1 min-w-0">
-      <span className="font-['Instrument_Sans',sans-serif] text-[18px] font-semibold text-(--text-primary) truncate">
-        {grid.name}
-      </span>
-      {grid.description && (
-        <span className="text-[13px] text-(--text-muted) truncate">
-          {grid.description}
-        </span>
-      )}
-    </div>
-    <svg
-      width="14"
-      height="14"
-      viewBox="0 0 14 14"
-      fill="none"
-      className="text-(--text-muted) shrink-0"
+    <button
+      onClick={onClick}
+      className="flex items-center gap-5 flex-1 min-w-0 text-left cursor-pointer bg-transparent border-none p-0"
     >
-      <path
-        d="M5.5 3L9.5 7L5.5 11"
-        stroke="currentColor"
-        strokeWidth="1.4"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  </button>
+      <div className="w-9 h-9 rounded-xl bg-(--accent)/10 flex items-center justify-center shrink-0 text-(--accent)">
+        <GridsIcon size={16} />
+      </div>
+      <div className="flex flex-col gap-0.5 flex-1 min-w-0">
+        <span className="font-['Instrument_Sans',sans-serif] text-[18px] font-semibold text-(--text-primary) truncate">
+          {grid.name}
+        </span>
+        {grid.description && (
+          <span className="text-[13px] text-(--text-muted) truncate">
+            {grid.description}
+          </span>
+        )}
+      </div>
+      <svg
+        width="14"
+        height="14"
+        viewBox="0 0 14 14"
+        fill="none"
+        className="text-(--text-muted) shrink-0"
+      >
+        <path
+          d="M5.5 3L9.5 7L5.5 11"
+          stroke="currentColor"
+          strokeWidth="1.4"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    </button>
+    <button
+      onClick={(e) => { e.stopPropagation(); onFork(grid.name); }}
+      title="Fork to another project"
+      className="opacity-0 group-hover:opacity-100 transition-opacity duration-150 p-2 rounded text-(--text-muted) hover:text-(--text-primary) bg-transparent border-none cursor-pointer shrink-0"
+    >
+      <ForkIcon />
+    </button>
+  </div>
 );
 
 const MODEL_OPTIONS = [
@@ -209,6 +222,7 @@ export const GridsLandingContent = () => {
   const [grids, setGrids] = useState<GridSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
+  const [forkName, setForkName] = useState<string | null>(null);
 
   useEffect(() => {
     if (!projectPath) return;
@@ -302,6 +316,7 @@ export const GridsLandingContent = () => {
                     `/${encodeProject(projectPath)}/grids/${encodeURIComponent(g.name)}`,
                   )
                 }
+                onFork={setForkName}
               />
             ))}
           </div>
@@ -312,6 +327,16 @@ export const GridsLandingContent = () => {
         <CreateGridModal
           onConfirm={handleCreate}
           onClose={() => setShowCreate(false)}
+        />
+      )}
+
+      {forkName && (
+        <ForkModal
+          resourceType="grid"
+          name={forkName}
+          sourceProjectPath={projectPath}
+          onClose={() => setForkName(null)}
+          onSuccess={() => setForkName(null)}
         />
       )}
     </div>

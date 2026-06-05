@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
-import { fetchAgents, fetchSkills, fetchMcpServers } from "../../lib/api";
+import { fetchSkills, fetchMcpServers, fetchAgentSummaries } from "../../lib/api";
+import type { AgentSummary } from "../../lib/api";
 import { useVersionControl } from "../../contexts/VersionControlContext";
+import { ForkIcon } from "../Icons";
+import { ForkModal } from "../Modals/ForkModal";
 
 // ── Icons ─────────────────────────────────────────────────────────────────────
 
@@ -131,27 +134,38 @@ interface TypeLandingPageProps {
 interface ItemRowProps {
   name: string;
   isLast: boolean;
+  color?: string;
   vcStatus?: "M" | "A" | "??" | null;
   onClick: () => void;
+  onFork: (name: string) => void;
 }
 
-const ItemRow = ({ name, isLast, vcStatus, onClick }: ItemRowProps) => (
-  <button
-    onClick={onClick}
+const ItemRow = ({ name, isLast, color, vcStatus, onClick, onFork }: ItemRowProps) => (
+  <div
     className={[
-      "w-full flex items-center pl-4 pr-1 min-h-18 text-left cursor-pointer",
-      "bg-transparent transition-colors duration-120",
-      "border-none hover:bg-(--bg-hover)",
+      "group relative w-full flex items-center pl-4 pr-1 min-h-18",
+      "bg-transparent transition-colors duration-120 hover:bg-(--bg-hover)",
       !isLast ? "border-b border-(--border-faint)" : "",
     ].join(" ")}
   >
-    <span className="font-['Instrument_Sans',sans-serif] text-[19px] font-medium text-(--text-primary) overflow-hidden text-ellipsis whitespace-nowrap flex-1 min-w-0">
-      {name}
-    </span>
+    {color && (
+      <div
+        className="w-2.5 h-2.5 rounded-full shrink-0 mr-3"
+        style={{ backgroundColor: color }}
+      />
+    )}
+    <button
+      onClick={onClick}
+      className="flex-1 min-w-0 text-left cursor-pointer bg-transparent border-none py-0 pl-0 pr-8"
+    >
+      <span className="font-['Instrument_Sans',sans-serif] text-[19px] font-medium text-(--text-primary) overflow-hidden text-ellipsis whitespace-nowrap flex-1 min-w-0 block">
+        {name}
+      </span>
+    </button>
     {vcStatus && (
       <span
         className={[
-          "shrink-0 mr-4 w-4 text-center text-[12px] font-bold font-mono",
+          "shrink-0 mr-2 w-4 text-center text-[12px] font-bold font-mono",
           vcStatus === "M" ? "text-amber-400" : "text-emerald-400",
         ].join(" ")}
         title={vcStatus === "M" ? "Modified" : "Added"}
@@ -159,7 +173,14 @@ const ItemRow = ({ name, isLast, vcStatus, onClick }: ItemRowProps) => (
         {vcStatus === "M" ? "M" : "A"}
       </span>
     )}
-  </button>
+    <button
+      onClick={(e) => { e.stopPropagation(); onFork(name); }}
+      title="Fork to another project"
+      className="opacity-0 group-hover:opacity-100 transition-opacity duration-150 p-2 rounded text-(--text-muted) hover:text-(--text-primary) bg-transparent border-none cursor-pointer shrink-0"
+    >
+      <ForkIcon />
+    </button>
+  </div>
 );
 
 // ── Generic landing page ──────────────────────────────────────────────────────
@@ -168,10 +189,12 @@ export const TypeLandingPage = (props: TypeLandingPageProps) => {
   const { type, title, projectPath, refreshKey, onSelect, onNew } = props;
   const { getItemStatus } = useVersionControl();
   const [items, setItems] = useState<string[]>([]);
+  const [agentSummaries, setAgentSummaries] = useState<AgentSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [showSkeleton, setShowSkeleton] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState("");
+  const [forkName, setForkName] = useState<string | null>(null);
 
   // Only show skeleton after 200ms to avoid flash on fast loads
   useEffect(() => {
@@ -186,30 +209,42 @@ export const TypeLandingPage = (props: TypeLandingPageProps) => {
   useEffect(() => {
     let cancelled = false;
 
-    const fetcher =
-      type === "agent"
-        ? fetchAgents
-        : type === "skill"
-          ? fetchSkills
-          : fetchMcpServers;
-
-    fetcher(projectPath)
-      .then((data) => {
-        if (cancelled) return;
-        setItems(data);
-        setError(null);
-        setLoading(false);
-      })
-      .catch((err: unknown) => {
-        if (cancelled) return;
-        setError(err instanceof Error ? err.message : "Failed to load");
-        setLoading(false);
-      });
+    if (type === "agent") {
+      fetchAgentSummaries(projectPath)
+        .then((data) => {
+          if (cancelled) return;
+          setAgentSummaries(data);
+          setItems(data.map((s) => s.name));
+          setError(null);
+          setLoading(false);
+        })
+        .catch((err: unknown) => {
+          if (cancelled) return;
+          setError(err instanceof Error ? err.message : "Failed to load");
+          setLoading(false);
+        });
+    } else {
+      const fetcher = type === "skill" ? fetchSkills : fetchMcpServers;
+      fetcher(projectPath)
+        .then((data) => {
+          if (cancelled) return;
+          setItems(data);
+          setError(null);
+          setLoading(false);
+        })
+        .catch((err: unknown) => {
+          if (cancelled) return;
+          setError(err instanceof Error ? err.message : "Failed to load");
+          setLoading(false);
+        });
+    }
 
     return () => {
       cancelled = true;
     };
   }, [projectPath, type, refreshKey]);
+
+  const colorMap = new Map(agentSummaries.map((s) => [s.name, s.color]));
 
   const filtered = query.trim()
     ? items.filter((name) =>
@@ -220,6 +255,9 @@ export const TypeLandingPage = (props: TypeLandingPageProps) => {
   // singular label for new button: strip trailing 's', handle 'MCP Servers' edge case
   const singularType =
     title === "MCP Servers" ? "MCP Server" : title.replace(/s$/, "");
+
+  const resourceType =
+    type === "agent" ? "agent" : type === "skill" ? "skill" : "mcp";
 
   return (
     <div className="flex-1 flex flex-col min-h-0 overflow-y-auto bg-(--bg-base)">
@@ -302,6 +340,7 @@ export const TypeLandingPage = (props: TypeLandingPageProps) => {
                 key={name}
                 name={name}
                 isLast={idx === filtered.length - 1}
+                color={colorMap.get(name)}
                 vcStatus={
                   type === "agent"
                     ? getItemStatus("agent", name)
@@ -310,11 +349,22 @@ export const TypeLandingPage = (props: TypeLandingPageProps) => {
                       : null
                 }
                 onClick={() => onSelect(name)}
+                onFork={setForkName}
               />
             ))}
           </div>
         )}
       </div>
+
+      {forkName && (
+        <ForkModal
+          resourceType={resourceType}
+          name={forkName}
+          sourceProjectPath={projectPath}
+          onClose={() => setForkName(null)}
+          onSuccess={() => setForkName(null)}
+        />
+      )}
     </div>
   );
 };

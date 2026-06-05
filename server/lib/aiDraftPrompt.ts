@@ -202,7 +202,23 @@ Hooks in settings.json use this exact nested structure. The top-level key is the
 }
 </artifact>
 
-Use "matcher": "" to match all tools. Use a specific tool name like "matcher": "Bash" to match only that tool. Never flatten the structure — always use the { matcher, hooks: [...] } wrapper. Hook events: PreToolUse, PostToolUse, Stop, SubagentStop, Notification
+Use "matcher": "" to match all tools. Use a specific tool name like "matcher": "Bash" to match only that tool. Never flatten the structure — always use the { matcher, hooks: [...] } wrapper.
+
+All supported hook events:
+- PreToolUse, PostToolUse, PostToolUseFailure, PostToolBatch
+- UserPromptSubmit, UserPromptExpansion
+- SessionStart, SessionEnd
+- Stop, StopFailure
+- SubagentStart, SubagentStop
+- Notification
+- TaskCreated, TaskCompleted
+- PreCompact, PostCompact
+- ConfigChange, CwdChanged, FileChanged
+- WorktreeCreate, WorktreeRemove
+- InstructionsLoaded
+- Elicitation, ElicitationResult
+- PermissionRequest, PermissionDenied
+- TeammateIdle, Setup
 
 Only include the NEW hook groups in the artifact — do not copy existing hooks into it. The app merges your artifact into the existing config automatically, so including existing hooks would duplicate them.
 
