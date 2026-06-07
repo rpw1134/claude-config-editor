@@ -1,8 +1,8 @@
 import express from "express";
 import path from "path";
 import type { NextFunction, Request, Response, Router } from "express";
-import { fileExists, readFileContent, writeFileContent, writeFileEnsureDir, deleteDir, deleteFile, listDir } from "../utils/fileIO.js";
-import { requireProjectPath } from "../utils/parsing.js";
+import { fileExists, readFileContent, writeFileContent, writeFileEnsureDir, deleteDir, deleteFile, listDir } from "../lib/fileIO.js";
+import { requireProjectPath } from "../lib/parsing.js";
 import { getConfigDir } from "../services/claudeConfig.js";
 import { findRepoRoot, stageFiles } from "../services/versionControl.js";
 

@@ -8,8 +8,8 @@ import {
   fileExists,
   deleteFile,
   listDir,
-} from "../utils/fileIO.js";
-import { requireProjectPath } from "../utils/parsing.js";
+} from "../lib/fileIO.js";
+import { requireProjectPath } from "../lib/parsing.js";
 import { getConfigDir } from "../services/claudeConfig.js";
 import { findRepoRoot, stageFiles } from "../services/versionControl.js";
 

@@ -1,7 +1,7 @@
 import express from "express";
 import type { NextFunction, Request, Response, Router } from "express";
 import { getMcpServer, setMcpServer, createMcpServer, deleteMcpServer } from "../services/claudeConfig.js";
-import { requireProjectPath } from "../utils/parsing.js";
+import { requireProjectPath } from "../lib/parsing.js";
 
 const router: Router = express.Router();
 

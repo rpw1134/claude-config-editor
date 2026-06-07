@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import Markdown from "react-markdown";
-import type { Artifact, ChatMessage, DraftedArtifactRef, ToolCall } from "../../types/aiDraft";
+import type { Artifact, ChatMessage, DraftedArtifactRef } from "../../types/aiDraft";
 import { useAIDraft } from "../../contexts/AIDraftContext";
 import { ArtifactsIcon } from "../Icons";
 import { StrydeStatusIcon } from "./StrydeStatusIcon";
+import { ToolStack } from "./ToolStack";
 
 // ── DraftedCard ───────────────────────────────────────────────────────────────
 
@@ -47,46 +48,6 @@ const DraftedCard = ({ artifact, artifactIndex, isEdit }: DraftedCardProps) => {
       )}
       <span className="shrink-0 text-[13px] text-(--accent) opacity-0 group-hover:opacity-100 transition-opacity duration-150">↗</span>
     </button>
-  );
-};
-
-// ── Tool call card ────────────────────────────────────────────────────────────
-
-function describeToolCall(tool: string, args: object): string {
-  const a = args as Record<string, unknown>;
-  if (tool === "get_agent" && typeof a.name === "string") return `Agent "${a.name}"`;
-  if (tool === "get_skill" && typeof a.name === "string") return `Skill "${a.name}"`;
-  const map: Record<string, string> = {
-    list_agents: "Listing agents",
-    list_skills: "Listing skills",
-    get_claude_md: "CLAUDE.md",
-    edit_agent: "Editing agent",
-    edit_skill: "Editing skill",
-    create_mcp_server: "Creating MCP server",
-    create_hook: "Creating hook",
-  };
-  return map[tool] ?? tool.replace(/_/g, " ");
-}
-
-const ToolCallCard = ({ tc }: { tc: ToolCall }) => {
-  const done = tc.result !== undefined;
-  return (
-    <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg
-      bg-(--bg-elevated) border border-(--border-subtle)
-      shadow-inner shadow-black/6
-      text-[12px] text-(--text-muted) select-none">
-      <span className="shrink-0">
-        {done ? (
-          <svg width="11" height="11" viewBox="0 0 11 11" fill="none" className="text-(--text-muted)/60">
-            <circle cx="5.5" cy="5.5" r="5" stroke="currentColor" strokeWidth="0.9" />
-            <path d="M3 5.5l1.7 1.7 3.3-3.3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        ) : (
-          <span className="block w-2.5 h-2.5 rounded-full border border-(--border-default) border-t-transparent animate-spin" />
-        )}
-      </span>
-      <span>{describeToolCall(tc.tool, tc.args)}</span>
-    </div>
   );
 };
 
@@ -172,10 +133,8 @@ export const MessageBubble = ({ message, isLastAssistant }: MessageBubbleProps) 
     insertions.push({
       position: firstToolPos,
       node: (
-        <div key="tools" className="flex flex-row flex-wrap gap-1.5 my-3">
-          {[...toolCalls]
-            .sort((a, b) => (a.textPosition ?? 0) - (b.textPosition ?? 0))
-            .map((tc, i) => <ToolCallCard key={i} tc={tc} />)}
+        <div key="tools">
+          <ToolStack toolCalls={toolCalls} />
         </div>
       ),
     });
@@ -203,9 +162,7 @@ export const MessageBubble = ({ message, isLastAssistant }: MessageBubbleProps) 
             {shouldShowContent && (
               <ProseSegment fadeIn><Markdown>{message.content}</Markdown></ProseSegment>
             )}
-            <div className="flex flex-row flex-wrap gap-1.5 mt-3">
-              {toolCalls.map((tc, i) => <ToolCallCard key={i} tc={tc} />)}
-            </div>
+            <ToolStack toolCalls={toolCalls} />
             {resolvedDrafts.map((d) => (
               <div key={d.artifact.id} className="mt-2 w-full">
                 <DraftedCard artifact={d.artifact} artifactIndex={d.index} isEdit={d.isEdit} />

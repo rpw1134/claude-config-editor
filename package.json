@@ -2,7 +2,8 @@
   "name": "stryde",
   "private": true,
   "scripts": {
-    "dev": "concurrently --kill-others --names server,client --prefix-colors cyan,magenta \"npm run dev --prefix server\" \"npm run dev --prefix client -- --open\"",
+    "dev": "concurrently --kill-others --names server,client --prefix-colors cyan,magenta \"npm run dev --prefix server\" \"BROWSER=chrome npm run dev --prefix client -- --open\"",
+    "dev_dia": "concurrently --kill-others --names server,client --prefix-colors cyan,magenta \"npm run dev --prefix server\" \"BROWSER=DIA npm run dev --prefix client -- --open\"",
     "postinstall": "npm install --prefix client && npm install --prefix server"
   },
   "devDependencies": {

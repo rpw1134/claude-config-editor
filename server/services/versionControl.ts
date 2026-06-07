@@ -1,7 +1,7 @@
 import { execFile } from "child_process";
 import { promisify } from "util";
 import path from "path";
-import { fileExists, readFileContent } from "../utils/fileIO.js";
+import { fileExists, readFileContent } from "../lib/fileIO.js";
 
 const execFileAsync = promisify(execFile);
 

@@ -2,7 +2,7 @@ import express from "express";
 import path from "path";
 import type { NextFunction, Request, Response, Router } from "express";
 import { getHooks, setHooks } from "../services/hooksService.js";
-import { requireProjectPath, resolveHome } from "../utils/parsing.js";
+import { requireProjectPath, resolveHome } from "../lib/parsing.js";
 import { getConfigDir } from "../services/claudeConfig.js";
 import { findRepoRoot, stageFiles } from "../services/versionControl.js";
 

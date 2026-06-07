@@ -6,7 +6,7 @@ import {
   listDir,
   readFileContent,
   writeFileEnsureDir,
-} from "../utils/fileIO.js";
+} from "../lib/fileIO.js";
 import { getConfigDir, getMcpServer, createMcpServer } from "../services/claudeConfig.js";
 
 const router: Router = express.Router();

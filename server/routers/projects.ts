@@ -2,7 +2,7 @@ import express from "express";
 import nodePath from "path";
 import type { NextFunction, Request, Response, Router } from "express";
 import { createProject, deleteProject, getProjectContent, listProjects, setProjectContent } from "../services/claudeConfig.js";
-import { requireProjectPath, resolveHome } from "../utils/parsing.js";
+import { requireProjectPath, resolveHome } from "../lib/parsing.js";
 import { findRepoRoot, stageFiles } from "../services/versionControl.js";
 
 const router: Router = express.Router();

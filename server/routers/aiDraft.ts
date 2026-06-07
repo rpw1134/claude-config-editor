@@ -2,8 +2,8 @@ import express from "express";
 import type { NextFunction, Request, Response, Router } from "express";
 import Anthropic from "@anthropic-ai/sdk";
 import { getStrydeProfile } from "../services/strydeProfile.js";
-import { sendEvent } from "../lib/aiDraftParser.js";
-import { runStream, normalizeApiError } from "../lib/aiDraftStream.js";
+import { sendEvent } from "../ai/parser.js";
+import { runStream, normalizeApiError } from "../ai/stream.js";
 
 type MessageParam = Anthropic.MessageParam;
 

@@ -1,5 +1,5 @@
 import path from "path";
-import { fileExists, readFileContent, writeFileEnsureDir } from "../utils/fileIO.js";
+import { fileExists, readFileContent, writeFileEnsureDir } from "../lib/fileIO.js";
 
 export interface GitignoreCheckResult {
   claudeIgnored: boolean;

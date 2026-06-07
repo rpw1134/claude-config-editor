@@ -6,8 +6,8 @@ import {
   listDir,
   readFileContent,
   writeFileEnsureDir,
-} from "./utils/fileIO.js";
-import { resolveHome } from "./utils/parsing.js";
+} from "./lib/fileIO.js";
+import { resolveHome } from "./lib/parsing.js";
 import claudeConfigRouter from "./routers/claudeConfig.js";
 import agentsRouter from "./routers/agents.js";
 import skillsRouter from "./routers/skills.js";

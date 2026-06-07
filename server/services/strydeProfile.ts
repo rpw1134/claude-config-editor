@@ -1,6 +1,6 @@
 import path from "path";
-import { readFileContent, writeFileEnsureDir } from "../utils/fileIO.js";
-import { resolveHome } from "../utils/parsing.js";
+import { readFileContent, writeFileEnsureDir } from "../lib/fileIO.js";
+import { resolveHome } from "../lib/parsing.js";
 
 export interface StrydeProfile {
   apiKey: string | null;

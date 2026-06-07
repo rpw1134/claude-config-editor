@@ -1,9 +1,9 @@
 import express from "express";
 import path from "path";
 import type { NextFunction, Request, Response, Router } from "express";
-import { requireProjectPath } from "../utils/parsing.js";
+import { requireProjectPath } from "../lib/parsing.js";
 import { getConfigDir } from "../services/claudeConfig.js";
-import { resolveHome } from "../utils/parsing.js";
+import { resolveHome } from "../lib/parsing.js";
 import {
   findRepoRoot,
   initRepo,

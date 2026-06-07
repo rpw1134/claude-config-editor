@@ -1,6 +1,6 @@
 import { basename } from "path";
-import { deleteDir, deleteFile, ensureDir, fileExists, listDir, readFileContent, writeFileContent } from "../utils/fileIO.js";
-import { resolveHome, validateProjectPath } from "../utils/parsing.js";
+import { deleteDir, deleteFile, ensureDir, fileExists, listDir, readFileContent, writeFileContent } from "../lib/fileIO.js";
+import { resolveHome, validateProjectPath } from "../lib/parsing.js";
 import type { ClaudeConfig } from "../types/claudeConfig.js";
 
 export interface ProjectInfo {

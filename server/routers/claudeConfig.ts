@@ -5,7 +5,7 @@ import {
   listMcpServers,
   listSkills,
 } from "../services/claudeConfig.js";
-import { requireProjectPath } from "../utils/parsing.js";
+import { requireProjectPath } from "../lib/parsing.js";
 
 const router: Router = express.Router();
 
