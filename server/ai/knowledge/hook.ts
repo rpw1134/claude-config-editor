@@ -25,13 +25,78 @@ Hooks in settings.json use this exact nested structure. The top-level key is the
 ### Matcher semantics
 
 - \`"matcher": ""\` — matches ALL tool calls for that event
-- \`"matcher": "Bash"\` — matches only when the Bash tool is used
-- \`"matcher": "Edit"\` — matches only when the Edit tool is used
+- \`"matcher": "Bash"\` — exact match on tool name
+- \`"matcher": "Edit|Write"\` — \`|\`-separated alternation (exact names)
+- A value containing regex special characters is treated as a **regex** (e.g. \`"^mcp__"\`, \`"mcp__memory__.*"\`)
 - Multiple groups with different matchers are allowed within the same event
+
+### Command matchers (the \`if\` field)
+
+A hook group may include an **\`if\`** field alongside \`matcher\` to filter by the actual command content, using permission-rule syntax. The \`matcher\` selects the tool; \`if\` further narrows by what was passed to it.
+
+Syntax: \`"if": "Bash(gh *)"\` — only fires when the Bash command matches the glob pattern.
+
+How it works:
+- Strips leading \`VAR=value\` shell assignments before matching
+- Inspects subcommands inside \`&&\`/\`||\` chains and \`$(...)\`/backtick expansions
+- **Fails open** — if the command can't be parsed, the hook runs anyway. For hard enforcement use the permission system instead.
+
+Common patterns:
+- \`"Bash(gh *)"\` — any GitHub CLI command
+- \`"Bash(git commit:*)"\` — git commit with any flags/args
+- \`"Bash(git push *)"\` — git push
+- \`"Bash(rm *)"\` — any rm invocation
+
+Example — run a script after every GitHub CLI command:
+
+\`\`\`json
+{
+  "PostToolUse": [
+    {
+      "matcher": "Bash",
+      "if": "Bash(gh *)",
+      "hooks": [{ "type": "command", "command": "~/.claude/scripts/log-gh-commands.sh" }]
+    }
+  ]
+}
+\`\`\`
 
 ### Merge behavior
 
 **Only include the NEW hook groups in your artifact** — do not copy existing hooks into it. The app merges your artifact into the existing config automatically. Including existing hooks would duplicate them.
+
+### Hook stdin payload & flow control
+
+A hook command receives a **JSON payload on stdin** with fields: \`tool_name\`, \`tool_input\`, \`cwd\`, \`session_id\`, \`hook_event_name\`. Read it with \`jq\` or a script — do NOT rely on \`$TOOL_INPUT\` or \`$PROJECT_ROOT\` env vars.
+
+**Flow control via exit code and stdout:**
+
+- Exit **\`0\`** — success, proceed normally
+- Exit **\`1\`** — non-blocking failure (logged, Claude continues)
+- Exit **\`2\`** — **block** execution; stderr is fed back to Claude as the reason
+
+**Structured JSON output** (print to stdout instead of/in addition to exit codes):
+
+\`\`\`json
+{
+  "hookSpecificOutput": {
+    "hookEventName": "PreToolUse",
+    "permissionDecision": "deny",
+    "permissionDecisionReason": "Destructive command blocked by policy"
+  }
+}
+\`\`\`
+
+Permission decisions: \`allow\` | \`deny\` | \`ask\` | \`defer\`
+
+Other output fields:
+- \`additionalContext\` — inject extra context into Claude's view
+- \`updatedInput\` — rewrite the tool input before it executes
+- Top-level \`{"continue": false}\` — stops Claude entirely
+
+### Events that take NO matcher (always fire)
+
+These events ignore the \`matcher\` field — they fire unconditionally: \`UserPromptSubmit\`, \`Stop\`, \`PostToolBatch\`, \`CwdChanged\`, \`TaskCreated\`, \`TaskCompleted\`, \`WorktreeCreate\`, \`WorktreeRemove\`.
 
 ### Full event list
 
@@ -67,13 +132,13 @@ Hooks in settings.json use this exact nested structure. The top-level key is the
 
 ### Concrete examples
 
-**Log every Bash command before it runs:**
+**Log every Bash command before it runs (reads stdin):**
 \`\`\`json
 {
   "PreToolUse": [
     {
       "matcher": "Bash",
-      "hooks": [{ "type": "command", "command": "echo \"[hook] Bash: $TOOL_INPUT\" >> /tmp/claude-log.txt" }]
+      "hooks": [{ "type": "command", "command": "jq -r '\"[hook] Bash: \" + .tool_input.command' >> /tmp/claude-log.txt" }]
     }
   ]
 }
@@ -91,13 +156,13 @@ Hooks in settings.json use this exact nested structure. The top-level key is the
 }
 \`\`\`
 
-**Run tests automatically after file edits:**
+**Run tests automatically after file edits (reads cwd from stdin):**
 \`\`\`json
 {
   "PostToolUse": [
     {
       "matcher": "Edit",
-      "hooks": [{ "type": "command", "command": "cd $PROJECT_ROOT && npm test --silent 2>&1 | tail -5" }]
+      "hooks": [{ "type": "command", "command": "cd \"$(jq -r .cwd)\" && npm test --silent 2>&1 | tail -5" }]
     }
   ]
 }
@@ -115,7 +180,7 @@ Hooks in settings.json use this exact nested structure. The top-level key is the
 }
 \`\`\`
 
-**Block Bash on a pattern (PreToolUse can exit non-zero to block):**
+**Block a command pattern (exit 2 to block, stderr goes to Claude):**
 \`\`\`json
 {
   "PreToolUse": [

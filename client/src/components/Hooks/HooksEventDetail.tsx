@@ -39,7 +39,8 @@ const TabButton = ({
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 interface HookGroup {
-  matcher?: string;
+  matcher: string;
+  if?: string;
   hooks?: Array<{ type?: string; command?: string; url?: string; timeout?: number }>;
   command?: string;
   type?: string;
@@ -55,8 +56,8 @@ interface HooksEventDetailProps {
   setActiveTab: (tab: HookTabId) => void;
   dirty: boolean;
   saving: boolean;
-  addHookGroup: (event: string, group: { matcher: string; hooks: Array<Record<string, unknown>> }) => void;
-  editHookGroup: (event: string, index: number, group: { matcher: string; hooks: Array<Record<string, unknown>> }) => void;
+  addHookGroup: (event: string, group: { matcher: string; if?: string; hooks: Array<Record<string, unknown>> }) => void;
+  editHookGroup: (event: string, index: number, group: { matcher: string; if?: string; hooks: Array<Record<string, unknown>> }) => void;
   deleteHookGroup: (event: string, index: number) => void;
   handleSave: () => Promise<void>;
   onBack: () => void;
@@ -201,14 +202,17 @@ export const HooksEventDetail = ({
             </div>
           ) : (
             <div className="flex flex-col gap-2 min-w-0">
-              {groups.map((group, i) => (
-                <HookGroupCard
-                  key={i}
-                  group={group}
-                  onEdit={() => setEditingGroup({ index: i, group })}
-                  onDelete={() => deleteHookGroup(event, i)}
-                />
-              ))}
+              {groups.map((group, i) => {
+                const typedGroup = group as unknown as HookGroup;
+                return (
+                  <HookGroupCard
+                    key={i}
+                    group={typedGroup}
+                    onEdit={() => setEditingGroup({ index: i, group: typedGroup })}
+                    onDelete={() => deleteHookGroup(event, i)}
+                  />
+                );
+              })}
             </div>
           )}
         </div>

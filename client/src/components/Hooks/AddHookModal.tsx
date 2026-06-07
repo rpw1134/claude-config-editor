@@ -1,16 +1,23 @@
 import { useState } from "react";
-import { HOOK_EVENTS } from "../../lib/hooksConstants";
+import { HOOK_EVENTS, supportsMatcher } from "../../lib/hooksConstants";
 
 interface HookGroupData {
   matcher: string;
+  if?: string;
   hooks: Array<{ type?: string; command?: string; url?: string; timeout?: number }>;
+}
+
+interface HookGroupInit {
+  matcher: string;
+  if?: string;
+  hooks?: Array<{ type?: string; command?: string; url?: string; timeout?: number }>;
 }
 
 interface AddHookModalProps {
   onConfirm: (event: string, group: HookGroupData) => void;
   onClose: () => void;
   fixedEvent?: string;
-  initialGroup?: HookGroupData;
+  initialGroup?: HookGroupInit;
 }
 
 const INPUT_CLASS =
@@ -22,6 +29,7 @@ export const AddHookModal = ({ onConfirm, onClose, fixedEvent, initialGroup }: A
 
   const [event, setEvent] = useState<string>(fixedEvent ?? HOOK_EVENTS[0]);
   const [matcher, setMatcher] = useState(initialGroup?.matcher ?? "");
+  const [ifField, setIfField] = useState(initialGroup?.if ?? "");
   const [hookType, setHookType] = useState<"command" | "http">(
     (firstHook?.type === "http" ? "http" : "command") as "command" | "http"
   );
@@ -30,6 +38,9 @@ export const AddHookModal = ({ onConfirm, onClose, fixedEvent, initialGroup }: A
   const [timeoutVal, setTimeoutVal] = useState(
     firstHook?.timeout != null ? String(firstHook.timeout) : ""
   );
+
+  const resolvedEvent = fixedEvent ?? event;
+  const showMatcher = supportsMatcher(resolvedEvent);
 
   const canConfirm = hookType === "command" ? command.trim() !== "" : url.trim() !== "";
 
@@ -42,8 +53,12 @@ export const AddHookModal = ({ onConfirm, onClose, fixedEvent, initialGroup }: A
       const t = parseInt(timeoutVal, 10);
       if (!isNaN(t)) hookEntry.timeout = t;
     }
-    const resolvedEvent = fixedEvent ?? event;
-    onConfirm(resolvedEvent, { matcher, hooks: [hookEntry] });
+    const group: HookGroupData = {
+      matcher: showMatcher ? matcher : "",
+      hooks: [hookEntry],
+    };
+    if (showMatcher && ifField.trim()) group.if = ifField.trim();
+    onConfirm(resolvedEvent, group);
     onClose();
   };
 
@@ -87,19 +102,47 @@ export const AddHookModal = ({ onConfirm, onClose, fixedEvent, initialGroup }: A
             )}
           </div>
 
-          {/* Matcher */}
-          <div>
-            <label className="block text-[11px] font-medium text-(--text-muted) tracking-widest uppercase mb-2">
-              Matcher
-            </label>
-            <input
-              type="text"
-              value={matcher}
-              onChange={(e) => setMatcher(e.target.value)}
-              placeholder="Leave empty to match all"
-              className={INPUT_CLASS}
-            />
-          </div>
+          {/* Matcher + if — only for events that support it */}
+          {showMatcher ? (
+            <>
+              <div>
+                <label className="block text-[11px] font-medium text-(--text-muted) tracking-widest uppercase mb-2">
+                  Matcher
+                </label>
+                <input
+                  type="text"
+                  value={matcher}
+                  onChange={(e) => setMatcher(e.target.value)}
+                  placeholder="Leave empty to match all"
+                  className={INPUT_CLASS}
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-medium text-(--text-muted) tracking-widest uppercase mb-1">
+                  Command condition{" "}
+                  <span className="normal-case font-normal tracking-normal">(optional)</span>
+                </label>
+                <input
+                  type="text"
+                  value={ifField}
+                  onChange={(e) => setIfField(e.target.value)}
+                  placeholder="Bash(gh *)"
+                  className={INPUT_CLASS}
+                />
+                <p className="m-0 mt-1.5 text-[11px] text-(--text-muted) leading-snug">
+                  Only run when the command matches this pattern. Use the form{" "}
+                  <code className="font-['Fira_Code',monospace] text-[10px]">ToolName(glob)</code>
+                  , e.g.{" "}
+                  <code className="font-['Fira_Code',monospace] text-[10px]">Bash(git commit:*)</code>.
+                </p>
+              </div>
+            </>
+          ) : (
+            <p className="m-0 text-[12px] text-(--text-muted) italic">
+              This event always fires — no tool matcher.
+            </p>
+          )}
 
           {/* Hook type toggle */}
           <div>
