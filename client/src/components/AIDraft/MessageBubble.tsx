@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import Markdown from "react-markdown";
-import type { Artifact, ChatMessage, DraftedArtifactRef } from "../../types/aiDraft";
+import type { Artifact, ChatMessage, DraftedArtifactRef, ToolCall } from "../../types/aiDraft";
 import { useAIDraft } from "../../contexts/AIDraftContext";
 import { ArtifactsIcon } from "../Icons";
 import { StrydeStatusIcon } from "./StrydeStatusIcon";
@@ -129,15 +129,26 @@ export const MessageBubble = ({ message, isLastAssistant }: MessageBubbleProps) 
   const insertions: Insertion[] = [];
 
   if (hasToolPositions) {
-    const firstToolPos = Math.min(...toolCalls.map((tc) => tc.textPosition!));
-    insertions.push({
-      position: firstToolPos,
-      node: (
-        <div key="tools">
-          <ToolStack toolCalls={toolCalls} />
-        </div>
-      ),
-    });
+    // Group tool calls by their position so each agent loop's tools render as one
+    // stack at the point they occurred. Lumping them all at the earliest position
+    // would float a later loop's tools above the text that introduces them.
+    const groups = new Map<number, ToolCall[]>();
+    for (const tc of toolCalls) {
+      const pos = tc.textPosition!;
+      const arr = groups.get(pos);
+      if (arr) arr.push(tc);
+      else groups.set(pos, [tc]);
+    }
+    for (const [pos, group] of groups) {
+      insertions.push({
+        position: pos,
+        node: (
+          <div key={`tools-${pos}`}>
+            <ToolStack toolCalls={group} />
+          </div>
+        ),
+      });
+    }
   }
 
   for (const d of resolvedDrafts) {
@@ -152,6 +163,13 @@ export const MessageBubble = ({ message, isLastAssistant }: MessageBubbleProps) 
   }
 
   insertions.sort((a, b) => a.position - b.position);
+
+  // While streaming, only show insertions (tool stacks, drafted cards) once the
+  // drain has revealed the text up to their position — so a card never appears
+  // above text that is still typing in.
+  const visibleInsertions = message.isStreaming
+    ? insertions.filter((ins) => ins.position <= message.content.length)
+    : insertions;
 
   function renderBody() {
     // No insertions: plain text (+ fallback artifact cards below)
@@ -190,7 +208,7 @@ export const MessageBubble = ({ message, isLastAssistant }: MessageBubbleProps) 
     let cursor = 0;
     let firstText = true;
 
-    for (const ins of insertions) {
+    for (const ins of visibleInsertions) {
       const textBefore = message.content.slice(cursor, ins.position);
       if (textBefore && shouldShowContent) {
         nodes.push(

@@ -8,26 +8,25 @@ function settingsPath(projectPath: string): string {
 
 interface NormalizedHookGroup {
   matcher: string;
-  if?: string;
   hooks: Array<Record<string, unknown>>;
 }
 
 function normalizeLegacyHookEntry(entry: unknown): NormalizedHookGroup {
   if (typeof entry !== "object" || entry === null) return { matcher: "", hooks: [] };
   const obj = entry as Record<string, unknown>;
-  // Modern format: already has a hooks array — pass through as-is, preserving if and any other fields
+  // Modern format: already has a hooks array — pass through as-is (handler-level `if` is preserved inside each hook object)
   if (Array.isArray(obj.hooks)) return obj as unknown as NormalizedHookGroup;
   // Legacy flat format: { command: "...", type?: "..." } — wrap it
   const hookEntry: Record<string, unknown> = { type: obj.type ?? "command" };
+  // `if` belongs on the handler, not the group — migrate it here
+  if (typeof obj.if === "string") hookEntry.if = obj.if;
   if (obj.command != null) hookEntry.command = obj.command;
   if (obj.url != null) hookEntry.url = obj.url;
   if (obj.timeout != null) hookEntry.timeout = obj.timeout;
-  const normalized: NormalizedHookGroup = {
+  return {
     matcher: typeof obj.matcher === "string" ? obj.matcher : "",
     hooks: [hookEntry],
   };
-  if (typeof obj.if === "string") normalized.if = obj.if;
-  return normalized;
 }
 
 export async function getHooks(projectPath: string): Promise<Record<string, unknown[]>> {

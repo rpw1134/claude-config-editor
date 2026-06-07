@@ -32,9 +32,11 @@ Hooks in settings.json use this exact nested structure. The top-level key is the
 
 ### Command matchers (the \`if\` field)
 
-A hook group may include an **\`if\`** field alongside \`matcher\` to filter by the actual command content, using permission-rule syntax. The \`matcher\` selects the tool; \`if\` further narrows by what was passed to it.
+To filter by the actual command content, set an **\`if\`** field on an individual **hook handler** (an entry INSIDE the \`hooks\` array), NOT on the group next to \`matcher\`. The \`matcher\` selects the tool; each handler's \`if\` further narrows by what was passed to it, using permission-rule syntax.
 
-Syntax: \`"if": "Bash(gh *)"\` — only fires when the Bash command matches the glob pattern.
+\`if\` is **only evaluated on tool events**: PreToolUse, PostToolUse, PostToolUseFailure, PermissionRequest, PermissionDenied. On other events a handler with \`if\` set never runs.
+
+Syntax: \`"if": "Bash(gh *)"\` — this handler only fires when the Bash command matches the glob.
 
 How it works:
 - Strips leading \`VAR=value\` shell assignments before matching
@@ -47,19 +49,25 @@ Common patterns:
 - \`"Bash(git push *)"\` — git push
 - \`"Bash(rm *)"\` — any rm invocation
 
-Example — run a script after every GitHub CLI command:
+**\`if\` takes exactly ONE pattern** — there is no \`||\`, array, or alternation syntax. To match MULTIPLE command globs, add MULTIPLE handlers under a SINGLE \`matcher\` group, each with its own \`if\` (do NOT create a second group). Alternatively use one broad pattern (e.g. \`"Bash(git *)"\`) and filter inside the script.
+
+Example — one Bash group, two command globs, each running its own script:
 
 \`\`\`json
 {
   "PostToolUse": [
     {
       "matcher": "Bash",
-      "if": "Bash(gh *)",
-      "hooks": [{ "type": "command", "command": "~/.claude/scripts/log-gh-commands.sh" }]
+      "hooks": [
+        { "type": "command", "if": "Bash(gh *)",         "command": "~/.claude/scripts/log-gh.sh" },
+        { "type": "command", "if": "Bash(git commit *)", "command": "~/.claude/scripts/log-commit.sh" }
+      ]
     }
   ]
 }
 \`\`\`
+
+To run the SAME command for several globs, repeat the handler with each \`if\` (the \`matcher\` stays a single group).
 
 ### Merge behavior
 

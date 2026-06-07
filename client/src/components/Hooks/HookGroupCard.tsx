@@ -6,10 +6,11 @@ interface HookEntry {
   command?: string;
   url?: string;
   prompt?: string;
+  if?: string;
 }
 
 interface HookGroupCardProps {
-  group: { matcher?: string; if?: string; hooks?: HookEntry[]; command?: string; type?: string };
+  group: { matcher?: string; hooks?: HookEntry[]; command?: string; type?: string };
   onEdit: () => void;
   onDelete: () => void;
 }
@@ -28,7 +29,7 @@ function entryValue(h: HookEntry): string {
 // ── Detail modal ──────────────────────────────────────────────────────────────
 
 interface DetailModalProps {
-  group: { matcher?: string; if?: string; hooks?: HookEntry[]; command?: string; type?: string };
+  group: { matcher?: string; hooks?: HookEntry[]; command?: string; type?: string };
   entries: HookEntry[];
   onEdit: () => void;
   onClose: () => void;
@@ -65,22 +66,18 @@ const DetailModal = ({ group, entries, onEdit, onClose }: DetailModalProps) => (
         </span>
       </div>
 
-      {group.if && (
-        <div className="flex flex-col gap-1">
-          <span className="text-[11px] font-semibold text-(--text-muted) uppercase tracking-widest">
-            Command condition
-          </span>
-          <span className="text-[13px] font-['Fira_Code',monospace] text-(--text-secondary)">
-            {group.if}
-          </span>
-        </div>
-      )}
-
       {entries.map((h, i) => (
-        <div key={i} className="flex flex-col gap-1">
-          <span className="text-[11px] font-semibold text-(--accent) uppercase tracking-widest">
-            {h.type ?? "command"}
-          </span>
+        <div key={i} className="flex flex-col gap-1.5">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-[11px] font-semibold text-(--accent) uppercase tracking-widest">
+              {h.type ?? "command"}
+            </span>
+            {h.if && (
+              <span className="text-[11px] font-['Fira_Code',monospace] px-1.5 py-0.5 rounded border border-(--border-subtle) bg-(--bg-surface) text-(--text-muted)">
+                if: {h.if}
+              </span>
+            )}
+          </div>
           <div className="p-3 rounded-lg bg-(--bg-surface) border border-(--border-subtle) overflow-y-auto max-h-64">
             {entryValue(h)
               ? <ShellHighlight code={entryValue(h)} />
@@ -134,13 +131,6 @@ export const HookGroupCard = ({ group, onEdit, onDelete }: HookGroupCardProps) =
           {group.matcher || "all tools"}
         </span>
 
-        {/* If badge — shown only when present */}
-        {group.if && (
-          <span className="shrink-0 text-[11px] font-['Fira_Code',monospace] px-2 py-0.5 rounded border border-(--border-subtle) bg-transparent text-(--text-muted) truncate max-w-[160px]">
-            if: {group.if}
-          </span>
-        )}
-
         {/* Command preview — takes remaining width, truncated */}
         <div className="flex-1 min-w-0 flex flex-col gap-0.5">
           {entries.length === 0 ? (
@@ -150,6 +140,11 @@ export const HookGroupCard = ({ group, onEdit, onDelete }: HookGroupCardProps) =
               <span className="text-[10px] font-semibold uppercase tracking-wider text-(--accent) shrink-0">
                 {h.type ?? "command"}
               </span>
+              {h.if && (
+                <span className="shrink-0 text-[10px] font-['Fira_Code',monospace] px-1.5 py-0.5 rounded border border-(--border-subtle) bg-(--bg-elevated) text-(--text-muted) truncate max-w-[120px]">
+                  if: {h.if}
+                </span>
+              )}
               <span className="flex-1 min-w-0 text-[12px] font-['Fira_Code',monospace] text-(--text-secondary) truncate">
                 {entryValue(h)}
               </span>

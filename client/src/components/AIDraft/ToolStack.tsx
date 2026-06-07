@@ -104,11 +104,11 @@ export const ToolStack = ({ toolCalls }: ToolStackProps) => {
 
       {/* Expanded list — all tool calls in chronological order */}
       <div
-        className={`grid transition-[grid-template-rows,opacity] duration-200 ease-out ${
+        className={`grid transition-[grid-template-rows,opacity] duration-200 ease-in-out ${
           expanded ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
         }`}
       >
-        <div className="overflow-hidden">
+        <div className="overflow-hidden min-h-0">
           <div className="mt-1.5 ml-0.5 flex flex-col gap-0.5">
             {toolCalls.map((tc, i) => (
               <ToolRow key={i} tc={tc} />

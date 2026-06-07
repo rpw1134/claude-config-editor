@@ -12,10 +12,16 @@ interface HooksPageProps {
 
 export const HooksPage = ({ projectPath }: HooksPageProps) => {
   const hooksEditor = useHooksEditor(projectPath);
-  const { dirty, saving, handleSave, hooks } = hooksEditor;
+  const { dirty, saving, handleSave, hooks, resetToVisual } = hooksEditor;
   const [selectedEvent, setSelectedEvent] = useState<string | null>(null);
 
   const { refresh: refreshVc } = useVersionControl();
+
+  // Always open an event in the visual view, regardless of the previous tab
+  useEffect(() => {
+    if (selectedEvent) resetToVisual();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedEvent]);
 
   const wrappedSave = async () => {
     await handleSave();

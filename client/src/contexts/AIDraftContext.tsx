@@ -9,6 +9,7 @@ import {
 import type { ReactNode } from "react";
 import type { Artifact, ChatMessage, DraftedArtifactRef, ToolCall } from "../types/aiDraft";
 import { useShell } from "./ShellContext";
+import { fetchAgents, fetchSkills, fetchMcpServers, fetchProjectContent } from "../lib/api";
 
 const BASE_URL = "http://localhost:3000";
 
@@ -108,12 +109,49 @@ export const AIDraftProvider = ({ children, projectPath }: AIDraftProviderProps)
   const artifactsRef = useRef<Artifact[]>(DEV_ARTIFACTS);
   useEffect(() => { artifactsRef.current = artifacts; }, [artifacts]);
 
+  // Resources that already exist on disk for this project. Used so that editing a
+  // resource that exists on disk (but hasn't been drafted this session) is still
+  // labeled "Editing" rather than "Drafting".
+  const existingResourcesRef = useRef<{ ids: Set<string>; hasClaudeMd: boolean }>({
+    ids: new Set(),
+    hasClaudeMd: false,
+  });
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const [agents, skills, mcps, claudeMd] = await Promise.all([
+        fetchAgents(projectPath).catch(() => [] as string[]),
+        fetchSkills(projectPath).catch(() => [] as string[]),
+        fetchMcpServers(projectPath).catch(() => [] as string[]),
+        fetchProjectContent(projectPath).catch(() => ""),
+      ]);
+      if (cancelled) return;
+      const ids = new Set<string>();
+      for (const a of agents) ids.add(`agent:${a}`);
+      for (const s of skills) ids.add(`skill:${s}`);
+      for (const m of mcps) ids.add(`mcp:${m}`);
+      existingResourcesRef.current = { ids, hasClaudeMd: !!claudeMd.trim() };
+    })();
+    return () => { cancelled = true; };
+  }, [projectPath]);
+
+  // True if an artifact already exists either as a session draft or on disk.
+  const isExistingResource = useCallback((type: string, name: string): boolean => {
+    if (artifactsRef.current.some((a) => a.name === name && a.type === type)) return true;
+    if (type === "claude-md") return existingResourcesRef.current.hasClaudeMd;
+    return existingResourcesRef.current.ids.has(`${type}:${name}`);
+  }, []);
+
   // Full Anthropic message history (with tool use/result blocks) from the last completed turn.
   // Sent to the API on the next turn so the model retains tool call context across turns.
   const rawHistoryRef = useRef<unknown[]>([]);
 
   // Ref for synchronous access inside the stream loop
   const pendingArtifactRef = useRef<{ type: string; name: string } | null>(null);
+
+  // The "Drafting/Editing X…" card is held here until the drain reveals the text
+  // up to the artifact's position, so it never appears over still-typing text.
+  const pendingBuildingRef = useRef<{ type: string; name: string; isEdit: boolean; flushAt: number } | null>(null);
 
   // Word-by-word drain
   const contentBufferRef = useRef("");
@@ -133,6 +171,7 @@ export const AIDraftProvider = ({ children, projectPath }: AIDraftProviderProps)
     setActiveArtifactIndex(0);
     setNoApiKey(false);
     pendingArtifactRef.current = null;
+    pendingBuildingRef.current = null;
     rawHistoryRef.current = [];
   }, []);
 
@@ -150,6 +189,7 @@ export const AIDraftProvider = ({ children, projectPath }: AIDraftProviderProps)
       const displayed = displayedLengthRef.current;
 
       if (displayed >= buffer.length) {
+        revealBuildingIfReached(displayed);
         if (streamDoneRef.current) {
           clearInterval(drainRef.current!);
           drainRef.current = null;
@@ -186,7 +226,19 @@ export const AIDraftProvider = ({ children, projectPath }: AIDraftProviderProps)
           }));
         }
       }
+
+      // Reveal a queued "Drafting/Editing" card once its text has been displayed
+      revealBuildingIfReached(end);
     }, 30);
+  }, []);
+
+  // Show the pending building card once the drain has revealed text up to its position.
+  const revealBuildingIfReached = useCallback((displayedTo: number) => {
+    const pb = pendingBuildingRef.current;
+    if (pb && displayedTo >= pb.flushAt) {
+      pendingBuildingRef.current = null;
+      setBuildingArtifact({ type: pb.type, name: pb.name, isEdit: pb.isEdit });
+    }
   }, []);
 
   const sendMessage = useCallback(
@@ -276,11 +328,16 @@ export const AIDraftProvider = ({ children, projectPath }: AIDraftProviderProps)
                 type: (event.data.type as string) ?? "agent",
                 name: (event.data.name as string) ?? "Untitled",
               };
-              const isEditArtifact = artifactsRef.current.some(
-                (a) => a.name === pending.name && a.type === pending.type
-              );
+              const isEditArtifact = isExistingResource(pending.type, pending.name);
               pendingArtifactRef.current = pending;
-              setBuildingArtifact({ ...pending, isEdit: isEditArtifact });
+              // Defer the "Drafting/Editing" card until the drain has revealed the
+              // narration up to this point, unless the text is already caught up.
+              const flushAt = contentBufferRef.current.length;
+              if (displayedLengthRef.current >= flushAt) {
+                setBuildingArtifact({ ...pending, isEdit: isEditArtifact });
+              } else {
+                pendingBuildingRef.current = { ...pending, isEdit: isEditArtifact, flushAt };
+              }
             } else if (event.type === "artifact-end") {
               const pending = pendingArtifactRef.current;
               const artifactType = ((event.data.type as string) ?? pending?.type ?? "agent") as Artifact["type"];
@@ -294,7 +351,9 @@ export const AIDraftProvider = ({ children, projectPath }: AIDraftProviderProps)
               const existingIdx = currentArtifacts.findIndex(
                 (a) => a.name === artifactName && a.type === artifactType
               );
-              const isEdit = existingIdx !== -1;
+              // Label as an edit if it exists in the session OR on disk; but the
+              // update-vs-add branch below keys off session presence (existingIdx).
+              const isEdit = existingIdx !== -1 || isExistingResource(artifactType, artifactName);
 
               // Append to the message's draftedArtifacts array (supports multiple per message)
               const artifactRef: DraftedArtifactRef = {
@@ -314,7 +373,7 @@ export const AIDraftProvider = ({ children, projectPath }: AIDraftProviderProps)
               }
 
               // Update artifacts and active index
-              if (isEdit) {
+              if (existingIdx !== -1) {
                 setActiveArtifactIndex(existingIdx);
                 setArtifacts((prev) =>
                   prev.map((a, i) => (i === existingIdx ? { ...a, content, saved: false } : a))
@@ -329,6 +388,7 @@ export const AIDraftProvider = ({ children, projectPath }: AIDraftProviderProps)
 
               setSidebarOpen(true);
               pendingArtifactRef.current = null;
+              pendingBuildingRef.current = null;
               setBuildingArtifact(null);
             } else if (event.type === "tool-call") {
               const toolCall: ToolCall = {
@@ -413,6 +473,7 @@ export const AIDraftProvider = ({ children, projectPath }: AIDraftProviderProps)
         );
         setIsStreaming(false);
       } finally {
+        pendingBuildingRef.current = null;
         setBuildingArtifact(null);
         // Signal drain to finish and handle isStreaming cleanup.
         // If drain never started (no tokens), clean up immediately.
@@ -427,7 +488,7 @@ export const AIDraftProvider = ({ children, projectPath }: AIDraftProviderProps)
         }
       }
     },
-    [isStreaming, projectPath, startDrain, stopDrain]
+    [isStreaming, projectPath, startDrain, stopDrain, isExistingResource]
   );
 
   const saveArtifact = useCallback(

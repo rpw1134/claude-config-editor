@@ -52,11 +52,25 @@ export function useHooksEditor(projectPath: string) {
     [activeTab, hooks, rawJson]
   );
 
+  // Force the visual tab (e.g. when navigating into an event). Syncs any
+  // pending JSON edits into `hooks` first so the visual view isn't stale.
+  const resetToVisual = useCallback(() => {
+    setActiveTabState((curr) => {
+      if (curr === "json") {
+        try {
+          setHooks(JSON.parse(rawJson) as HooksConfig);
+        } catch {
+          /* invalid JSON — keep last good hooks */
+        }
+      }
+      return "visual";
+    });
+  }, [rawJson]);
+
   const addHookGroup = useCallback(
-    (event: string, group: { matcher: string; if?: string; hooks: Array<Record<string, unknown>> }) => {
+    (event: string, group: { matcher: string; hooks: Array<Record<string, unknown>> }) => {
       setHooks((prev) => {
         const entry: Record<string, unknown> = { matcher: group.matcher, hooks: group.hooks };
-        if (group.if) entry.if = group.if;
         const updated = { ...prev, [event]: [...(prev[event] ?? []), entry] };
         setRawJson(JSON.stringify(updated, null, 2));
         return updated;
@@ -76,12 +90,11 @@ export function useHooksEditor(projectPath: string) {
   }, []);
 
   const editHookGroup = useCallback(
-    (event: string, index: number, group: { matcher: string; if?: string; hooks: Array<Record<string, unknown>> }) => {
+    (event: string, index: number, group: { matcher: string; hooks: Array<Record<string, unknown>> }) => {
       setHooks((prev) => {
         const updated = { ...prev };
         const eventGroups = [...(prev[event] ?? [])];
         const entry: Record<string, unknown> = { matcher: group.matcher, hooks: group.hooks };
-        if (group.if) entry.if = group.if;
         eventGroups[index] = entry;
         updated[event] = eventGroups;
         setRawJson(JSON.stringify(updated, null, 2));
@@ -121,6 +134,7 @@ export function useHooksEditor(projectPath: string) {
     loadError,
     activeTab,
     setActiveTab,
+    resetToVisual,
     dirty,
     saving,
     addHookGroup,

@@ -40,8 +40,7 @@ const TabButton = ({
 
 interface HookGroup {
   matcher: string;
-  if?: string;
-  hooks?: Array<{ type?: string; command?: string; url?: string; timeout?: number }>;
+  hooks?: Array<{ type?: string; command?: string; url?: string; timeout?: number; if?: string }>;
   command?: string;
   type?: string;
 }
@@ -56,8 +55,8 @@ interface HooksEventDetailProps {
   setActiveTab: (tab: HookTabId) => void;
   dirty: boolean;
   saving: boolean;
-  addHookGroup: (event: string, group: { matcher: string; if?: string; hooks: Array<Record<string, unknown>> }) => void;
-  editHookGroup: (event: string, index: number, group: { matcher: string; if?: string; hooks: Array<Record<string, unknown>> }) => void;
+  addHookGroup: (event: string, group: { matcher: string; hooks: Array<Record<string, unknown>> }) => void;
+  editHookGroup: (event: string, index: number, group: { matcher: string; hooks: Array<Record<string, unknown>> }) => void;
   deleteHookGroup: (event: string, index: number) => void;
   handleSave: () => Promise<void>;
   onBack: () => void;

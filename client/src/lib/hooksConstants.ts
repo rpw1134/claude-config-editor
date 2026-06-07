@@ -48,3 +48,13 @@ export const NO_MATCHER_EVENTS = new Set<string>([
 
 export const supportsMatcher = (event: string): boolean =>
   !NO_MATCHER_EVENTS.has(event);
+
+export const IF_EVENTS = new Set<string>([
+  "PreToolUse",
+  "PostToolUse",
+  "PostToolUseFailure",
+  "PermissionRequest",
+  "PermissionDenied",
+]);
+
+export const supportsIf = (event: string): boolean => IF_EVENTS.has(event);

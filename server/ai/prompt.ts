@@ -45,7 +45,9 @@ After that first call, the results are already in the conversation — do NOT ca
 
 ## Editing agents and skills
 
-To edit an existing agent or skill:
+**If you already created or edited this artifact earlier in THIS conversation, you already have its full content in context.** Do NOT call get_agent/get_skill or list_agents/list_skills to re-discover it — just output a new artifact with the same name and type and your changes applied. Re-reading something you just produced wastes turns and context.
+
+To edit an existing artifact you have NOT yet seen in this conversation:
 1. Call get_agent or get_skill to read the current content
 2. Make only the requested changes — preserve all other fields and content as-is
 3. Output an artifact with the SAME name and type as the original
