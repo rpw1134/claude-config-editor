@@ -4,6 +4,7 @@ import type { AgentSummary } from "../../lib/api";
 import { useVersionControl } from "../../contexts/VersionControlContext";
 import { ForkIcon } from "../Icons";
 import { ForkModal } from "../Modals/ForkModal";
+import { COLORS } from "../Agent/constants";
 
 // ── Icons ─────────────────────────────────────────────────────────────────────
 
@@ -134,13 +135,13 @@ interface TypeLandingPageProps {
 interface ItemRowProps {
   name: string;
   isLast: boolean;
-  color?: string;
+  leading?: React.ReactNode;
   vcStatus?: "M" | "A" | "??" | null;
   onClick: () => void;
   onFork: (name: string) => void;
 }
 
-const ItemRow = ({ name, isLast, color, vcStatus, onClick, onFork }: ItemRowProps) => (
+const ItemRow = ({ name, isLast, leading, vcStatus, onClick, onFork }: ItemRowProps) => (
   <div
     className={[
       "group relative w-full flex items-center pl-4 pr-1 min-h-18",
@@ -148,12 +149,7 @@ const ItemRow = ({ name, isLast, color, vcStatus, onClick, onFork }: ItemRowProp
       !isLast ? "border-b border-(--border-faint)" : "",
     ].join(" ")}
   >
-    {color && (
-      <div
-        className="w-2.5 h-2.5 rounded-full shrink-0 mr-3"
-        style={{ backgroundColor: color }}
-      />
-    )}
+    {leading && <span className="shrink-0 mr-3 flex items-center">{leading}</span>}
     <button
       onClick={onClick}
       className="flex-1 min-w-0 text-left cursor-pointer bg-transparent border-none py-0 pl-0 pr-8"
@@ -335,12 +331,25 @@ export const TypeLandingPage = (props: TypeLandingPageProps) => {
         {/* List */}
         {!loading && !error && filtered.length > 0 && (
           <div>
-            {filtered.map((name, idx) => (
+            {filtered.map((name, idx) => {
+              let leading: React.ReactNode;
+              if (type === "agent") {
+                const colorName = colorMap.get(name);
+                const base = colorName
+                  ? (COLORS.find((c) => c.name === colorName)?.bg ?? colorName)
+                  : "#64748b";
+                leading = (
+                  <span style={{ color: `color-mix(in srgb, ${base} 80%, #94a3b8 20%)` }} className="flex items-center">
+                    <AgentIcon size={18} />
+                  </span>
+                );
+              }
+              return (
               <ItemRow
                 key={name}
                 name={name}
                 isLast={idx === filtered.length - 1}
-                color={colorMap.get(name)}
+                leading={leading}
                 vcStatus={
                   type === "agent"
                     ? getItemStatus("agent", name)
@@ -351,7 +360,8 @@ export const TypeLandingPage = (props: TypeLandingPageProps) => {
                 onClick={() => onSelect(name)}
                 onFork={setForkName}
               />
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

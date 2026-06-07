@@ -44,6 +44,20 @@ export async function fetchSkills(projectPath: string): Promise<string[]> {
   return data.skills;
 }
 
+export async function fetchAvailableSkills(projectPath: string): Promise<string[]> {
+  const data = await get<{ skills: string[] }>(
+    `/api/stryde/skills?projectPath=${encodeURIComponent(projectPath)}&scope=all`
+  );
+  return data.skills;
+}
+
+export async function fetchAvailableMcpServers(projectPath: string): Promise<string[]> {
+  const data = await get<{ mcpServers: string[] }>(
+    `/api/stryde/mcp-servers?projectPath=${encodeURIComponent(projectPath)}&scope=all`
+  );
+  return data.mcpServers;
+}
+
 export async function fetchAgents(projectPath: string): Promise<string[]> {
   const data = await get<{ agents: string[] }>(
     `/api/stryde/agents?projectPath=${encodeURIComponent(projectPath)}`

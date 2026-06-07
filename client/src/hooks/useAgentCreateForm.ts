@@ -31,14 +31,17 @@ function buildContent(opts: {
   maxTurns: string;
   tools: string;
   disallowedTools: string;
-  skills: string;
+  skills: string[];
   initialPrompt: string;
   systemPrompt: string;
 }): string {
   const lines: string[] = ["---"];
   lines.push(`name: ${opts.name.trim()}`);
   lines.push(`description: ${opts.description.trim()}`);
-  if (opts.model !== DEFAULT_MODEL) lines.push(`model: ${opts.model}`);
+  // Skip when model equals DEFAULT_MODEL; "inherit" is always written since it differs from DEFAULT_MODEL
+  if (opts.model !== DEFAULT_MODEL) {
+    lines.push(`model: ${opts.model}`);
+  }
   if (opts.color) lines.push(`color: ${opts.color}`);
   if (opts.permissionMode) lines.push(`permissionMode: ${opts.permissionMode}`);
   if (opts.effort) lines.push(`effort: ${opts.effort}`);
@@ -51,8 +54,7 @@ function buildContent(opts: {
   if (toolList.length) lines.push(`tools: [${toolList.join(", ")}]`);
   const denyList = toYamlList(opts.disallowedTools);
   if (denyList.length) lines.push(`disallowedTools: [${denyList.join(", ")}]`);
-  const skillList = toYamlList(opts.skills);
-  if (skillList.length) lines.push(`skills: [${skillList.join(", ")}]`);
+  if (opts.skills.length) lines.push(`skills: [${opts.skills.join(", ")}]`);
   if (opts.initialPrompt.trim()) {
     lines.push("initialPrompt: |");
     for (const line of opts.initialPrompt.trim().split("\n"))
@@ -77,15 +79,15 @@ export function useAgentCreateForm(
   const [description, setDescription] = useState("");
   const [model, setModel] = useState<ModelOption>(DEFAULT_MODEL);
   const [color, setColor] = useState<string | null>(null);
-  const [permissionMode, setPermissionMode] = useState<PermissionMode | null>(null);
-  const [effort, setEffort] = useState<EffortLevel | null>(null);
+  const [permissionMode, setPermissionMode] = useState<PermissionMode | null>("default");
+  const [effort, setEffort] = useState<EffortLevel | null>("medium");
   const [memory, setMemory] = useState<MemoryScope | null>(null);
   const [background, setBackground] = useState(false);
   const [isolation, setIsolation] = useState(false);
   const [maxTurns, setMaxTurns] = useState("");
   const [tools, setTools] = useState("");
   const [disallowedTools, setDisallowedTools] = useState("");
-  const [skills, setSkills] = useState("");
+  const [skills, setSkills] = useState<string[]>([]);
   const [initialPrompt, setInitialPrompt] = useState("");
   const [systemPrompt, setSystemPrompt] = useState("");
   const [submitting, setSubmitting] = useState(false);

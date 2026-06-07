@@ -15,6 +15,7 @@ export interface AgentFrontmatter {
   color?: string;
   initialPrompt?: string;
   mcpServers?: string[];
+  skills?: string[];
   [key: string]: unknown;
 }
 

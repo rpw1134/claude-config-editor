@@ -18,8 +18,8 @@ interface AgentSummary {
   color?: string;
 }
 
-// Matches `color: #7c3aed` or `color: "#7c3aed"` in YAML frontmatter.
-const COLOR_LINE_RE = /^color:\s*["']?(#[0-9a-fA-F]{3,8})["']?\s*$/m;
+// Matches `color: red` or `color: "#7c3aed"` or `color: #7c3aed` in YAML frontmatter.
+const COLOR_LINE_RE = /^color:\s*["']?([a-zA-Z]+|#[0-9a-fA-F]{3,8})["']?\s*$/m;
 const FRONTMATTER_BLOCK_RE = /^---\r?\n[\s\S]*?\r?\n---(?:\r?\n|$)/;
 
 function extractColor(content: string): string | undefined {

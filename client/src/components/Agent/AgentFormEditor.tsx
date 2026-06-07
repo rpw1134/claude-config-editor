@@ -188,9 +188,12 @@ export const AgentFormEditor = ({
           <SettingsTab
             fm={fm}
             onFieldChange={handleFieldChange}
+            body={body}
+            onBodyChange={handleBodyChange}
             onDelete={onDelete ?? (() => {})}
             deleteStatus={deleteStatus}
             disabled={disabled}
+            projectPath={projectPath ?? ""}
           />
         )}
         {activeTab === "history" && agentName && projectPath && (

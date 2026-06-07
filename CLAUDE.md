@@ -91,8 +91,7 @@ client/src/
       mcp/           # Step components for McpCreateModal: StepName, StepType, StepJsonMode, StepConfigure, StepReview, shared.tsx
     Skill/           # Skill* components
     Editor/          # Editor, EditorPane, parts/
-    Pages/           # LandingPage, WelcomePane, ProjectSettingsPage
-    sections/        # Sidebar list sections
+    Pages/           # LandingPage (agent/skill/mcp list pages), WelcomePane, ProjectSettingsPage
 ```
 
 ### One component per file

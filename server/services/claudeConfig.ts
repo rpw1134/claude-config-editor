@@ -165,6 +165,53 @@ export async function listSkills(projectPath: string): Promise<string[]> {
   return dirs.filter((_, i) => checks[i]);
 }
 
+export async function listSkillsAllScopes(projectPath: string): Promise<string[]> {
+  const sets: string[][] = [];
+
+  // Project-scoped skills
+  try {
+    sets.push(await listSkills(projectPath));
+  } catch {
+    // Missing dir is fine
+  }
+
+  // User-global skills under ~/.claude/skills
+  try {
+    const globalSkillsDir = resolveHome("~/.claude/skills");
+    const listing = await listDir(globalSkillsDir);
+    const dirs = listing?.dirs ?? [];
+    const checks = await Promise.all(
+      dirs.map((d) => fileExists(`${globalSkillsDir}/${d}/SKILL.md`)),
+    );
+    sets.push(dirs.filter((_, i) => checks[i]));
+  } catch {
+    // Missing dir is fine
+  }
+
+  const merged = Array.from(new Set(sets.flat()));
+  return merged.sort();
+}
+
+export async function listMcpServersAllScopes(projectPath: string): Promise<string[]> {
+  let config: ClaudeConfig = {};
+  try {
+    const raw = await readFileContent(resolveHome("~/.claude.json"));
+    config = JSON.parse(raw) as ClaudeConfig;
+  } catch (e) {
+    const error = e as NodeJS.ErrnoException;
+    if (error.code !== "ENOENT") throw error;
+    return [];
+  }
+
+  const globalKeys = Object.keys(config.mcpServers ?? {});
+  const projectKeys = Object.keys(
+    config.projects?.[projectPath]?.mcpServers ?? {},
+  );
+
+  const merged = Array.from(new Set([...globalKeys, ...projectKeys]));
+  return merged.sort();
+}
+
 export async function listAgents(projectPath: string): Promise<string[]> {
   const configDir = getConfigDir(projectPath);
   const listing = await listDir(`${configDir}/agents`);

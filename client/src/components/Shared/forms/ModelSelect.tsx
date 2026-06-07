@@ -1,6 +1,6 @@
 import { fieldInput } from "./styles";
 
-const KNOWN_MODELS = ["sonnet", "opus", "haiku"];
+const KNOWN_MODELS = ["inherit", "sonnet", "opus", "haiku"];
 
 interface ModelSelectProps {
   value: string | undefined;
@@ -32,7 +32,8 @@ export const ModelSelect = ({
         disabled={disabled}
         className={fieldInput}
       >
-        <option value="">Inherit — default</option>
+        <option value="">Unset — default</option>
+        <option value="inherit">inherit — use parent/session model</option>
         <option value="sonnet">sonnet</option>
         <option value="opus">opus</option>
         <option value="haiku">haiku</option>

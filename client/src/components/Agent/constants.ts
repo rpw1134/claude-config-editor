@@ -1,9 +1,15 @@
 export type ModelOption =
+  | "inherit"
   | "claude-opus-4-7"
   | "claude-sonnet-4-6"
   | "claude-haiku-4-5-20251001";
 
 export const MODELS: { value: ModelOption; label: string; note: string }[] = [
+  {
+    value: "inherit",
+    label: "Inherit",
+    note: "Use the parent/session model",
+  },
   { value: "claude-opus-4-7", label: "Claude Opus 4.7", note: "Most capable" },
   {
     value: "claude-sonnet-4-6",
@@ -65,7 +71,7 @@ export const COLORS: ColorSwatch[] = [
   { name: "orange", bg: "#f97316", ring: "rgba(249,115,22,0.35)" },
   { name: "yellow", bg: "#eab308", ring: "rgba(234,179,8,0.35)" },
   { name: "green", bg: "#22c55e", ring: "rgba(34,197,94,0.35)" },
-  { name: "teal", bg: "#14b8a6", ring: "rgba(20,184,166,0.35)" },
+  { name: "cyan", bg: "#06b6d4", ring: "rgba(6,182,212,0.35)" },
   { name: "blue", bg: "#3b82f6", ring: "rgba(59,130,246,0.35)" },
   { name: "purple", bg: "#a855f7", ring: "rgba(168,85,247,0.35)" },
   { name: "pink", bg: "#ec4899", ring: "rgba(236,72,153,0.35)" },

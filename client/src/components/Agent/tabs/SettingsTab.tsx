@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import type { AgentFrontmatter } from "../../../lib/frontmatter";
 import { FieldHelp } from "../../Shared/forms/FieldHelp";
 import { ModelSelect } from "../../Shared/forms/ModelSelect";
@@ -8,6 +9,11 @@ import {
   fieldInput,
   fieldLabel,
 } from "../../Shared/forms/styles";
+import { fetchAvailableSkills, fetchAvailableMcpServers } from "../../../lib/api";
+
+const MEMORY_BOILERPLATE = `## Memory
+
+Before starting, read your memory to recall context from past runs. When you finish, record any durable learnings, decisions, or gotchas so future runs benefit.`;
 
 interface SettingsTabProps {
   fm: AgentFrontmatter;
@@ -15,18 +21,48 @@ interface SettingsTabProps {
     key: K,
     value: AgentFrontmatter[K],
   ) => void;
+  body: string;
+  onBodyChange: (val: string) => void;
   onDelete: () => void;
   deleteStatus: "idle" | "confirm" | "deleting" | "error";
   disabled?: boolean;
+  projectPath: string;
 }
 
 export const SettingsTab = ({
   fm,
   onFieldChange,
+  body,
+  onBodyChange,
   onDelete,
   deleteStatus,
   disabled,
-}: SettingsTabProps) => (
+  projectPath,
+}: SettingsTabProps) => {
+  const [availableSkills, setAvailableSkills] = useState<string[]>([]);
+  const [availableMcp, setAvailableMcp] = useState<string[]>([]);
+
+  useEffect(() => {
+    fetchAvailableSkills(projectPath).then(setAvailableSkills).catch(() => {});
+    fetchAvailableMcpServers(projectPath).then(setAvailableMcp).catch(() => {});
+  }, [projectPath]);
+
+  const memoryChecked = body.includes("## Memory");
+
+  const handleMemoryToggle = (on: boolean) => {
+    if (on) {
+      if (body.includes("## Memory")) return;
+      const separator = body.trim() ? "\n\n" : "";
+      onBodyChange(body + separator + MEMORY_BOILERPLATE);
+    } else {
+      const cleaned = body
+        .replace(/\n*## Memory\n[\s\S]*?(?=\n##|\s*$)/, "")
+        .trimEnd();
+      onBodyChange(cleaned);
+    }
+  };
+
+  return (
   <div className="px-7 py-8 flex flex-col gap-8 overflow-y-auto h-full">
     <div>
       <h2 className="m-0 mb-1 text-2xl font-['Bricolage_Grotesque',sans-serif] font-bold tracking-[-0.015em] text-(--text-primary)">
@@ -213,6 +249,23 @@ export const SettingsTab = ({
 
         <div>
           <label className={fieldLabel}>
+            Skills
+            <FieldHelp text="Preload these skills' full content into the agent at startup." />
+          </label>
+          <TagInput
+            value={fm.skills ?? []}
+            onChange={(v) =>
+              onFieldChange("skills", v.length > 0 ? v : undefined)
+            }
+            placeholder="Add skill…"
+            disabled={disabled}
+            suggestions={availableSkills}
+            selectOnly
+          />
+        </div>
+
+        <div>
+          <label className={fieldLabel}>
             MCP Servers
             <FieldHelp text="MCP server names this agent has access to." />
           </label>
@@ -223,6 +276,7 @@ export const SettingsTab = ({
             }
             placeholder="Add server…"
             disabled={disabled}
+            suggestions={availableMcp}
           />
         </div>
 
@@ -244,6 +298,15 @@ export const SettingsTab = ({
             <option value="project">project</option>
             <option value="local">local</option>
           </select>
+          {fm.memory && !disabled && (
+            <div className="flex items-center gap-3 my-3">
+              <Toggle checked={memoryChecked} onChange={handleMemoryToggle} disabled={disabled} />
+              <span className="text-[13px] text-(--text-secondary)">
+                Add memory instructions to the prompt
+              </span>
+              <FieldHelp text="Recommended — adds instructions telling the agent to read its memory before starting and record durable learnings when done." />
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -278,4 +341,5 @@ export const SettingsTab = ({
       </button>
     </div>
   </div>
-);
+  );
+};

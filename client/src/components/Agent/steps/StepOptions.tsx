@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AccordionSection } from "../../Shared/Accordion";
 import { Toggle } from "../../Shared/forms/Toggle";
+import { TagInput } from "../../Shared/forms/TagInput";
 import { CheckIcon, ArrowRightIcon } from "../../Icons";
 import {
   type ModelOption,
@@ -13,6 +14,8 @@ import {
   EFFORT_LEVELS,
   MEMORY_SCOPES,
 } from "../constants";
+import { fetchAvailableSkills } from "../../../lib/api";
+import { FieldHelp } from "../../Shared/forms/FieldHelp";
 
 const radioRow = (active: boolean) =>
   [
@@ -41,6 +44,10 @@ const StepHeading = ({ heading, subtext }: StepHeadingProps) => (
   </div>
 );
 
+const MEMORY_BOILERPLATE = `## Memory
+
+Before starting, read your memory to recall context from past runs. When you finish, record any durable learnings, decisions, or gotchas so future runs benefit.`;
+
 interface StepOptionsProps {
   model: ModelOption;
   onModelChange: (m: ModelOption) => void;
@@ -62,10 +69,13 @@ interface StepOptionsProps {
   onToolsChange: (v: string) => void;
   disallowedTools: string;
   onDisallowedToolsChange: (v: string) => void;
-  skills: string;
-  onSkillsChange: (v: string) => void;
+  skills: string[];
+  onSkillsChange: (v: string[]) => void;
   initialPrompt: string;
   onInitialPromptChange: (v: string) => void;
+  body: string;
+  onBodyChange: (v: string) => void;
+  projectPath: string;
   onContinue: () => void;
   onBack: () => void;
   firstButtonRef?: React.RefObject<HTMLButtonElement | null>;
@@ -97,12 +107,35 @@ export function StepOptions({
   onSkillsChange,
   initialPrompt,
   onInitialPromptChange,
+  body,
+  onBodyChange,
+  projectPath,
   onContinue,
   onBack,
   firstButtonRef,
   onEnterAdvance,
 }: StepOptionsProps) {
   const [openSection, setOpenSection] = useState<string | null>(null);
+  const [availableSkills, setAvailableSkills] = useState<string[]>([]);
+
+  useEffect(() => {
+    fetchAvailableSkills(projectPath).then(setAvailableSkills).catch(() => {});
+  }, [projectPath]);
+
+  const memoryChecked = body.includes("## Memory");
+
+  const handleMemoryToggle = (on: boolean) => {
+    if (on) {
+      if (body.includes("## Memory")) return;
+      const separator = body.trim() ? "\n\n" : "";
+      onBodyChange(body + separator + MEMORY_BOILERPLATE);
+    } else {
+      const cleaned = body
+        .replace(/\n*## Memory\n[\s\S]*?(?=\n##|\s*$)/, "")
+        .trimEnd();
+      onBodyChange(cleaned);
+    }
+  };
 
   const toggle = (title: string) =>
     setOpenSection((prev) => (prev === title ? null : title));
@@ -259,6 +292,14 @@ export function StepOptions({
                 </span>
               </button>
             ))}
+            {memory && (
+              <div className="my-3 flex items-center gap-3">
+                <Toggle checked={memoryChecked} onChange={handleMemoryToggle} />
+                <span className="text-[13px] text-(--text-secondary)">
+                  Add memory instructions to the prompt
+                </span>
+                <FieldHelp text="Recommended — adds instructions telling the agent to read its memory before starting and record durable learnings when done." />
+              </div>)}
           </div>
         </AccordionSection>
 
@@ -304,14 +345,18 @@ export function StepOptions({
         >
           <div className="pt-1">
             <p className="text-[12px] text-(--text-muted) mb-1.5">
-              Comma-separated skill names to preload into context at startup.
+              Preload these skills' full content into the agent at startup.
             </p>
-            <input
-              type="text"
+            <TagInput
               value={skills}
-              onChange={(e) => onSkillsChange(e.target.value)}
-              placeholder="e.g. ship-pr, review"
-              className={fieldInput}
+              onChange={onSkillsChange}
+              placeholder={
+                availableSkills.length > 0
+                  ? `e.g. ${availableSkills.slice(0, 2).join(", ")}`
+                  : "Add skill…"
+              }
+              suggestions={availableSkills}
+              selectOnly
             />
           </div>
         </AccordionSection>

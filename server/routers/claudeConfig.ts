@@ -3,7 +3,9 @@ import type { NextFunction, Request, Response, Router } from "express";
 import {
   listAgents,
   listMcpServers,
+  listMcpServersAllScopes,
   listSkills,
+  listSkillsAllScopes,
 } from "../services/claudeConfig.js";
 import { requireProjectPath } from "../lib/parsing.js";
 
@@ -15,7 +17,10 @@ router.get(
     const projectPath = requireProjectPath(req.query.projectPath, res);
     if (projectPath === null) return;
     try {
-      const skills = await listSkills(projectPath);
+      const skills =
+        req.query.scope === "all"
+          ? await listSkillsAllScopes(projectPath)
+          : await listSkills(projectPath);
       res.json({ skills });
     } catch (err) {
       next(err);
@@ -43,7 +48,10 @@ router.get(
     const projectPath = requireProjectPath(req.query.projectPath, res);
     if (projectPath === null) return;
     try {
-      const mcpServers = await listMcpServers(projectPath);
+      const mcpServers =
+        req.query.scope === "all"
+          ? await listMcpServersAllScopes(projectPath)
+          : await listMcpServers(projectPath);
       res.json({ mcpServers });
     } catch (err) {
       next(err);
